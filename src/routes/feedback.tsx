@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Star, AlertTriangle, MessageSquare, Plus, ChevronDown, ChevronUp, Upload, FileText, Car, ShieldAlert } from "lucide-react";
+import { Star, AlertTriangle, MessageSquare, Plus, ChevronDown, ChevronUp, Upload, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/feedback")({
