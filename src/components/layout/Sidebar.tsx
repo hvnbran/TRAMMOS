@@ -39,11 +39,11 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-        <img src={logo} alt="TRAMOS" className="h-9 w-9 rounded-lg object-cover shrink-0" />
+        <img src={logo} alt="TRAMMOS" className="h-9 w-9 rounded-lg object-cover shrink-0" />
         {!collapsed && (
           <div className="overflow-hidden">
             <span className="text-base font-bold text-foreground tracking-tight" style={{ color: "oklch(0.95 0.005 220)" }}>
-              TRAMOS
+              TRAMMOS
             </span>
             <p className="text-[10px] leading-none" style={{ color: "oklch(0.6 0.02 220)" }}>
               Transporte Especial
