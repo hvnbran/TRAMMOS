@@ -38,10 +38,10 @@ const cumplimientoMensual = [
 ];
 
 const tooltipStyle = {
-  backgroundColor: "oklch(0.2 0.025 260)",
-  border: "1px solid oklch(0.28 0.02 260)",
+  backgroundColor: "oklch(1 0 0)",
+  border: "1px solid oklch(0.9 0.01 220)",
   borderRadius: "8px",
-  color: "oklch(0.95 0.01 260)",
+  color: "oklch(0.2 0.02 220)",
 };
 
 function Reportes() {
@@ -67,12 +67,12 @@ function Reportes() {
             </h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={serviciosPorMes}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.02 260)" />
-                <XAxis dataKey="mes" tick={{ fill: "oklch(0.65 0.02 260)", fontSize: 12 }} />
-                <YAxis tick={{ fill: "oklch(0.65 0.02 260)", fontSize: 12 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.9 0.01 220)" />
+                <XAxis dataKey="mes" tick={{ fill: "oklch(0.5 0.02 220)", fontSize: 12 }} />
+                <YAxis tick={{ fill: "oklch(0.5 0.02 220)", fontSize: 12 }} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="total" name="Total" fill="oklch(0.62 0.18 250)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="completados" name="Completados" fill="oklch(0.7 0.18 160)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" name="Total" fill="oklch(0.72 0.14 200)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="completados" name="Completados" fill="oklch(0.8 0.18 115)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -84,11 +84,11 @@ function Reportes() {
             </h3>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={cumplimientoMensual}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.02 260)" />
-                <XAxis dataKey="mes" tick={{ fill: "oklch(0.65 0.02 260)", fontSize: 12 }} />
-                <YAxis domain={[85, 100]} tick={{ fill: "oklch(0.65 0.02 260)", fontSize: 12 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.9 0.01 220)" />
+                <XAxis dataKey="mes" tick={{ fill: "oklch(0.5 0.02 220)", fontSize: 12 }} />
+                <YAxis domain={[85, 100]} tick={{ fill: "oklch(0.5 0.02 220)", fontSize: 12 }} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Line type="monotone" dataKey="cumplimiento" stroke="oklch(0.7 0.18 160)" strokeWidth={2} dot={{ fill: "oklch(0.7 0.18 160)", r: 4 }} />
+                <Line type="monotone" dataKey="cumplimiento" stroke="oklch(0.72 0.14 200)" strokeWidth={2} dot={{ fill: "oklch(0.72 0.14 200)", r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
