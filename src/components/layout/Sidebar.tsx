@@ -27,6 +27,7 @@ const navItems: Array<{ to: string; icon: typeof LayoutDashboard; label: string;
   { to: "/monitoreo", icon: Radar, label: "Monitoreo" },
   { to: "/facturacion", icon: FileText, label: "Facturación" },
   { to: "/reportes", icon: BarChart3, label: "Reportes" },
+  { to: "/feedback", icon: Star, label: "Feedback" },
   { to: "/alertas", icon: Bell, label: "Alertas" },
 ];
 
