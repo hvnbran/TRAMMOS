@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bell,
   Radar,
+  Star,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
