@@ -7,7 +7,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="flex h-14 items-center justify-between border-b border-border px-6">
+        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
           <div className="flex items-center gap-3 flex-1">
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
