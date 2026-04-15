@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
+import logo from "@/assets/logo-trammos.jpeg";
 
 const navItems: Array<{ to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean }> = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
@@ -38,15 +39,13 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0">
-          T
-        </div>
+        <img src={logo} alt="TRAMMOS" className="h-9 w-9 rounded-lg object-cover shrink-0" />
         {!collapsed && (
           <div className="overflow-hidden">
-            <span className="text-base font-bold text-foreground tracking-tight">
-              TRAMOS
+            <span className="text-base font-bold text-foreground tracking-tight" style={{ color: "oklch(0.95 0.005 220)" }}>
+              TRAMMOS
             </span>
-            <p className="text-[10px] text-muted-foreground leading-none">
+            <p className="text-[10px] leading-none" style={{ color: "oklch(0.6 0.02 220)" }}>
               Transporte Especial
             </p>
           </div>
@@ -70,7 +69,7 @@ export function Sidebar() {
               }`}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className="h-4 w-4 shrink-0" />
+              <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
               {!collapsed && <span>{item.label}</span>}
               {isActive && !collapsed && (
                 <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
@@ -83,7 +82,7 @@ export function Sidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center h-10 border-t border-sidebar-border text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors"
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </button>
