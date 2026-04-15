@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-const navItems = [
+const navItems: Array<{ to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean }> = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/conductores", icon: Users, label: "Conductores" },
   { to: "/vehiculos", icon: Car, label: "Vehículos" },
@@ -26,7 +26,7 @@ const navItems = [
   { to: "/facturacion", icon: FileText, label: "Facturación" },
   { to: "/reportes", icon: BarChart3, label: "Reportes" },
   { to: "/alertas", icon: Bell, label: "Alertas" },
-] as const;
+];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
