@@ -14,6 +14,7 @@ import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as ReportesRouteImport } from './routes/reportes'
 import { Route as OperacionRouteImport } from './routes/operacion'
 import { Route as MonitoreoRouteImport } from './routes/monitoreo'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FacturacionRouteImport } from './routes/facturacion'
 import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as ConductoresRouteImport } from './routes/conductores'
@@ -43,6 +44,11 @@ const OperacionRoute = OperacionRouteImport.update({
 const MonitoreoRoute = MonitoreoRouteImport.update({
   id: '/monitoreo',
   path: '/monitoreo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FacturacionRoute = FacturacionRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/conductores': typeof ConductoresRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
+  '/feedback': typeof FeedbackRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
   '/reportes': typeof ReportesRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/conductores': typeof ConductoresRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
+  '/feedback': typeof FeedbackRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
   '/reportes': typeof ReportesRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/conductores': typeof ConductoresRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
+  '/feedback': typeof FeedbackRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
   '/reportes': typeof ReportesRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/conductores'
     | '/cumplimiento'
     | '/facturacion'
+    | '/feedback'
     | '/monitoreo'
     | '/operacion'
     | '/reportes'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/conductores'
     | '/cumplimiento'
     | '/facturacion'
+    | '/feedback'
     | '/monitoreo'
     | '/operacion'
     | '/reportes'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/conductores'
     | '/cumplimiento'
     | '/facturacion'
+    | '/feedback'
     | '/monitoreo'
     | '/operacion'
     | '/reportes'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   ConductoresRoute: typeof ConductoresRoute
   CumplimientoRoute: typeof CumplimientoRoute
   FacturacionRoute: typeof FacturacionRoute
+  FeedbackRoute: typeof FeedbackRoute
   MonitoreoRoute: typeof MonitoreoRoute
   OperacionRoute: typeof OperacionRoute
   ReportesRoute: typeof ReportesRoute
@@ -195,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/monitoreo'
       fullPath: '/monitoreo'
       preLoaderRoute: typeof MonitoreoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/facturacion': {
@@ -241,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConductoresRoute: ConductoresRoute,
   CumplimientoRoute: CumplimientoRoute,
   FacturacionRoute: FacturacionRoute,
+  FeedbackRoute: FeedbackRoute,
   MonitoreoRoute: MonitoreoRoute,
   OperacionRoute: OperacionRoute,
   ReportesRoute: ReportesRoute,
