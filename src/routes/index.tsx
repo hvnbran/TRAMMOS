@@ -44,9 +44,9 @@ const serviciosData = [
 ];
 
 const estadoVehiculos = [
-  { name: "Disponible", value: 18, color: "oklch(0.7 0.18 160)" },
-  { name: "En servicio", value: 12, color: "oklch(0.62 0.18 250)" },
-  { name: "Mantenimiento", value: 3, color: "oklch(0.75 0.16 70)" },
+  { name: "Disponible", value: 18, color: "oklch(0.8 0.18 115)" },
+  { name: "En servicio", value: 12, color: "oklch(0.72 0.14 200)" },
+  { name: "Mantenimiento", value: 3, color: "oklch(0.45 0 0)" },
 ];
 
 const alertasRecientes = [
@@ -118,18 +118,18 @@ function Dashboard() {
             <h3 className="text-sm font-semibold mb-4">Servicios por Mes</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={serviciosData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.02 260)" />
-                <XAxis dataKey="mes" tick={{ fill: "oklch(0.65 0.02 260)", fontSize: 12 }} />
-                <YAxis tick={{ fill: "oklch(0.65 0.02 260)", fontSize: 12 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.9 0.01 220)" />
+                <XAxis dataKey="mes" tick={{ fill: "oklch(0.5 0.02 220)", fontSize: 12 }} />
+                <YAxis tick={{ fill: "oklch(0.5 0.02 220)", fontSize: 12 }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "oklch(0.2 0.025 260)",
-                    border: "1px solid oklch(0.28 0.02 260)",
+                    backgroundColor: "oklch(1 0 0)",
+                    border: "1px solid oklch(0.9 0.01 220)",
                     borderRadius: "8px",
-                    color: "oklch(0.95 0.01 260)",
+                    color: "oklch(0.2 0.02 220)",
                   }}
                 />
-                <Bar dataKey="servicios" fill="oklch(0.62 0.18 250)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="servicios" fill="oklch(0.72 0.14 200)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -154,10 +154,10 @@ function Dashboard() {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "oklch(0.2 0.025 260)",
-                    border: "1px solid oklch(0.28 0.02 260)",
+                    backgroundColor: "oklch(1 0 0)",
+                    border: "1px solid oklch(0.9 0.01 220)",
                     borderRadius: "8px",
-                    color: "oklch(0.95 0.01 260)",
+                    color: "oklch(0.2 0.02 220)",
                   }}
                 />
               </PieChart>
