@@ -13,6 +13,7 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
+  FolderOpen,
 } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo-trammos.jpeg";
@@ -28,6 +29,7 @@ const navItems: Array<{ to: string; icon: typeof LayoutDashboard; label: string;
   { to: "/facturacion", icon: FileText, label: "Facturación" },
   { to: "/reportes", icon: BarChart3, label: "Reportes" },
   { to: "/feedback", icon: Star, label: "Feedback" },
+  { to: "/formatos", icon: FolderOpen, label: "Formatos" },
   { to: "/alertas", icon: Bell, label: "Alertas" },
 ];
 
