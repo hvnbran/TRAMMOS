@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Star, AlertTriangle, MessageSquare, Plus, ChevronDown, ChevronUp, Upload } from "lucide-react";
+import { Star, AlertTriangle, MessageSquare, Plus, ChevronDown, ChevronUp, Upload, FileText, Car, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/feedback")({
@@ -8,7 +8,7 @@ export const Route = createFileRoute("/feedback")({
   head: () => ({
     meta: [
       { title: "Feedback y Calificaciones - TRAMMOS" },
-      { name: "description", content: "Calificación de conductores, usuarios y reporte de accidentalidad" },
+      { name: "description", content: "Calificación de conductores, usuarios, formatos y reporte de accidentalidad/incidentalidad" },
     ],
   }),
 });
@@ -50,11 +50,12 @@ interface Calificacion {
   mejoras: string;
 }
 
-interface Accidente {
+interface Incidente {
   id: string;
   fecha: string;
   conductor: string;
   vehiculo: string;
+  tipoIncidente: string;
   quePaso: string;
   cuando: string;
   porQue: string;
@@ -62,6 +63,17 @@ interface Accidente {
   solucion: string;
   planMejoramiento: string;
   estado: "Abierto" | "En revisión" | "Cerrado";
+}
+
+interface Formato {
+  id: string;
+  nombre: string;
+  tipo: "cliente" | "vendedor";
+  cliente?: string;
+  vendedor?: string;
+  fecha: string;
+  estado: "Pendiente" | "Completado" | "En revisión";
+  vehiculosAuditados: number;
 }
 
 /* ── Mock data ── */
@@ -72,12 +84,21 @@ const calificaciones: Calificacion[] = [
   { id: "CAL-004", tipo: "usuario", nombre: "María Gómez", servicio: "SRV-1289", fecha: "2025-04-14", estrellas: 4, mejoras: "Indicar mejor la ubicación de recogida" },
 ];
 
-const accidentes: Accidente[] = [
+const tiposIncidente = [
+  "Choque / Colisión",
+  "Multa de tránsito",
+  "Infracción de velocidad",
+  "Comparendo electrónico",
+  "Daño a propiedad ajena",
+  "Incidente con peatón",
+  "Falla mecánica en vía",
+  "Otro",
+];
+
+const incidentes: Incidente[] = [
   {
-    id: "ACC-001",
-    fecha: "2025-04-10",
-    conductor: "Pedro Ruiz",
-    vehiculo: "JKL-012",
+    id: "INC-001", fecha: "2025-04-10", conductor: "Pedro Ruiz", vehiculo: "JKL-012",
+    tipoIncidente: "Choque / Colisión",
     quePaso: "Colisión menor en parqueadero del cliente",
     cuando: "10/04/2025 - 08:45 AM",
     porQue: "Punto ciego al reversar en espacio reducido",
@@ -87,21 +108,37 @@ const accidentes: Accidente[] = [
     estado: "Cerrado",
   },
   {
-    id: "ACC-002",
-    fecha: "2025-04-13",
-    conductor: "Ana Torres",
-    vehiculo: "GHI-789",
-    quePaso: "Frenazo brusco por peatón imprudente, pasajero reportó molestia",
+    id: "INC-002", fecha: "2025-04-13", conductor: "Ana Torres", vehiculo: "GHI-789",
+    tipoIncidente: "Multa de tránsito",
+    quePaso: "Comparendo por estacionar en zona prohibida durante recogida de pasajero",
     cuando: "13/04/2025 - 02:20 PM",
-    porQue: "Peatón cruzó fuera de la zona demarcada",
-    soporte: "Testimonio del pasajero, dashcam",
-    solucion: "Revisión médica del pasajero, acta firmada sin lesiones",
-    planMejoramiento: "Recordatorio de distancia de frenado segura en zonas urbanas",
+    porQue: "No había zona de parqueo disponible cerca del punto de recogida",
+    soporte: "Foto del comparendo, captura de ubicación GPS",
+    solucion: "Pago del comparendo, solicitud de zona de cargue al edificio",
+    planMejoramiento: "Identificar puntos de parqueo seguros por cada ruta frecuente",
     estado: "En revisión",
+  },
+  {
+    id: "INC-003", fecha: "2025-04-14", conductor: "Carlos Mejía", vehiculo: "ABC-123",
+    tipoIncidente: "Infracción de velocidad",
+    quePaso: "Foto-multa por exceso de velocidad en Autopista Norte",
+    cuando: "14/04/2025 - 07:10 AM",
+    porQue: "Conductor reportó no haber visto señalización de límite reducido por obra",
+    soporte: "Notificación electrónica SIMIT, captura de velocidad registrada",
+    solucion: "Verificación en SIMIT, descargo presentado ante autoridad",
+    planMejoramiento: "Refuerzo en límites de velocidad por zonas de obra, alerta en app",
+    estado: "Abierto",
   },
 ];
 
-function getEstadoAccidente(estado: string) {
+const formatos: Formato[] = [
+  { id: "FMT-001", nombre: "Auditoría Vehículos Q1 2025", tipo: "cliente", cliente: "Corona - Planta Sogamoso", fecha: "2025-03-30", estado: "Completado", vehiculosAuditados: 6 },
+  { id: "FMT-002", nombre: "Auditoría Vehículos Q1 2025", tipo: "vendedor", vendedor: "Renault Bogotá Norte", fecha: "2025-03-28", estado: "Completado", vehiculosAuditados: 4 },
+  { id: "FMT-003", nombre: "Auditoría Vehículos Abril 2025", tipo: "cliente", cliente: "Corona - Planta Madrid", fecha: "2025-04-10", estado: "En revisión", vehiculosAuditados: 3 },
+  { id: "FMT-004", nombre: "Inspección Pre-entrega Lote", tipo: "vendedor", vendedor: "Renault Calle 80", fecha: "2025-04-12", estado: "Pendiente", vehiculosAuditados: 2 },
+];
+
+function getEstadoIncidente(estado: string) {
   switch (estado) {
     case "Abierto": return "bg-destructive/15 text-destructive";
     case "En revisión": return "bg-warning/15 text-warning";
@@ -110,29 +147,38 @@ function getEstadoAccidente(estado: string) {
   }
 }
 
+function getEstadoFormato(estado: string) {
+  switch (estado) {
+    case "Pendiente": return "bg-warning/15 text-warning";
+    case "En revisión": return "bg-primary/15 text-primary";
+    case "Completado": return "bg-success/15 text-success";
+    default: return "bg-muted text-muted-foreground";
+  }
+}
+
 /* ── Main Component ── */
 function Feedback() {
-  const [tab, setTab] = useState<"calificaciones" | "accidentalidad">("calificaciones");
+  const [tab, setTab] = useState<"calificaciones" | "incidentalidad" | "formatos">("calificaciones");
   const [filtroTipo, setFiltroTipo] = useState<"todos" | "conductor" | "usuario">("todos");
+  const [filtroFormato, setFiltroFormato] = useState<"todos" | "cliente" | "vendedor">("todos");
   const [showNuevaCal, setShowNuevaCal] = useState(false);
-  const [showNuevoAcc, setShowNuevoAcc] = useState(false);
-  const [expandedAcc, setExpandedAcc] = useState<string | null>(null);
+  const [showNuevoInc, setShowNuevoInc] = useState(false);
+  const [showNuevoFmt, setShowNuevoFmt] = useState(false);
+  const [expandedInc, setExpandedInc] = useState<string | null>(null);
 
-  // New rating form state
   const [newCal, setNewCal] = useState({ tipo: "conductor" as "conductor" | "usuario", nombre: "", servicio: "", estrellas: 0, mejoras: "" });
-  // New accident form state
-  const [newAcc, setNewAcc] = useState({ conductor: "", vehiculo: "", quePaso: "", cuando: "", porQue: "", soporte: "", solucion: "", planMejoramiento: "" });
+  const [newInc, setNewInc] = useState({ conductor: "", vehiculo: "", tipoIncidente: "", quePaso: "", cuando: "", porQue: "", soporte: "", solucion: "", planMejoramiento: "" });
 
   const calFiltradas = calificaciones.filter((c) => filtroTipo === "todos" || c.tipo === filtroTipo);
+  const fmtFiltrados = formatos.filter((f) => filtroFormato === "todos" || f.tipo === filtroFormato);
 
   return (
     <AppLayout>
       <div className="space-y-5">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Feedback y Calificaciones</h1>
-            <p className="text-sm text-muted-foreground">Evaluaciones de servicio y reporte de accidentalidad</p>
+            <p className="text-sm text-muted-foreground">Evaluaciones, incidentalidad y formatos de auditoría</p>
           </div>
         </div>
 
@@ -147,19 +193,26 @@ function Feedback() {
             <Star className="h-4 w-4" /> Calificaciones
           </button>
           <button
-            onClick={() => setTab("accidentalidad")}
+            onClick={() => setTab("incidentalidad")}
             className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              tab === "accidentalidad" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              tab === "incidentalidad" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <AlertTriangle className="h-4 w-4" /> Accidentalidad
+            <ShieldAlert className="h-4 w-4" /> Accidentalidad / Incidentalidad
+          </button>
+          <button
+            onClick={() => setTab("formatos")}
+            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              tab === "formatos" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileText className="h-4 w-4" /> Formatos
           </button>
         </div>
 
         {/* ═══ CALIFICACIONES TAB ═══ */}
         {tab === "calificaciones" && (
           <div className="space-y-4">
-            {/* Actions */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 {(["todos", "conductor", "usuario"] as const).map((f) => (
@@ -182,18 +235,13 @@ function Feedback() {
               </button>
             </div>
 
-            {/* New rating form */}
             {showNuevaCal && (
               <div className="rounded-lg border border-primary/30 bg-card p-5 space-y-4">
                 <h3 className="text-sm font-bold flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> Registrar Calificación</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Tipo</label>
-                    <select
-                      value={newCal.tipo}
-                      onChange={(e) => setNewCal({ ...newCal, tipo: e.target.value as "conductor" | "usuario" })}
-                      className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                    >
+                    <select value={newCal.tipo} onChange={(e) => setNewCal({ ...newCal, tipo: e.target.value as "conductor" | "usuario" })} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
                       <option value="conductor">Conductor</option>
                       <option value="usuario">Usuario</option>
                     </select>
@@ -222,16 +270,13 @@ function Feedback() {
               </div>
             )}
 
-            {/* Ratings list */}
             <div className="space-y-3">
               {calFiltradas.map((c) => (
                 <div key={c.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-bold">{c.id}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        c.tipo === "conductor" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"
-                      }`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.tipo === "conductor" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent-foreground"}`}>
                         {c.tipo === "conductor" ? "Conductor" : "Usuario"}
                       </span>
                     </div>
@@ -251,90 +296,94 @@ function Feedback() {
           </div>
         )}
 
-        {/* ═══ ACCIDENTALIDAD TAB ═══ */}
-        {tab === "accidentalidad" && (
+        {/* ═══ ACCIDENTALIDAD / INCIDENTALIDAD TAB ═══ */}
+        {tab === "incidentalidad" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Registro y seguimiento de incidentes viales</p>
+              <p className="text-sm text-muted-foreground">Registro y seguimiento de accidentes, multas, comparendos e incidentes viales</p>
               <button
-                onClick={() => setShowNuevoAcc(!showNuevoAcc)}
+                onClick={() => setShowNuevoInc(!showNuevoInc)}
                 className="flex items-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
               >
-                <Plus className="h-4 w-4" /> Reportar Accidente
+                <Plus className="h-4 w-4" /> Reportar Incidente
               </button>
             </div>
 
-            {/* New accident form */}
-            {showNuevoAcc && (
+            {showNuevoInc && (
               <div className="rounded-lg border border-destructive/30 bg-card p-5 space-y-4">
-                <h3 className="text-sm font-bold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-destructive" /> Reporte de Accidente - Debido Proceso</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="text-sm font-bold flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-destructive" /> Reporte de Accidentalidad / Incidentalidad</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Tipo de incidente</label>
+                    <select value={newInc.tipoIncidente} onChange={(e) => setNewInc({ ...newInc, tipoIncidente: e.target.value })} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
+                      <option value="">Seleccionar...</option>
+                      {tiposIncidente.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Conductor</label>
-                    <input value={newAcc.conductor} onChange={(e) => setNewAcc({ ...newAcc, conductor: e.target.value })} placeholder="Nombre del conductor" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                    <input value={newInc.conductor} onChange={(e) => setNewInc({ ...newInc, conductor: e.target.value })} placeholder="Nombre del conductor" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Vehículo (placa)</label>
-                    <input value={newAcc.vehiculo} onChange={(e) => setNewAcc({ ...newAcc, vehiculo: e.target.value })} placeholder="ABC-123" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                    <input value={newInc.vehiculo} onChange={(e) => setNewInc({ ...newInc, vehiculo: e.target.value })} placeholder="ABC-123" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">¿Qué pasó?</label>
-                  <textarea value={newAcc.quePaso} onChange={(e) => setNewAcc({ ...newAcc, quePaso: e.target.value })} rows={2} placeholder="Describa el incidente..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  <textarea value={newInc.quePaso} onChange={(e) => setNewInc({ ...newInc, quePaso: e.target.value })} rows={2} placeholder="Describa el incidente..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">¿Cuándo?</label>
-                  <input value={newAcc.cuando} onChange={(e) => setNewAcc({ ...newAcc, cuando: e.target.value })} placeholder="Fecha y hora del incidente" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  <input value={newInc.cuando} onChange={(e) => setNewInc({ ...newInc, cuando: e.target.value })} placeholder="Fecha y hora del incidente" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">¿Por qué?</label>
-                  <textarea value={newAcc.porQue} onChange={(e) => setNewAcc({ ...newAcc, porQue: e.target.value })} rows={2} placeholder="Causa probable del accidente..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  <textarea value={newInc.porQue} onChange={(e) => setNewInc({ ...newInc, porQue: e.target.value })} rows={2} placeholder="Causa probable..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Soporte (evidencias)</label>
-                  <textarea value={newAcc.soporte} onChange={(e) => setNewAcc({ ...newAcc, soporte: e.target.value })} rows={2} placeholder="Fotos, videos, testimonios, reportes..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  <textarea value={newInc.soporte} onChange={(e) => setNewInc({ ...newInc, soporte: e.target.value })} rows={2} placeholder="Fotos, videos, testimonios, comparendos..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                   <button className="mt-2 flex items-center gap-1.5 text-xs text-primary hover:underline"><Upload className="h-3.5 w-3.5" /> Adjuntar archivos</button>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Solución</label>
-                  <textarea value={newAcc.solucion} onChange={(e) => setNewAcc({ ...newAcc, solucion: e.target.value })} rows={2} placeholder="Acciones correctivas tomadas..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  <textarea value={newInc.solucion} onChange={(e) => setNewInc({ ...newInc, solucion: e.target.value })} rows={2} placeholder="Acciones correctivas tomadas..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Plan de Mejoramiento</label>
-                  <textarea value={newAcc.planMejoramiento} onChange={(e) => setNewAcc({ ...newAcc, planMejoramiento: e.target.value })} rows={2} placeholder="Acciones preventivas y capacitaciones..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  <textarea value={newInc.planMejoramiento} onChange={(e) => setNewInc({ ...newInc, planMejoramiento: e.target.value })} rows={2} placeholder="Acciones preventivas y capacitaciones..." className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
                 </div>
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setShowNuevoAcc(false)} className="px-4 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
-                  <button className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors">Registrar Accidente</button>
+                  <button onClick={() => setShowNuevoInc(false)} className="px-4 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+                  <button className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors">Registrar Incidente</button>
                 </div>
               </div>
             )}
 
-            {/* Accidents list */}
             <div className="space-y-3">
-              {accidentes.map((a) => (
+              {incidentes.map((a) => (
                 <div key={a.id} className="rounded-lg border border-border bg-card overflow-hidden hover:border-destructive/30 transition-colors">
-                  <button
-                    onClick={() => setExpandedAcc(expandedAcc === a.id ? null : a.id)}
-                    className="w-full p-4 text-left"
-                  >
+                  <button onClick={() => setExpandedInc(expandedInc === a.id ? null : a.id)} className="w-full p-4 text-left">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <ShieldAlert className="h-4 w-4 text-destructive" />
                         <span className="text-sm font-bold">{a.id}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getEstadoAccidente(a.estado)}`}>{a.estado}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getEstadoIncidente(a.estado)}`}>{a.estado}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-secondary text-foreground">{a.tipoIncidente}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{a.fecha}</span>
-                        {expandedAcc === a.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                        {expandedInc === a.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                       </div>
                     </div>
                     <p className="mt-1 text-sm">{a.quePaso}</p>
                     <p className="text-xs text-muted-foreground mt-1">Conductor: {a.conductor} · Vehículo: {a.vehiculo}</p>
                   </button>
-                  {expandedAcc === a.id && (
+                  {expandedInc === a.id && (
                     <div className="border-t border-border px-4 pb-4 pt-3 space-y-3">
                       {[
+                        { label: "Tipo de Incidente", value: a.tipoIncidente },
                         { label: "¿Qué pasó?", value: a.quePaso },
                         { label: "¿Cuándo?", value: a.cuando },
                         { label: "¿Por qué?", value: a.porQue },
@@ -349,6 +398,109 @@ function Feedback() {
                       ))}
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ FORMATOS TAB ═══ */}
+        {tab === "formatos" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                {(["todos", "cliente", "vendedor"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFiltroFormato(f)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      filtroFormato === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {f === "todos" ? "Todos" : f === "cliente" ? "Por Cliente" : "Por Vendedor"}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowNuevoFmt(!showNuevoFmt)}
+                className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-4 w-4" /> Nuevo Formato
+              </button>
+            </div>
+
+            {showNuevoFmt && (
+              <div className="rounded-lg border border-primary/30 bg-card p-5 space-y-4">
+                <h3 className="text-sm font-bold flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Cargar Formato de Auditoría</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Tipo de Auditoría</label>
+                    <select className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
+                      <option value="cliente">Auditoría de vehículos por cliente</option>
+                      <option value="vendedor">Auditoría de vehículos por vendedor</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Nombre del formato</label>
+                    <input placeholder="Ej: Auditoría Q2 2025" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Cliente / Vendedor</label>
+                    <input placeholder="Nombre del cliente o vendedor" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Vehículos auditados</label>
+                    <input type="number" placeholder="Cantidad" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Archivo del formato</label>
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                    <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Arrastra archivos aquí o haz clic para seleccionar</p>
+                    <p className="text-xs text-muted-foreground mt-1">PDF, Excel, Word (máx 10MB)</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowNuevoFmt(false)} className="px-4 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
+                  <button className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">Guardar Formato</button>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {fmtFiltrados.map((f) => (
+                <div key={f.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-bold">{f.id}</span>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getEstadoFormato(f.estado)}`}>{f.estado}</span>
+                  </div>
+                  <p className="mt-2 text-sm font-medium">{f.nombre}</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">{f.tipo === "cliente" ? "Cliente" : "Vendedor"}</span>
+                      <p className="font-medium">{f.cliente || f.vendedor}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Vehículos auditados</span>
+                      <p className="font-medium">{f.vehiculosAuditados}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Fecha</span>
+                      <p className="font-medium">{f.fecha}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Tipo</span>
+                      <p className="font-medium capitalize">{f.tipo === "cliente" ? "Auditoría por cliente" : "Auditoría por vendedor"}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <button className="flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 transition-colors">Ver formato</button>
+                    <button className="rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 transition-colors">Descargar</button>
+                  </div>
                 </div>
               ))}
             </div>
