@@ -31,8 +31,14 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TRAMOS - Sistema de Monitoreo de Transporte Especial" },
+      { title: "TRAMOS" },
       { name: "description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
+      { property: "og:title", content: "TRAMOS" },
+      { name: "twitter:title", content: "TRAMOS" },
+      { property: "og:description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
+      { name: "twitter:description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
+      { name: "twitter:card", content: "summary" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
