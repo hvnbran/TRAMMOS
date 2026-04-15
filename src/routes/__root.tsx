@@ -31,10 +31,10 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TRAMOS" },
+      { title: "TRAMMOS" },
       { name: "description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
-      { property: "og:title", content: "TRAMOS" },
-      { name: "twitter:title", content: "TRAMOS" },
+      { property: "og:title", content: "TRAMMOS" },
+      { name: "twitter:title", content: "TRAMMOS" },
       { property: "og:description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
       { name: "twitter:description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
       { name: "twitter:card", content: "summary" },
