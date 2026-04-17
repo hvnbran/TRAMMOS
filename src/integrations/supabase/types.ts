@@ -14,16 +14,333 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      calificaciones: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at: string
+          created_by: string | null
+          estrellas: number
+          fecha: string
+          id: string
+          mejoras: string | null
+          nombre: string
+          servicio: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          created_by?: string | null
+          estrellas: number
+          fecha?: string
+          id?: string
+          mejoras?: string | null
+          nombre: string
+          servicio?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          created_by?: string | null
+          estrellas?: number
+          fecha?: string
+          id?: string
+          mejoras?: string | null
+          nombre?: string
+          servicio?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conductores: {
+        Row: {
+          categoria_lic: string | null
+          cedula: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at: string
+          created_by: string | null
+          cumplimiento: number | null
+          estado: string
+          id: string
+          licencia: string | null
+          nombre: string
+          servicios: number | null
+          telefono: string | null
+          updated_at: string
+          vence_licencia: string | null
+        }
+        Insert: {
+          categoria_lic?: string | null
+          cedula?: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          created_by?: string | null
+          cumplimiento?: number | null
+          estado?: string
+          id?: string
+          licencia?: string | null
+          nombre: string
+          servicios?: number | null
+          telefono?: string | null
+          updated_at?: string
+          vence_licencia?: string | null
+        }
+        Update: {
+          categoria_lic?: string | null
+          cedula?: string | null
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          created_by?: string | null
+          cumplimiento?: number | null
+          estado?: string
+          id?: string
+          licencia?: string | null
+          nombre?: string
+          servicios?: number | null
+          telefono?: string | null
+          updated_at?: string
+          vence_licencia?: string | null
+        }
+        Relationships: []
+      }
+      incidentes: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor: string | null
+          created_at: string
+          created_by: string | null
+          cuando: string | null
+          estado: string
+          fecha: string
+          id: string
+          plan_mejoramiento: string | null
+          por_que: string | null
+          que_paso: string | null
+          solucion: string | null
+          soporte: string | null
+          tipo_incidente: string
+          updated_at: string
+          vehiculo: string | null
+        }
+        Insert: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuando?: string | null
+          estado?: string
+          fecha?: string
+          id?: string
+          plan_mejoramiento?: string | null
+          por_que?: string | null
+          que_paso?: string | null
+          solucion?: string | null
+          soporte?: string | null
+          tipo_incidente: string
+          updated_at?: string
+          vehiculo?: string | null
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          conductor?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuando?: string | null
+          estado?: string
+          fecha?: string
+          id?: string
+          plan_mejoramiento?: string | null
+          por_que?: string | null
+          que_paso?: string | null
+          solucion?: string | null
+          soporte?: string | null
+          tipo_incidente?: string
+          updated_at?: string
+          vehiculo?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      servicios: {
+        Row: {
+          centro_costo: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor: string | null
+          created_at: string
+          created_by: string | null
+          destino: string | null
+          estado: string
+          fecha: string
+          hora: string | null
+          id: string
+          origen: string | null
+          pasajero: string | null
+          updated_at: string
+          vehiculo: string | null
+        }
+        Insert: {
+          centro_costo?: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor?: string | null
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          estado?: string
+          fecha: string
+          hora?: string | null
+          id?: string
+          origen?: string | null
+          pasajero?: string | null
+          updated_at?: string
+          vehiculo?: string | null
+        }
+        Update: {
+          centro_costo?: string | null
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          conductor?: string | null
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          estado?: string
+          fecha?: string
+          hora?: string | null
+          id?: string
+          origen?: string | null
+          pasajero?: string | null
+          updated_at?: string
+          vehiculo?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vehiculos: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          color: string | null
+          conductor: string | null
+          created_at: string
+          created_by: string | null
+          estado: string
+          id: string
+          linea: string | null
+          marca: string | null
+          modelo: number | null
+          num_interno: string | null
+          placa: string
+          updated_at: string
+          vence_rtm: string | null
+          vence_soat: string | null
+        }
+        Insert: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          color?: string | null
+          conductor?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          id?: string
+          linea?: string | null
+          marca?: string | null
+          modelo?: number | null
+          num_interno?: string | null
+          placa: string
+          updated_at?: string
+          vence_rtm?: string | null
+          vence_soat?: string | null
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          color?: string | null
+          conductor?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          id?: string
+          linea?: string | null
+          marca?: string | null
+          modelo?: number | null
+          num_interno?: string | null
+          placa?: string
+          updated_at?: string
+          vence_rtm?: string | null
+          vence_soat?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_cliente: {
+        Args: { _cliente: Database["public"]["Enums"]["cliente_tipo"] }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      user_client: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["cliente_tipo"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "corona" | "sodimac"
+      cliente_tipo: "corona" | "sodimac"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +467,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "corona", "sodimac"],
+      cliente_tipo: ["corona", "sodimac"],
+    },
   },
 } as const
