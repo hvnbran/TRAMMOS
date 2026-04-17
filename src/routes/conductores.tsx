@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Loader2, Trash2, Users } from "lucide-react";
+import { Plus, Loader2, Trash2, Users, FileText, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { DocumentManager, TIPOS_CONDUCTOR } from "@/components/DocumentManager";
 
 export const Route = createFileRoute("/conductores")({
   component: Conductores,
