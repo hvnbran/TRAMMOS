@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { AdminOnly } from "../components/layout/AdminOnly";
 import { AlertTriangle, CheckCircle, Info, Clock, Filter } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/alertas")({
-  component: Alertas,
+  component: () => <AdminOnly><Alertas /></AdminOnly>,
   head: () => ({
     meta: [
       { title: "Alertas - TRAMOS" },

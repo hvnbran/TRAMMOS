@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { AdminOnly } from "../components/layout/AdminOnly";
 import { CheckCircle, XCircle, AlertTriangle, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/cumplimiento")({
-  component: Cumplimiento,
+  component: () => <AdminOnly><Cumplimiento /></AdminOnly>,
   head: () => ({
     meta: [
       { title: "Cumplimiento ANS - TRAMOS" },
