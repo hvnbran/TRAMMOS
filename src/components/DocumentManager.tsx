@@ -51,8 +51,8 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from(TABLE[kind])
+    const { data, error } = await (supabase
+      .from(TABLE[kind]) as any)
       .select("*")
       .eq(FK[kind], entityId)
       .order("created_at", { ascending: false });
@@ -97,7 +97,7 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
       [FK[kind]]: entityId,
     };
 
-    const { error: insErr } = await supabase.from(TABLE[kind]).insert(insertPayload);
+    const { error: insErr } = await (supabase.from(TABLE[kind]) as any).insert(insertPayload);
     setUploading(null);
     if (insErr) {
       await supabase.storage.from("documentos").remove([path]);
@@ -131,7 +131,7 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
   async function handleDelete(d: DocItem) {
     if (!confirm(`¿Eliminar "${d.file_name}"?`)) return;
     await supabase.storage.from("documentos").remove([d.storage_path]);
-    await supabase.from(TABLE[kind]).delete().eq("id", d.id);
+    await (supabase.from(TABLE[kind]) as any).delete().eq("id", d.id);
     load();
   }
 
