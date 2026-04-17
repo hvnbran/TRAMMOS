@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { AdminOnly } from "../components/layout/AdminOnly";
 import { FileText, Plus, Upload } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/formatos")({
-  component: Formatos,
+  component: () => <AdminOnly><Formatos /></AdminOnly>,
   head: () => ({
     meta: [
       { title: "Formatos de Auditoría - TRAMMOS" },

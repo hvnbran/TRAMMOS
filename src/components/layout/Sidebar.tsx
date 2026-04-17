@@ -14,11 +14,15 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderOpen,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo-trammos.jpeg";
+import { useAuth } from "@/lib/auth-context";
 
-const navItems: Array<{ to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean }> = [
+type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean };
+
+const ADMIN_NAV: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/conductores", icon: Users, label: "Conductores" },
   { to: "/vehiculos", icon: Car, label: "Vehículos" },
@@ -33,15 +37,26 @@ const navItems: Array<{ to: string; icon: typeof LayoutDashboard; label: string;
   { to: "/alertas", icon: Bell, label: "Alertas" },
 ];
 
+// Corona y Sodimac sólo ven estas 4
+const CLIENT_NAV: NavItem[] = [
+  { to: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
+  { to: "/servicios", icon: RouteIcon, label: "Servicios" },
+  { to: "/conductores", icon: Users, label: "Conductores" },
+  { to: "/vehiculos", icon: Car, label: "Vehículos" },
+  { to: "/feedback", icon: Star, label: "Feedback" },
+];
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { role, signOut, displayName } = useAuth();
+
+  const navItems = role === "admin" ? ADMIN_NAV : CLIENT_NAV;
 
   return (
     <aside
       className={`flex flex-col bg-sidebar-bg border-r border-sidebar-border transition-all duration-300 ${collapsed ? "w-[68px]" : "w-[240px]"}`}
     >
-      {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
         <img src={logo} alt="TRAMMOS" className="h-9 w-9 rounded-lg object-cover shrink-0" />
         {!collapsed && (
@@ -50,13 +65,12 @@ export function Sidebar() {
               TRAMMOS
             </span>
             <p className="text-[10px] leading-none" style={{ color: "oklch(0.6 0.02 220)" }}>
-              Transporte Especial
+              {role === "admin" ? "Admin General" : displayName || "Transporte Especial"}
             </p>
           </div>
         )}
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = item.exact
@@ -83,7 +97,15 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Collapse toggle */}
+      <button
+        onClick={() => signOut()}
+        className="flex items-center gap-3 px-4 h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-destructive transition-colors text-sm"
+        title="Cerrar sesión"
+      >
+        <LogOut className="h-4 w-4 shrink-0" />
+        {!collapsed && <span>Cerrar sesión</span>}
+      </button>
+
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors"

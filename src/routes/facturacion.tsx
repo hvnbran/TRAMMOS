@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { AdminOnly } from "../components/layout/AdminOnly";
 import { FileText, Download, DollarSign, Calendar } from "lucide-react";
 
 export const Route = createFileRoute("/facturacion")({
-  component: Facturacion,
+  component: () => <AdminOnly><Facturacion /></AdminOnly>,
   head: () => ({
     meta: [
       { title: "Facturación - TRAMOS" },

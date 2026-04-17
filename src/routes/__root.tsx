@@ -1,6 +1,8 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { AppLayout } from "../components/layout/AppLayout";
+import { AuthProvider, useAuth } from "../lib/auth-context";
 
 function NotFoundComponent() {
   return (
@@ -64,6 +66,37 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function RootComponent() {
+function AuthGate() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user && location.pathname !== "/login") {
+      navigate({ to: "/login" });
+    }
+  }, [user, loading, location.pathname, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user && location.pathname !== "/login") {
+    return null;
+  }
+
   return <Outlet />;
+}
+
+function RootComponent() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
+  );
 }

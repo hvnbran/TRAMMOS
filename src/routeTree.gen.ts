@@ -14,6 +14,7 @@ import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as ReportesRouteImport } from './routes/reportes'
 import { Route as OperacionRouteImport } from './routes/operacion'
 import { Route as MonitoreoRouteImport } from './routes/monitoreo'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FormatosRouteImport } from './routes/formatos'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FacturacionRouteImport } from './routes/facturacion'
@@ -21,6 +22,7 @@ import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSeedRouteImport } from './routes/api/seed'
 
 const VehiculosRoute = VehiculosRouteImport.update({
   id: '/vehiculos',
@@ -45,6 +47,11 @@ const OperacionRoute = OperacionRouteImport.update({
 const MonitoreoRoute = MonitoreoRouteImport.update({
   id: '/monitoreo',
   path: '/monitoreo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FormatosRoute = FormatosRouteImport.update({
@@ -82,6 +89,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSeedRoute = ApiSeedRouteImport.update({
+  id: '/api/seed',
+  path: '/api/seed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -91,11 +103,13 @@ export interface FileRoutesByFullPath {
   '/facturacion': typeof FacturacionRoute
   '/feedback': typeof FeedbackRoute
   '/formatos': typeof FormatosRoute
+  '/login': typeof LoginRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
+  '/api/seed': typeof ApiSeedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -105,11 +119,13 @@ export interface FileRoutesByTo {
   '/facturacion': typeof FacturacionRoute
   '/feedback': typeof FeedbackRoute
   '/formatos': typeof FormatosRoute
+  '/login': typeof LoginRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
+  '/api/seed': typeof ApiSeedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -120,11 +136,13 @@ export interface FileRoutesById {
   '/facturacion': typeof FacturacionRoute
   '/feedback': typeof FeedbackRoute
   '/formatos': typeof FormatosRoute
+  '/login': typeof LoginRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
+  '/api/seed': typeof ApiSeedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -136,11 +154,13 @@ export interface FileRouteTypes {
     | '/facturacion'
     | '/feedback'
     | '/formatos'
+    | '/login'
     | '/monitoreo'
     | '/operacion'
     | '/reportes'
     | '/servicios'
     | '/vehiculos'
+    | '/api/seed'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,11 +170,13 @@ export interface FileRouteTypes {
     | '/facturacion'
     | '/feedback'
     | '/formatos'
+    | '/login'
     | '/monitoreo'
     | '/operacion'
     | '/reportes'
     | '/servicios'
     | '/vehiculos'
+    | '/api/seed'
   id:
     | '__root__'
     | '/'
@@ -164,11 +186,13 @@ export interface FileRouteTypes {
     | '/facturacion'
     | '/feedback'
     | '/formatos'
+    | '/login'
     | '/monitoreo'
     | '/operacion'
     | '/reportes'
     | '/servicios'
     | '/vehiculos'
+    | '/api/seed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -179,11 +203,13 @@ export interface RootRouteChildren {
   FacturacionRoute: typeof FacturacionRoute
   FeedbackRoute: typeof FeedbackRoute
   FormatosRoute: typeof FormatosRoute
+  LoginRoute: typeof LoginRoute
   MonitoreoRoute: typeof MonitoreoRoute
   OperacionRoute: typeof OperacionRoute
   ReportesRoute: typeof ReportesRoute
   ServiciosRoute: typeof ServiciosRoute
   VehiculosRoute: typeof VehiculosRoute
+  ApiSeedRoute: typeof ApiSeedRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -221,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/monitoreo'
       fullPath: '/monitoreo'
       preLoaderRoute: typeof MonitoreoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/formatos': {
@@ -272,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/seed': {
+      id: '/api/seed'
+      path: '/api/seed'
+      fullPath: '/api/seed'
+      preLoaderRoute: typeof ApiSeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -283,11 +323,13 @@ const rootRouteChildren: RootRouteChildren = {
   FacturacionRoute: FacturacionRoute,
   FeedbackRoute: FeedbackRoute,
   FormatosRoute: FormatosRoute,
+  LoginRoute: LoginRoute,
   MonitoreoRoute: MonitoreoRoute,
   OperacionRoute: OperacionRoute,
   ReportesRoute: ReportesRoute,
   ServiciosRoute: ServiciosRoute,
   VehiculosRoute: VehiculosRoute,
+  ApiSeedRoute: ApiSeedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

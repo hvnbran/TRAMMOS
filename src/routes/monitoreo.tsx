@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
+import { AdminOnly } from "../components/layout/AdminOnly";
 import { Radar, Car, Navigation } from "lucide-react";
 
 export const Route = createFileRoute("/monitoreo")({
-  component: Monitoreo,
+  component: () => <AdminOnly><Monitoreo /></AdminOnly>,
   head: () => ({
     meta: [
       { title: "Monitoreo - TRAMOS" },
