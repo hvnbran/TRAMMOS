@@ -21,6 +21,7 @@ import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiSeedRouteImport } from './routes/api/seed'
 
 const VehiculosRoute = VehiculosRouteImport.update({
   id: '/vehiculos',
@@ -82,6 +83,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSeedRoute = ApiSeedRouteImport.update({
+  id: '/api/seed',
+  path: '/api/seed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
+  '/api/seed': typeof ApiSeedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
+  '/api/seed': typeof ApiSeedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
+  '/api/seed': typeof ApiSeedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/servicios'
     | '/vehiculos'
+    | '/api/seed'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/servicios'
     | '/vehiculos'
+    | '/api/seed'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/servicios'
     | '/vehiculos'
+    | '/api/seed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   ReportesRoute: typeof ReportesRoute
   ServiciosRoute: typeof ServiciosRoute
   VehiculosRoute: typeof VehiculosRoute
+  ApiSeedRoute: typeof ApiSeedRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/seed': {
+      id: '/api/seed'
+      path: '/api/seed'
+      fullPath: '/api/seed'
+      preLoaderRoute: typeof ApiSeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -288,7 +308,17 @@ const rootRouteChildren: RootRouteChildren = {
   ReportesRoute: ReportesRoute,
   ServiciosRoute: ServiciosRoute,
   VehiculosRoute: VehiculosRoute,
+  ApiSeedRoute: ApiSeedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
