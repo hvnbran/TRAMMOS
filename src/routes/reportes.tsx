@@ -15,7 +15,7 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/reportes")({
-  component: Reportes,
+  component: () => <AdminOnly><Reportes /></AdminOnly>,
   head: () => ({
     meta: [
       { title: "Reportes - TRAMOS" },
