@@ -8,7 +8,7 @@ export const Route = createFileRoute("/feedback")({
   head: () => ({
     meta: [
       { title: "Feedback y Calificaciones - TRAMMOS" },
-      { name: "description", content: "Calificación de conductores, usuarios, formatos y reporte de accidentalidad/incidentalidad" },
+      { name: "description", content: "Calificación de conductores, usuarios, formatos y reporte de incidentalidad" },
     ],
   }),
 });
@@ -150,7 +150,7 @@ function Feedback() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Feedback y Calificaciones</h1>
-            <p className="text-sm text-muted-foreground">Evaluaciones y reporte de accidentalidad / incidentalidad</p>
+            <p className="text-sm text-muted-foreground">Evaluaciones y reporte de incidentalidad</p>
           </div>
         </div>
 
@@ -170,7 +170,7 @@ function Feedback() {
               tab === "incidentalidad" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <ShieldAlert className="h-4 w-4" /> Accidentalidad / Incidentalidad
+            <ShieldAlert className="h-4 w-4" /> Incidentalidad
           </button>
         </div>
 
@@ -275,7 +275,7 @@ function Feedback() {
 
             {showNuevoInc && (
               <div className="rounded-lg border border-destructive/30 bg-card p-5 space-y-4">
-                <h3 className="text-sm font-bold flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-destructive" /> Reporte de Accidentalidad / Incidentalidad</h3>
+                <h3 className="text-sm font-bold flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-destructive" /> Reporte de Incidentalidad</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Tipo de incidente</label>
