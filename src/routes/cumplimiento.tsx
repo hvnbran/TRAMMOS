@@ -7,7 +7,7 @@ export const Route = createFileRoute("/cumplimiento")({
   component: () => <AdminOnly><Cumplimiento /></AdminOnly>,
   head: () => ({
     meta: [
-      { title: "Cumplimiento ANS - TRAMOS" },
+      { title: "Cumplimiento ANS - TRAMMOS" },
       { name: "description", content: "Control de acuerdos de nivel de servicio" },
     ],
   }),

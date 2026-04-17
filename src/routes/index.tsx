@@ -87,7 +87,7 @@ function Dashboard() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Resumen general de operaciones TRAMOS</p>
+          <p className="text-sm text-muted-foreground">Resumen general de operaciones TRAMMOS</p>
         </div>
 
         {/* Stats */}

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/alertas")({
   component: () => <AdminOnly><Alertas /></AdminOnly>,
   head: () => ({
     meta: [
-      { title: "Alertas - TRAMOS" },
+      { title: "Alertas - TRAMMOS" },
       { name: "description", content: "Sistema de alertas y notificaciones" },
     ],
   }),

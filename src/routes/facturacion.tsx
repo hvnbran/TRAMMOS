@@ -7,7 +7,7 @@ export const Route = createFileRoute("/facturacion")({
   component: () => <AdminOnly><Facturacion /></AdminOnly>,
   head: () => ({
     meta: [
-      { title: "Facturación - TRAMOS" },
+      { title: "Facturación - TRAMMOS" },
       { name: "description", content: "Gestión de facturación y reportes financieros" },
     ],
   }),
