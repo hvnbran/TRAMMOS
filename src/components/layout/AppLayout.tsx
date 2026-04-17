@@ -1,6 +1,7 @@
 import { Sidebar } from "./Sidebar";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
@@ -30,12 +31,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-                3
-              </span>
-            </button>
+            <NotificationsBell />
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                 {initials}
