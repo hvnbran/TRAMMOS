@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Loader2, Trash2, Car } from "lucide-react";
+import { Plus, Loader2, Trash2, Car, FileText, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { DocumentManager, TIPOS_VEHICULO } from "@/components/DocumentManager";
 
 export const Route = createFileRoute("/vehiculos")({
   component: Vehiculos,
@@ -46,6 +47,7 @@ function Vehiculos() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({
     cliente: (cliente ?? "corona") as "corona" | "sodimac",
     placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
@@ -160,6 +162,24 @@ function Vehiculos() {
                   <div className="col-span-2"><span className="text-muted-foreground">Conductor</span><p>{v.conductor || "Sin asignar"}</p></div>
                   {role === "admin" && <div className="col-span-2"><span className="text-muted-foreground">Cliente</span><p className="capitalize">{v.cliente}</p></div>}
                 </div>
+                <button
+                  onClick={() => setExpanded(expanded === v.id ? null : v.id)}
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Documentos
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === v.id ? "rotate-180" : ""}`} />
+                </button>
+                {expanded === v.id && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <DocumentManager
+                      kind="vehiculo"
+                      entityId={v.id}
+                      cliente={v.cliente}
+                      tipos={TIPOS_VEHICULO}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
