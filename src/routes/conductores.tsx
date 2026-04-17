@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Loader2, Trash2, Users } from "lucide-react";
+import { Plus, Loader2, Trash2, Users, FileText, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { DocumentManager, TIPOS_CONDUCTOR } from "@/components/DocumentManager";
 
 export const Route = createFileRoute("/conductores")({
   component: Conductores,
@@ -45,6 +46,7 @@ function Conductores() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({
     cliente: (cliente ?? "corona") as "corona" | "sodimac",
     nombre: "", cedula: "", telefono: "", licencia: "", categoria_lic: "C1",
@@ -152,6 +154,24 @@ function Conductores() {
                   <div><span className="text-muted-foreground">Vence</span><p>{c.vence_licencia || "—"}</p></div>
                   {role === "admin" && <div><span className="text-muted-foreground">Cliente</span><p className="capitalize">{c.cliente}</p></div>}
                 </div>
+                <button
+                  onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Documentos
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === c.id ? "rotate-180" : ""}`} />
+                </button>
+                {expanded === c.id && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <DocumentManager
+                      kind="conductor"
+                      entityId={c.id}
+                      cliente={c.cliente}
+                      tipos={TIPOS_CONDUCTOR}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -56,6 +56,53 @@ export type Database = {
         }
         Relationships: []
       }
+      conductor_documentos: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_id: string
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          tipo: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_id: string
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          tipo: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_id?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          tipo?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conductor_documentos_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "conductores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conductores: {
         Row: {
           categoria_lic: string | null
@@ -262,6 +309,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehiculo_documentos: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          tipo: string
+          uploaded_by: string | null
+          vehiculo_id: string
+        }
+        Insert: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          tipo: string
+          uploaded_by?: string | null
+          vehiculo_id: string
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          tipo?: string
+          uploaded_by?: string | null
+          vehiculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehiculo_documentos_vehiculo_id_fkey"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehiculos: {
         Row: {
