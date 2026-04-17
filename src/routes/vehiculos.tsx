@@ -1,7 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Search, Plus, Filter, MoreVertical, CheckCircle, AlertTriangle, Wrench, Calendar, ClipboardCheck, Car } from "lucide-react";
-import { useState } from "react";
+import { Plus, Loader2, Trash2, Car } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/vehiculos")({
   component: Vehiculos,
@@ -13,325 +15,153 @@ export const Route = createFileRoute("/vehiculos")({
   }),
 });
 
-interface Vehiculo {
+interface VehiculoRow {
   id: string;
+  cliente: "corona" | "sodimac";
   placa: string;
-  marca: string;
-  linea: string;
-  modelo: number;
-  color: string;
-  numInterno: string;
-  estado: "Disponible" | "En servicio" | "En mantenimiento";
-  venceSOAT: string;
-  venceRTM: string;
+  marca: string | null;
+  linea: string | null;
+  modelo: number | null;
+  color: string | null;
+  num_interno: string | null;
+  estado: string;
+  vence_soat: string | null;
+  vence_rtm: string | null;
   conductor: string | null;
 }
 
-const vehiculos: Vehiculo[] = [
-  { id: "V001", placa: "ABC-123", marca: "Renault", linea: "Duster", modelo: 2023, color: "Blanco", numInterno: "01", estado: "En servicio", venceSOAT: "2025-04-20", venceRTM: "2025-06-15", conductor: "Carlos Mejía" },
-  { id: "V002", placa: "DEF-456", marca: "Renault", linea: "Duster", modelo: 2023, color: "Gris", numInterno: "02", estado: "Disponible", venceSOAT: "2025-09-10", venceRTM: "2025-10-01", conductor: null },
-  { id: "V003", placa: "GHI-789", marca: "Renault", linea: "Duster", modelo: 2022, color: "Negro", numInterno: "03", estado: "En mantenimiento", venceSOAT: "2025-05-05", venceRTM: "2025-07-20", conductor: null },
-  { id: "V004", placa: "JKL-012", marca: "Renault", linea: "Duster", modelo: 2024, color: "Blanco", numInterno: "04", estado: "En servicio", venceSOAT: "2026-01-15", venceRTM: "2026-02-28", conductor: "María F. Díaz" },
-  { id: "V005", placa: "MNO-345", marca: "Renault", linea: "Duster", modelo: 2023, color: "Rojo", numInterno: "05", estado: "Disponible", venceSOAT: "2025-07-22", venceRTM: "2025-08-10", conductor: null },
-  { id: "V006", placa: "PQR-678", marca: "Renault", linea: "Duster", modelo: 2022, color: "Gris", numInterno: "06", estado: "En servicio", venceSOAT: "2025-11-30", venceRTM: "2025-12-15", conductor: "Jorge A. Muñoz" },
-];
-
-interface Mantenimiento {
-  id: string;
-  vehiculo: string;
-  placa: string;
-  tipo: string;
-  fechaProgramada: string;
-  kilometraje: string;
-  estado: "Programado" | "Completado" | "Vencido";
-  responsable: string;
-}
-
-const cronogramaMantenimiento: Mantenimiento[] = [
-  { id: "MNT-001", vehiculo: "V001", placa: "ABC-123", tipo: "Cambio de aceite y filtros", fechaProgramada: "2025-04-20", kilometraje: "15,000 km", estado: "Programado", responsable: "Taller Renault Bogotá" },
-  { id: "MNT-002", vehiculo: "V002", placa: "DEF-456", tipo: "Revisión de frenos", fechaProgramada: "2025-04-18", kilometraje: "20,000 km", estado: "Programado", responsable: "Taller Renault Bogotá" },
-  { id: "MNT-003", vehiculo: "V003", placa: "GHI-789", tipo: "Cambio de correa de distribución", fechaProgramada: "2025-04-10", kilometraje: "60,000 km", estado: "Completado", responsable: "Taller Renault Calle 80" },
-  { id: "MNT-004", vehiculo: "V004", placa: "JKL-012", tipo: "Alineación y balanceo", fechaProgramada: "2025-04-25", kilometraje: "10,000 km", estado: "Programado", responsable: "Taller Renault Bogotá" },
-  { id: "MNT-005", vehiculo: "V001", placa: "ABC-123", tipo: "Revisión general 30,000 km", fechaProgramada: "2025-03-15", kilometraje: "30,000 km", estado: "Vencido", responsable: "Taller Renault Bogotá" },
-  { id: "MNT-006", vehiculo: "V006", placa: "PQR-678", tipo: "Cambio de llantas", fechaProgramada: "2025-05-01", kilometraje: "40,000 km", estado: "Programado", responsable: "Taller Renault Calle 80" },
-];
-
-interface Preoperacional {
-  id: string;
-  vehiculo: string;
-  placa: string;
-  conductor: string;
-  fecha: string;
-  hora: string;
-  luces: boolean;
-  frenos: boolean;
-  llantas: boolean;
-  espejos: boolean;
-  documentos: boolean;
-  aseo: boolean;
-  combustible: string;
-  observaciones: string;
-  estado: "Aprobado" | "Con observaciones" | "No realizado";
-}
-
-const preoperacionales: Preoperacional[] = [
-  { id: "PRE-001", vehiculo: "V001", placa: "ABC-123", conductor: "Carlos Mejía", fecha: "2025-04-15", hora: "06:30", luces: true, frenos: true, llantas: true, espejos: true, documentos: true, aseo: true, combustible: "3/4", observaciones: "Sin novedad", estado: "Aprobado" },
-  { id: "PRE-002", vehiculo: "V004", placa: "JKL-012", conductor: "María F. Díaz", fecha: "2025-04-15", hora: "06:45", luces: true, frenos: true, llantas: false, espejos: true, documentos: true, aseo: true, combustible: "1/2", observaciones: "Llanta trasera derecha con desgaste, reportar a mantenimiento", estado: "Con observaciones" },
-  { id: "PRE-003", vehiculo: "V006", placa: "PQR-678", conductor: "Jorge A. Muñoz", fecha: "2025-04-15", hora: "07:00", luces: true, frenos: true, llantas: true, espejos: true, documentos: true, aseo: false, combustible: "Full", observaciones: "Vehículo requiere lavado interior", estado: "Con observaciones" },
-  { id: "PRE-004", vehiculo: "V002", placa: "DEF-456", conductor: "—", fecha: "2025-04-15", hora: "—", luces: false, frenos: false, llantas: false, espejos: false, documentos: false, aseo: false, combustible: "—", observaciones: "Vehículo sin asignar", estado: "No realizado" },
-];
-
-function getEstadoBadge(estado: string) {
-  switch (estado) {
-    case "Disponible": return { className: "bg-success/15 text-success", icon: <CheckCircle className="h-3 w-3" /> };
-    case "En servicio": return { className: "bg-primary/15 text-primary", icon: <CheckCircle className="h-3 w-3" /> };
-    case "En mantenimiento": return { className: "bg-warning/15 text-warning", icon: <Wrench className="h-3 w-3" /> };
-    default: return { className: "bg-muted text-muted-foreground", icon: null };
-  }
-}
-
-function getEstadoMant(estado: string) {
-  switch (estado) {
-    case "Programado": return "bg-primary/15 text-primary";
-    case "Completado": return "bg-success/15 text-success";
-    case "Vencido": return "bg-destructive/15 text-destructive";
-    default: return "bg-muted text-muted-foreground";
-  }
-}
-
-function getEstadoPre(estado: string) {
-  switch (estado) {
-    case "Aprobado": return "bg-success/15 text-success";
-    case "Con observaciones": return "bg-warning/15 text-warning";
-    case "No realizado": return "bg-muted text-muted-foreground";
+function estadoStyle(e: string) {
+  switch (e) {
+    case "Disponible": return "bg-success/15 text-success";
+    case "En servicio": return "bg-primary/15 text-primary";
+    case "En mantenimiento": return "bg-warning/15 text-warning";
     default: return "bg-muted text-muted-foreground";
   }
 }
 
 function Vehiculos() {
-  const [search, setSearch] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("Todos");
-  const [tab, setTab] = useState<"flota" | "mantenimiento" | "preoperacional">("flota");
-
-  const filtered = vehiculos.filter((v) => {
-    const matchSearch = v.placa.toLowerCase().includes(search.toLowerCase()) || v.numInterno.includes(search);
-    const matchEstado = filtroEstado === "Todos" || v.estado === filtroEstado;
-    return matchSearch && matchEstado;
+  const navigate = useNavigate();
+  const { role, cliente, loading: authLoading } = useAuth();
+  const [items, setItems] = useState<VehiculoRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
+    num_interno: "", estado: "Disponible", vence_soat: "", vence_rtm: "", conductor: "",
   });
+
+  useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
+  useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase.from("vehiculos").select("*").order("placa");
+    if (data) setItems(data as VehiculoRow[]);
+    setLoading(false);
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    const payload = {
+      ...form,
+      cliente: cliente ?? form.cliente,
+      modelo: Number(form.modelo) || null,
+      vence_soat: form.vence_soat || null,
+      vence_rtm: form.vence_rtm || null,
+    };
+    const { error } = await supabase.from("vehiculos").insert(payload);
+    setSaving(false);
+    if (error) { alert(error.message); return; }
+    setShowForm(false);
+    setForm({ ...form, placa: "", marca: "", linea: "", color: "", num_interno: "", vence_soat: "", vence_rtm: "", conductor: "" });
+    load();
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("¿Eliminar este vehículo?")) return;
+    const { error } = await supabase.from("vehiculos").delete().eq("id", id);
+    if (error) { alert(error.message); return; }
+    load();
+  }
 
   return (
     <AppLayout>
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Vehículos</h1>
-            <p className="text-sm text-muted-foreground">Administración de la flota, mantenimiento y preoperacional</p>
+            <h1 className="text-2xl font-bold flex items-center gap-2"><Car className="h-5 w-5" /> Vehículos</h1>
+            <p className="text-sm text-muted-foreground">{role === "admin" ? "Todos los clientes" : `Cliente: ${cliente}`}</p>
           </div>
-          <button className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-            <Plus className="h-4 w-4" />
-            Nuevo Vehículo
+          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Nuevo Vehículo
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 rounded-lg bg-secondary p-1">
-          <button onClick={() => setTab("flota")} className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${tab === "flota" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-            <Car className="h-4 w-4" /> Flota
-          </button>
-          <button onClick={() => setTab("mantenimiento")} className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${tab === "mantenimiento" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-            <Calendar className="h-4 w-4" /> Mantenimiento Preventivo
-          </button>
-          <button onClick={() => setTab("preoperacional")} className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${tab === "preoperacional" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-            <ClipboardCheck className="h-4 w-4" /> Preoperacional Diaria
-          </button>
-        </div>
-
-        {/* ═══ FLOTA TAB ═══ */}
-        {tab === "flota" && (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Buscar por placa o número..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="h-9 w-full rounded-md bg-secondary pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div className="flex items-center gap-1">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                {["Todos", "Disponible", "En servicio", "En mantenimiento"].map((e) => (
-                  <button
-                    key={e}
-                    onClick={() => setFiltroEstado(e)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      filtroEstado === e ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {e}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((v) => {
-                const badge = getEstadoBadge(v.estado);
-                return (
-                  <div key={v.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-lg font-bold">{v.placa}</span>
-                        <p className="text-xs text-muted-foreground">{v.marca} {v.linea} · {v.modelo} · {v.color}</p>
-                      </div>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
-                        {badge.icon}
-                        {v.estado}
-                      </span>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">N° Interno</span>
-                        <p className="font-medium">{v.numInterno}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Conductor</span>
-                        <p className="font-medium">{v.conductor || "—"}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Vence SOAT</span>
-                        <p className="font-medium">{v.venceSOAT}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Vence RTM</span>
-                        <p className="font-medium">{v.venceRTM}</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <button className="flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/80 transition-colors">Ver detalle</button>
-                      <button className="p-1.5 rounded-md bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {/* ═══ MANTENIMIENTO PREVENTIVO TAB ═══ */}
-        {tab === "mantenimiento" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Cronograma de mantenimiento preventivo de la flota</p>
-              <button className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                <Plus className="h-4 w-4" /> Programar Mantenimiento
-              </button>
-            </div>
-
-            {/* Summary cards */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-lg border border-border bg-card p-4 text-center">
-                <p className="text-2xl font-bold text-primary">{cronogramaMantenimiento.filter(m => m.estado === "Programado").length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Programados</p>
-              </div>
-              <div className="rounded-lg border border-border bg-card p-4 text-center">
-                <p className="text-2xl font-bold text-success">{cronogramaMantenimiento.filter(m => m.estado === "Completado").length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Completados</p>
-              </div>
-              <div className="rounded-lg border border-border bg-card p-4 text-center">
-                <p className="text-2xl font-bold text-destructive">{cronogramaMantenimiento.filter(m => m.estado === "Vencido").length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Vencidos</p>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-secondary/50">
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">ID</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Placa</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Tipo de Mantenimiento</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Fecha Programada</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Kilometraje</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Responsable</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cronogramaMantenimiento.map((m) => (
-                    <tr key={m.id} className="border-t border-border hover:bg-secondary/30 transition-colors">
-                      <td className="px-4 py-3 font-medium">{m.id}</td>
-                      <td className="px-4 py-3 font-bold">{m.placa}</td>
-                      <td className="px-4 py-3">{m.tipo}</td>
-                      <td className="px-4 py-3">{m.fechaProgramada}</td>
-                      <td className="px-4 py-3">{m.kilometraje}</td>
-                      <td className="px-4 py-3 text-xs">{m.responsable}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getEstadoMant(m.estado)}`}>{m.estado}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ PREOPERACIONAL DIARIA TAB ═══ */}
-        {tab === "preoperacional" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Inspección preoperacional diaria de vehículos — {new Date().toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
-              <button className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                <Plus className="h-4 w-4" /> Registrar Inspección
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {preoperacionales.map((p) => (
-                <div key={p.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <ClipboardCheck className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-bold">{p.placa}</span>
-                      <span className="text-xs text-muted-foreground">· {p.conductor} · {p.hora !== "—" ? `${p.hora} hrs` : "Sin registro"}</span>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getEstadoPre(p.estado)}`}>{p.estado}</span>
-                  </div>
-
-                  {p.estado !== "No realizado" && (
-                    <div className="mt-3 grid grid-cols-3 md:grid-cols-7 gap-2">
-                      {[
-                        { label: "Luces", ok: p.luces },
-                        { label: "Frenos", ok: p.frenos },
-                        { label: "Llantas", ok: p.llantas },
-                        { label: "Espejos", ok: p.espejos },
-                        { label: "Documentos", ok: p.documentos },
-                        { label: "Aseo", ok: p.aseo },
-                      ].map((item) => (
-                        <div key={item.label} className={`rounded-md px-2 py-1.5 text-center text-xs font-medium ${item.ok ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-                          {item.ok ? "✓" : "✗"} {item.label}
-                        </div>
-                      ))}
-                      <div className="rounded-md bg-secondary px-2 py-1.5 text-center text-xs font-medium">
-                        ⛽ {p.combustible}
-                      </div>
-                    </div>
-                  )}
-
-                  {p.observaciones && p.estado !== "No realizado" && (
-                    <div className="mt-2 rounded-md bg-secondary/50 p-2.5">
-                      <p className="text-xs text-muted-foreground">Observaciones:</p>
-                      <p className="text-xs mt-0.5">{p.observaciones}</p>
-                    </div>
-                  )}
+        {showForm && (
+          <form onSubmit={handleCreate} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {role === "admin" && (
+                <div>
+                  <label className="text-xs text-muted-foreground">Cliente</label>
+                  <select value={form.cliente} onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <option value="corona">Corona</option>
+                    <option value="sodimac">Sodimac</option>
+                  </select>
                 </div>
-              ))}
+              )}
+              <div><label className="text-xs text-muted-foreground">Placa</label><input required value={form.placa} onChange={(e) => setForm({ ...form, placa: e.target.value.toUpperCase() })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Marca</label><input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Línea</label><input value={form.linea} onChange={(e) => setForm({ ...form, linea: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Modelo (año)</label><input type="number" value={form.modelo} onChange={(e) => setForm({ ...form, modelo: Number(e.target.value) })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Color</label><input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">N° interno</label><input value={form.num_interno} onChange={(e) => setForm({ ...form, num_interno: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Vence SOAT</label><input type="date" value={form.vence_soat} onChange={(e) => setForm({ ...form, vence_soat: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Vence RTM</label><input type="date" value={form.vence_rtm} onChange={(e) => setForm({ ...form, vence_rtm: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Conductor asignado</label><input value={form.conductor} onChange={(e) => setForm({ ...form, conductor: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Estado</label>
+                <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  {["Disponible", "En servicio", "En mantenimiento"].map((x) => <option key={x}>{x}</option>)}
+                </select>
+              </div>
             </div>
+            <div className="flex gap-2 justify-end">
+              <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-md text-sm text-muted-foreground">Cancelar</button>
+              <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : "Guardar"}</button>
+            </div>
+          </form>
+        )}
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        ) : items.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay vehículos registrados.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {items.map((v) => (
+              <div key={v.id} className="rounded-lg border border-border bg-card p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-bold text-lg">{v.placa}</p>
+                    <p className="text-xs text-muted-foreground">{v.marca} {v.linea} {v.modelo}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(v.estado)}`}>{v.estado}</span>
+                    <button onClick={() => handleDelete(v.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
+                  <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
+                  <div><span className="text-muted-foreground">SOAT</span><p>{v.vence_soat || "—"}</p></div>
+                  <div><span className="text-muted-foreground">RTM</span><p>{v.vence_rtm || "—"}</p></div>
+                  <div className="col-span-2"><span className="text-muted-foreground">Conductor</span><p>{v.conductor || "Sin asignar"}</p></div>
+                  {role === "admin" && <div className="col-span-2"><span className="text-muted-foreground">Cliente</span><p className="capitalize">{v.cliente}</p></div>}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
