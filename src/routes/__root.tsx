@@ -66,6 +66,37 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function RootComponent() {
+function AuthGate() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user && location.pathname !== "/login") {
+      navigate({ to: "/login" });
+    }
+  }, [user, loading, location.pathname, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user && location.pathname !== "/login") {
+    return null;
+  }
+
   return <Outlet />;
+}
+
+function RootComponent() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
+  );
 }
