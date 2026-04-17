@@ -18,7 +18,7 @@ export const Route = createFileRoute("/reportes")({
   component: () => <AdminOnly><Reportes /></AdminOnly>,
   head: () => ({
     meta: [
-      { title: "Reportes - TRAMOS" },
+      { title: "Reportes - TRAMMOS" },
       { name: "description", content: "Reportes y estadísticas del sistema" },
     ],
   }),

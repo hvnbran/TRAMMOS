@@ -7,7 +7,7 @@ export const Route = createFileRoute("/operacion")({
   component: () => <AdminOnly><Operacion /></AdminOnly>,
   head: () => ({
     meta: [
-      { title: "Operación - TRAMOS" },
+      { title: "Operación - TRAMMOS" },
       { name: "description", content: "Centros de costo y rutas operativas" },
     ],
   }),

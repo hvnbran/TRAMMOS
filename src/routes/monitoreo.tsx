@@ -7,7 +7,7 @@ export const Route = createFileRoute("/monitoreo")({
   component: () => <AdminOnly><Monitoreo /></AdminOnly>,
   head: () => ({
     meta: [
-      { title: "Monitoreo - TRAMOS" },
+      { title: "Monitoreo - TRAMMOS" },
       { name: "description", content: "Monitoreo en tiempo real de vehículos" },
     ],
   }),
