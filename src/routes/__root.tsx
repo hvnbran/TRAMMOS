@@ -1,6 +1,8 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { AppLayout } from "../components/layout/AppLayout";
+import { AuthProvider, useAuth } from "../lib/auth-context";
 
 function NotFoundComponent() {
   return (
