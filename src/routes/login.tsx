@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import banner from "@/assets/banner-trammos.png";
 import logoCorona from "@/assets/logo-corona.png";
-import logoSodimac from "@/assets/logo-sodimac.png";
+import logoSodimac from "@/assets/logo-sodimac-icon.png";
 import { LogIn, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
