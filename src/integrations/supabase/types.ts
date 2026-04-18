@@ -250,6 +250,66 @@ export type Database = {
         }
         Relationships: []
       }
+      formatos_auditoria: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          codigo: string
+          created_at: string
+          created_by: string | null
+          entidad: string
+          estado: string
+          fecha: string
+          file_name: string | null
+          id: string
+          mime_type: string | null
+          nombre: string
+          notas: string | null
+          size_bytes: number | null
+          storage_path: string | null
+          tipo: string
+          updated_at: string
+          vehiculos_auditados: number
+        }
+        Insert: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          entidad: string
+          estado?: string
+          fecha?: string
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          nombre: string
+          notas?: string | null
+          size_bytes?: number | null
+          storage_path?: string | null
+          tipo?: string
+          updated_at?: string
+          vehiculos_auditados?: number
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          entidad?: string
+          estado?: string
+          fecha?: string
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          nombre?: string
+          notas?: string | null
+          size_bytes?: number | null
+          storage_path?: string | null
+          tipo?: string
+          updated_at?: string
+          vehiculos_auditados?: number
+        }
+        Relationships: []
+      }
       incidentes: {
         Row: {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
