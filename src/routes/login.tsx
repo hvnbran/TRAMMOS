@@ -199,21 +199,12 @@ function LoginPage() {
             />
 
             {(splashClient === "corona" || splashClient === "sodimac") && (
-              <div
-                className="w-full flex flex-col items-center gap-3 animate-fade-in"
+              <img
+                src={splashClient === "corona" ? bannerCorona : bannerSodimac}
+                alt={splashClient === "corona" ? "Corona" : "Sodimac"}
+                className="w-full max-w-xs h-auto object-contain animate-fade-in"
                 style={{ animationDelay: "300ms", animationFillMode: "backwards" }}
-              >
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Cliente
-                </div>
-                <div className="rounded-xl border border-border bg-card px-8 py-5 shadow-sm flex items-center justify-center min-h-[80px] w-full max-w-xs">
-                  <img
-                    src={splashClient === "corona" ? logoCorona : logoSodimac}
-                    alt={splashClient === "corona" ? "Corona" : "Sodimac"}
-                    className="max-h-12 w-auto object-contain"
-                  />
-                </div>
-              </div>
+              />
             )}
 
             <div
