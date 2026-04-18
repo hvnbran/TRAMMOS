@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import banner from "@/assets/banner-trammos.png";
+import logoCorona from "@/assets/logo-corona.png";
+import logoSodimac from "@/assets/logo-sodimac.png";
 import { LogIn, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
@@ -32,6 +34,7 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [splashName, setSplashName] = useState("");
+  const [splashClient, setSplashClient] = useState<"corona" | "sodimac" | "admin" | null>(null);
   const [progress, setProgress] = useState(0);
   const [splashFadeOut, setSplashFadeOut] = useState(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -59,8 +62,9 @@ function LoginPage() {
     }
   }
 
-  const startSplashSequence = (displayName: string) => {
+  const startSplashSequence = (displayName: string, clientKey: "corona" | "sodimac" | "admin" | null) => {
     setSplashName(displayName);
+    setSplashClient(clientKey);
     setShowSplash(true);
 
     // Animate progress bar after a tiny delay so the transition kicks in
@@ -108,7 +112,8 @@ function LoginPage() {
 
     // Success: trigger splash sequence
     const displayName = preset ? preset.display_name : email.split("@")[0];
-    startSplashSequence(displayName);
+    const clientKey = preset ? preset.role : null;
+    startSplashSequence(displayName, clientKey);
   };
 
   return (
@@ -192,9 +197,28 @@ function LoginPage() {
               alt="TRAMMOS"
               className="w-full max-w-sm h-auto animate-scale-in"
             />
+
+            {(splashClient === "corona" || splashClient === "sodimac") && (
+              <div
+                className="w-full flex flex-col items-center gap-3 animate-fade-in"
+                style={{ animationDelay: "300ms", animationFillMode: "backwards" }}
+              >
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Cliente
+                </div>
+                <div className="rounded-xl border border-border bg-card px-8 py-5 shadow-sm flex items-center justify-center min-h-[80px] w-full max-w-xs">
+                  <img
+                    src={splashClient === "corona" ? logoCorona : logoSodimac}
+                    alt={splashClient === "corona" ? "Corona" : "Sodimac"}
+                    className="max-h-12 w-auto object-contain"
+                  />
+                </div>
+              </div>
+            )}
+
             <div
               className="flex items-center gap-2 text-sm font-medium text-foreground animate-fade-in"
-              style={{ animationDelay: "400ms", animationFillMode: "backwards" }}
+              style={{ animationDelay: "500ms", animationFillMode: "backwards" }}
             >
               <Check className="h-4 w-4 text-primary" />
               <span>¡Bienvenido{splashName ? `, ${splashName}` : ""}!</span>
@@ -207,7 +231,7 @@ function LoginPage() {
             </div>
             <p
               className="text-xs text-muted-foreground animate-fade-in"
-              style={{ animationDelay: "700ms", animationFillMode: "backwards" }}
+              style={{ animationDelay: "800ms", animationFillMode: "backwards" }}
             >
               Cargando tu panel de control...
             </p>
