@@ -118,7 +118,7 @@ function Reportes() {
       }
       switch (key) {
         case "servicios": downloadServiciosExcel(data.servicios, clienteLabel); break;
-        case "ans": downloadCumplimientoANSPdf(data, clienteLabel, desde, hasta); break;
+        case "ans": await downloadCumplimientoANSPdf(data, clienteLabel, desde, hasta); break;
         case "vehiculos": downloadUsoVehiculosExcel(data.vehiculos, data.servicios, clienteLabel); break;
         case "conductores": downloadRendimientoConductoresExcel(data.conductores, data.servicios, clienteLabel); break;
         case "facturacion": downloadFacturacionExcel(data.servicios, clienteLabel); break;
