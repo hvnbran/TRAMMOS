@@ -1,56 +1,58 @@
 
-El usuario quiere que la transición del login al dashboard no sea un corte abrupto, sino una animación de ~2 segundos. Necesito diseñar una experiencia de transición fluida.
 
-## Análisis actual
+## Objetivo
 
-En `src/routes/login.tsx`, tras un `signIn` exitoso se hace `navigate({ to: "/" })` inmediatamente → corte seco.
+Convertir la sección **Reportes Disponibles** en un módulo funcional que descargue archivos reales con los datos en vivo de la base (servicios, vehículos, conductores, calificaciones, incidentes, facturación), y conectar también las gráficas superiores a datos reales en lugar de los valores hardcodeados.
 
-## Propuesta: Splash de transición animado (~2s)
+## Qué descargará cada reporte
 
-Una pantalla de bienvenida con el banner TRAMMOS que aparece tras login exitoso, antes de navegar al dashboard.
+Cada botón generará un archivo descargable directamente en el navegador. Formatos propuestos:
 
-### Secuencia (≈2 segundos total)
+| Reporte | Formato | Contenido (datos reales) |
+|---|---|---|
+| Servicios realizados por período | **Excel (.xlsx)** | Tabla de `servicios` filtrada por rango de fechas: N° orden, fecha, hora, origen, destino, pasajero, conductor, vehículo, centro de costo, estado |
+| Cumplimiento ANS detallado | **PDF** | Resumen por categoría (Operativas, Vehículo, Conductor, Facturación, Atención) con % de cumplimiento, total/cumplidos, calculado desde `servicios`, `vehiculos`, `conductores` |
+| Uso de vehículos por mes | **Excel (.xlsx)** | Por cada vehículo: placa, marca, línea, # servicios del mes, estado, vencimiento SOAT/RTM |
+| Rendimiento de conductores | **Excel (.xlsx)** | Por cada conductor: nombre, cédula, # servicios, % cumplimiento, estado licencia |
+| Facturación por centro de costo | **Excel (.xlsx)** | Agrupado por `centro_costo`: cantidad de servicios, conductores únicos, vehículos únicos, total estimado |
+| Documentos por vencer | **Excel (.xlsx)** | SOAT, RTM (vehículos) y licencias (conductores) que vencen en los próximos 60 días, ordenados por fecha de vencimiento |
 
-```text
-0.0s  Login submit → loader en botón
-0.3s  signIn() OK → fade-out del formulario (300ms)
-0.6s  Splash overlay aparece con fondo blanco
-0.6s  Banner TRAMMOS hace scale-in + fade-in (500ms)
-1.1s  Tagline "Bienvenido, [Usuario]" fade-in (300ms)
-1.4s  Barra de progreso anima de 0% a 100% (500ms)
-1.9s  Fade-out del splash (200ms)
-2.1s  navigate({ to: "/" }) → dashboard
-```
+Además, el botón **"Exportar"** del header descargará un Excel con **todas** las hojas anteriores en un solo archivo.
 
-### Implementación
+## Cómo conectaremos los datos
 
-**Archivo a editar**: `src/routes/login.tsx`
+1. **Hook `useReportesData`** que carga en paralelo: `servicios`, `vehiculos`, `conductores`, `calificaciones`, `incidentes` aplicando el filtro por `cliente` (admin ve todo, corona/sodimac solo lo suyo).
+2. **Gráficas superiores dinámicas**:
+   - "Servicios por Mes" → agrupar `servicios` por mes (últimos 6 meses), contar total y `estado='Finalizado'`.
+   - "Cumplimiento ANS (%)" → calcular % de finalizados vs total por mes.
+3. **Selector de rango de fechas** arriba (defecto: últimos 30 días) que aplica a los reportes que dependen de período.
+4. **Modal de filtros opcional por reporte** (período, cliente si es admin) antes de descargar.
 
-1. Nuevo estado `showSplash: boolean` además de `submitting`.
-2. Tras `signIn` exitoso: en vez de navegar de inmediato, `setShowSplash(true)` y un `setTimeout(() => navigate({ to: "/" }), 2000)`.
-3. Renderizar condicionalmente un overlay full-screen cuando `showSplash` sea true:
-   - Fondo blanco con `animate-fade-in`
-   - Banner centrado con `animate-scale-in`
-   - Texto "Bienvenido a TRAMMOS" con delay
-   - Barra de progreso animada con `transition-all duration-[1500ms]`
+## Generación de archivos en el cliente
 
-4. Usar utilidades ya existentes en el proyecto (`animate-fade-in`, `animate-scale-in` están en el knowledge de animaciones, y Tailwind las soporta vía `tailwindcss-animate`).
+- **Excel**: usaremos la librería `xlsx` (SheetJS) — pura JS, funciona en navegador, permite múltiples hojas, formato y autoancho de columnas.
+- **PDF**: usaremos `jspdf` + `jspdf-autotable` para tablas formateadas con el branding TRAMMOS (cyan/lime).
+- Los archivos se generan en memoria y se disparan con `Blob` + descarga automática — no requiere backend ni guardar nada.
+- Cada archivo incluirá: logo/encabezado TRAMMOS, cliente (Corona/Sodimac/Todos), rango de fechas, fecha de generación.
 
-### Bonus opcional (incluido)
+## UX al hacer clic
 
-- Micro-animación al **entrar al login**: el formulario hace fade-in suave al cargar la página (mejora la primera impresión sin costo).
-- El botón "Iniciar sesión" cambia el texto de "Iniciar sesión" → "Verificando..." → "¡Bienvenido!" según el estado.
+1. Clic en el botón del reporte → spinner pequeño en el ícono.
+2. Se cargan los datos relevantes desde Supabase (si no están ya en caché).
+3. Se genera el archivo y se dispara la descarga.
+4. Toast de confirmación: "Reporte descargado".
+5. Si no hay datos: toast "No hay datos para el período seleccionado".
 
-### Detalles técnicos
+## Detalles técnicos
 
-- No requiere nuevas dependencias.
-- No toca el AuthContext ni la lógica de Supabase — solo retrasa la navegación visual.
-- Si hay error de credenciales, NO se muestra splash (solo en éxito).
-- El splash usa `position: fixed inset-0 z-50` para cubrir todo.
-- Los timers se limpian en cleanup por si el componente se desmonta.
+- **Dependencias nuevas**: `xlsx`, `jspdf`, `jspdf-autotable`.
+- **Archivos a modificar**:
+  - `src/routes/reportes.tsx` — convertir gráficas a datos reales, conectar botones, agregar selector de fecha.
+- **Archivos nuevos**:
+  - `src/lib/reportes/data.ts` — fetchers desde Supabase con filtro por cliente.
+  - `src/lib/reportes/excel.ts` — generadores de cada Excel (uno por reporte + uno consolidado).
+  - `src/lib/reportes/pdf.ts` — generador del PDF de Cumplimiento ANS.
+  - `src/lib/reportes/utils.ts` — helpers de formato (fechas, agrupado por mes, nombre de archivo).
+- **Permisos**: la página ya está protegida por `<AdminOnly>`. Las RLS existentes ya filtran por `cliente`, así que el admin ve todo y los clientes solo lo suyo automáticamente.
+- **Sin cambios en base de datos**: todo se calcula desde las tablas existentes.
 
-### Archivos afectados
-
-- `src/routes/login.tsx` — único archivo modificado.
-
-No se necesitan cambios en estilos globales: las animaciones `fade-in`, `scale-in` y `animate-pulse` ya están disponibles vía Tailwind.
