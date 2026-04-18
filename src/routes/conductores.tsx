@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { DocumentManager, TIPOS_CONDUCTOR } from "@/components/DocumentManager";
+import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 
 export const Route = createFileRoute("/conductores")({
   component: Conductores,
@@ -131,7 +132,7 @@ function Conductores() {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <CardGridSkeleton count={6} />
         ) : items.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay conductores registrados.</div>
         ) : (

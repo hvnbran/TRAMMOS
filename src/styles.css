@@ -158,6 +158,10 @@
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 35%, transparent); }
   50%      { box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 0%, transparent); }
 }
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
 
 .page-transition {
   animation: page-in 320ms cubic-bezier(0.22, 1, 0.36, 1);

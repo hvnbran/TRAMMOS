@@ -25,6 +25,7 @@ import {
   Cell,
   Tooltip,
 } from "recharts";
+import { StatsGridSkeleton, ChartSkeleton, CardGridSkeleton, HeaderSkeleton } from "@/components/ui/loading-skeletons";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -316,6 +317,25 @@ function Dashboard() {
   ];
 
   const totalTrend = serviciosPorMes.reduce((a, b) => a + b.servicios, 0);
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <HeaderSkeleton />
+          <StatsGridSkeleton count={4} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2"><ChartSkeleton height={240} /></div>
+            <ChartSkeleton height={200} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CardGridSkeleton count={2} />
+            <CardGridSkeleton count={2} />
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>

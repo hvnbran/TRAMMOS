@@ -5,6 +5,7 @@ import { AdminOnly } from "../components/layout/AdminOnly";
 import { FileText, DollarSign, Calendar, Inbox, Loader2, Trash2, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { TableSkeleton } from "@/components/ui/loading-skeletons";
 
 export const Route = createFileRoute("/facturacion")({
   component: () => (
@@ -180,12 +181,11 @@ function Facturacion() {
         </div>
 
         {/* Table */}
+        {loading ? (
+          <TableSkeleton rows={6} cols={7} />
+        ) : (
         <div className="rounded-lg border border-border bg-card overflow-hidden">
-          {loading ? (
-            <div className="p-10 flex items-center justify-center text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
-          ) : rows.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="py-16 flex flex-col items-center text-center text-muted-foreground px-4">
               <Inbox className="h-10 w-10 mb-2 opacity-50" />
               <p className="text-sm text-foreground font-medium">Aún no hay facturas generadas</p>
@@ -253,6 +253,7 @@ function Facturacion() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Modal: Nueva factura */}

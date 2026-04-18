@@ -4,6 +4,7 @@ import { Plus, Filter, Clock, MapPin, Loader2, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 
 export const Route = createFileRoute("/servicios")({
   component: Servicios,
@@ -218,7 +219,7 @@ function Servicios() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <CardGridSkeleton count={5} />
         ) : filtered.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
             No hay servicios. Crea el primero con "Nuevo Servicio".
