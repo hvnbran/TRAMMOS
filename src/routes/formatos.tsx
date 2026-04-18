@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 
 export const Route = createFileRoute("/formatos")({
   component: () => <AdminOnly><Formatos /></AdminOnly>,
@@ -294,9 +295,7 @@ function Formatos() {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Cargando formatos...
-          </div>
+          <CardGridSkeleton count={4} />
         ) : fmtFiltrados.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-12 text-center">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
