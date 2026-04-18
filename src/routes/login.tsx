@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-trammos.jpeg";
+import logo from "@/assets/logo-trammos.png";
 import { LogIn, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
