@@ -4,9 +4,16 @@ import { cn } from "@/lib/utils";
  * Elegant shimmer skeleton primitive.
  * Uses a subtle gradient sweep over the muted token for theme-consistent feel.
  */
-export function Shimmer({ className }: { className?: string }) {
+export function Shimmer({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <div
+      style={style}
       className={cn(
         "relative overflow-hidden rounded-md bg-muted/60",
         "before:absolute before:inset-0 before:-translate-x-full",
