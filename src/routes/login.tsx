@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo-trammos.png";
+import banner from "@/assets/banner-trammos.png";
 import { LogIn, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
@@ -95,12 +95,8 @@ function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-3">
-          <img src={logo} alt="TRAMMOS" className="h-16 w-16 rounded-xl object-cover mx-auto" />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">TRAMMOS</h1>
-            <p className="text-sm text-muted-foreground">Sistema de Transporte Especial</p>
-          </div>
+        <div className="text-center">
+          <img src={banner} alt="TRAMMOS - Transportes Especiales" className="w-full max-w-sm mx-auto h-auto" />
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-4">
