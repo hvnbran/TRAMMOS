@@ -1,0 +1,1 @@
+ALTER TABLE public.servicios ADD COLUMN numero_orden text;
