@@ -86,132 +86,141 @@ export function GlobalSearch() {
     try {
       const queries: Promise<SearchResult[]>[] = [
         // Conductores
-        supabase
-          .from("conductores")
-          .select("id, nombre, cedula, telefono, estado")
-          .or(`nombre.ilike.${like},cedula.ilike.${like},telefono.ilike.${like}`)
-          .limit(5)
-          .then(({ data }) =>
-            (data ?? []).map<SearchResult>((c) => ({
-              kind: "conductor",
-              id: c.id,
-              title: c.nombre,
-              subtitle: [c.cedula, c.estado].filter(Boolean).join(" • "),
-              to: "/conductores",
-            }))
-          ),
+        Promise.resolve(
+          supabase
+            .from("conductores")
+            .select("id, nombre, cedula, telefono, estado")
+            .or(`nombre.ilike.${like},cedula.ilike.${like},telefono.ilike.${like}`)
+            .limit(5)
+        ).then(({ data }) =>
+          (data ?? []).map<SearchResult>((c) => ({
+            kind: "conductor",
+            id: c.id,
+            title: c.nombre,
+            subtitle: [c.cedula, c.estado].filter(Boolean).join(" • "),
+            to: "/conductores",
+          }))
+        ),
         // Vehículos
-        supabase
-          .from("vehiculos")
-          .select("id, placa, marca, linea, modelo, conductor")
-          .or(`placa.ilike.${like},marca.ilike.${like},linea.ilike.${like},conductor.ilike.${like}`)
-          .limit(5)
-          .then(({ data }) =>
-            (data ?? []).map<SearchResult>((v) => ({
-              kind: "vehiculo",
-              id: v.id,
-              title: v.placa,
-              subtitle: [v.marca, v.linea, v.modelo].filter(Boolean).join(" "),
-              to: "/vehiculos",
-            }))
-          ),
+        Promise.resolve(
+          supabase
+            .from("vehiculos")
+            .select("id, placa, marca, linea, modelo, conductor")
+            .or(`placa.ilike.${like},marca.ilike.${like},linea.ilike.${like},conductor.ilike.${like}`)
+            .limit(5)
+        ).then(({ data }) =>
+          (data ?? []).map<SearchResult>((v) => ({
+            kind: "vehiculo",
+            id: v.id,
+            title: v.placa,
+            subtitle: [v.marca, v.linea, v.modelo].filter(Boolean).join(" "),
+            to: "/vehiculos",
+          }))
+        ),
         // Servicios
-        supabase
-          .from("servicios")
-          .select("id, numero_orden, pasajero, origen, destino, fecha")
-          .or(
-            `numero_orden.ilike.${like},pasajero.ilike.${like},origen.ilike.${like},destino.ilike.${like}`
-          )
-          .limit(5)
-          .then(({ data }) =>
-            (data ?? []).map<SearchResult>((s) => ({
-              kind: "servicio",
-              id: s.id,
-              title: s.numero_orden || s.pasajero || "Servicio",
-              subtitle: [s.origen, s.destino].filter(Boolean).join(" → ") + (s.fecha ? ` • ${s.fecha}` : ""),
-              to: "/servicios",
-            }))
-          ),
+        Promise.resolve(
+          supabase
+            .from("servicios")
+            .select("id, numero_orden, pasajero, origen, destino, fecha")
+            .or(
+              `numero_orden.ilike.${like},pasajero.ilike.${like},origen.ilike.${like},destino.ilike.${like}`
+            )
+            .limit(5)
+        ).then(({ data }) =>
+          (data ?? []).map<SearchResult>((s) => ({
+            kind: "servicio",
+            id: s.id,
+            title: s.numero_orden || s.pasajero || "Servicio",
+            subtitle:
+              [s.origen, s.destino].filter(Boolean).join(" → ") + (s.fecha ? ` • ${s.fecha}` : ""),
+            to: "/servicios",
+          }))
+        ),
         // Feedback (calificaciones)
-        supabase
-          .from("calificaciones")
-          .select("id, nombre, servicio, tipo, estrellas")
-          .or(`nombre.ilike.${like},servicio.ilike.${like}`)
-          .limit(5)
-          .then(({ data }) =>
-            (data ?? []).map<SearchResult>((f) => ({
-              kind: "servicio",
-              id: f.id,
-              title: f.nombre,
-              subtitle: `${"★".repeat(f.estrellas)} • ${f.tipo}${f.servicio ? ` • ${f.servicio}` : ""}`,
-              to: "/feedback",
-            }))
-          ),
+        Promise.resolve(
+          supabase
+            .from("calificaciones")
+            .select("id, nombre, servicio, tipo, estrellas")
+            .or(`nombre.ilike.${like},servicio.ilike.${like}`)
+            .limit(5)
+        ).then(({ data }) =>
+          (data ?? []).map<SearchResult>((f) => ({
+            kind: "servicio",
+            id: f.id,
+            title: f.nombre,
+            subtitle: `${"★".repeat(f.estrellas)} • ${f.tipo}${f.servicio ? ` • ${f.servicio}` : ""}`,
+            to: "/feedback",
+          }))
+        ),
       ];
 
       // Admin-only sources
       if (isAdmin) {
         queries.push(
-          supabase
-            .from("facturas")
-            .select("id, numero, periodo, estado, monto")
-            .or(`numero.ilike.${like},periodo.ilike.${like},estado.ilike.${like}`)
-            .limit(5)
-            .then(({ data }) =>
-              (data ?? []).map<SearchResult>((f) => ({
-                kind: "factura",
-                id: f.id,
-                title: f.numero,
-                subtitle: `${f.periodo} • ${f.estado} • $${Number(f.monto).toLocaleString()}`,
-                to: "/facturacion",
-              }))
-            ),
-          supabase
-            .from("formatos_auditoria")
-            .select("id, codigo, nombre, entidad, tipo, estado")
-            .or(`codigo.ilike.${like},nombre.ilike.${like},entidad.ilike.${like}`)
-            .limit(5)
-            .then(({ data }) =>
-              (data ?? []).map<SearchResult>((f) => ({
-                kind: "formato",
-                id: f.id,
-                title: `${f.codigo} — ${f.nombre}`,
-                subtitle: `${f.entidad} • ${f.tipo} • ${f.estado}`,
-                to: "/formatos",
-              }))
-            ),
-          supabase
-            .from("centros_costo")
-            .select("id, codigo, origen, destino, departamento")
-            .or(
-              `codigo.ilike.${like},origen.ilike.${like},destino.ilike.${like},departamento.ilike.${like}`
-            )
-            .limit(5)
-            .then(({ data }) =>
-              (data ?? []).map<SearchResult>((c) => ({
-                kind: "centro_costo",
-                id: c.id,
-                title: `${c.codigo} • ${c.origen} → ${c.destino}`,
-                subtitle: c.departamento ?? "",
-                to: "/operacion",
-              }))
-            ),
-          supabase
-            .from("incidentes")
-            .select("id, tipo_incidente, conductor, vehiculo, estado, fecha")
-            .or(
-              `tipo_incidente.ilike.${like},conductor.ilike.${like},vehiculo.ilike.${like},estado.ilike.${like}`
-            )
-            .limit(5)
-            .then(({ data }) =>
-              (data ?? []).map<SearchResult>((i) => ({
-                kind: "incidente",
-                id: i.id,
-                title: i.tipo_incidente,
-                subtitle: [i.conductor, i.vehiculo, i.estado, i.fecha].filter(Boolean).join(" • "),
-                to: "/cumplimiento",
-              }))
-            )
+          Promise.resolve(
+            supabase
+              .from("facturas")
+              .select("id, numero, periodo, estado, monto")
+              .or(`numero.ilike.${like},periodo.ilike.${like},estado.ilike.${like}`)
+              .limit(5)
+          ).then(({ data }) =>
+            (data ?? []).map<SearchResult>((f) => ({
+              kind: "factura",
+              id: f.id,
+              title: f.numero,
+              subtitle: `${f.periodo} • ${f.estado} • $${Number(f.monto).toLocaleString()}`,
+              to: "/facturacion",
+            }))
+          ),
+          Promise.resolve(
+            supabase
+              .from("formatos_auditoria")
+              .select("id, codigo, nombre, entidad, tipo, estado")
+              .or(`codigo.ilike.${like},nombre.ilike.${like},entidad.ilike.${like}`)
+              .limit(5)
+          ).then(({ data }) =>
+            (data ?? []).map<SearchResult>((f) => ({
+              kind: "formato",
+              id: f.id,
+              title: `${f.codigo} — ${f.nombre}`,
+              subtitle: `${f.entidad} • ${f.tipo} • ${f.estado}`,
+              to: "/formatos",
+            }))
+          ),
+          Promise.resolve(
+            supabase
+              .from("centros_costo")
+              .select("id, codigo, origen, destino, departamento")
+              .or(
+                `codigo.ilike.${like},origen.ilike.${like},destino.ilike.${like},departamento.ilike.${like}`
+              )
+              .limit(5)
+          ).then(({ data }) =>
+            (data ?? []).map<SearchResult>((c) => ({
+              kind: "centro_costo",
+              id: c.id,
+              title: `${c.codigo} • ${c.origen} → ${c.destino}`,
+              subtitle: c.departamento ?? "",
+              to: "/operacion",
+            }))
+          ),
+          Promise.resolve(
+            supabase
+              .from("incidentes")
+              .select("id, tipo_incidente, conductor, vehiculo, estado, fecha")
+              .or(
+                `tipo_incidente.ilike.${like},conductor.ilike.${like},vehiculo.ilike.${like},estado.ilike.${like}`
+              )
+              .limit(5)
+          ).then(({ data }) =>
+            (data ?? []).map<SearchResult>((i) => ({
+              kind: "incidente",
+              id: i.id,
+              title: i.tipo_incidente,
+              subtitle: [i.conductor, i.vehiculo, i.estado, i.fecha].filter(Boolean).join(" • "),
+              to: "/cumplimiento",
+            }))
+          )
         );
       }
 
