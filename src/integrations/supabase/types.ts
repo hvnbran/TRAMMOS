@@ -250,6 +250,7 @@ export type Database = {
           fecha: string
           hora: string | null
           id: string
+          numero_orden: string | null
           origen: string | null
           pasajero: string | null
           updated_at: string
@@ -266,6 +267,7 @@ export type Database = {
           fecha: string
           hora?: string | null
           id?: string
+          numero_orden?: string | null
           origen?: string | null
           pasajero?: string | null
           updated_at?: string
@@ -282,6 +284,7 @@ export type Database = {
           fecha?: string
           hora?: string | null
           id?: string
+          numero_orden?: string | null
           origen?: string | null
           pasajero?: string | null
           updated_at?: string
