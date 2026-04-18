@@ -1,14 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AdminOnly } from "../components/layout/AdminOnly";
-import { Car, Navigation } from "lucide-react";
+import { Car, Inbox } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 const MonitoreoMap = lazy(() => import("../components/MonitoreoMap"));
 
 export const Route = createFileRoute("/monitoreo")({
-  component: () => <AdminOnly><Monitoreo /></AdminOnly>,
+  component: () => (
+    <AdminOnly>
+      <Monitoreo />
+    </AdminOnly>
+  ),
   head: () => ({
     meta: [
       { title: "Monitoreo - TRAMMOS" },
@@ -17,13 +23,37 @@ export const Route = createFileRoute("/monitoreo")({
   }),
 });
 
-const vehiculosEnVivo = [
-  { placa: "ABC-123", conductor: "Carlos Mejía", estado: "En ruta", velocidad: 62, ruta: "Bogotá → Sopó", progreso: 65 },
-  { placa: "JKL-012", conductor: "María F. Díaz", estado: "En ruta", velocidad: 48, ruta: "Bogotá → Funza", progreso: 40 },
-  { placa: "PQR-678", conductor: "Jorge A. Muñoz", estado: "En espera", velocidad: 0, ruta: "Madrid → Bogotá", progreso: 0 },
-];
+interface VehiculoLive {
+  id: string;
+  placa: string;
+  conductor: string | null;
+  estado: string;
+  marca: string | null;
+  linea: string | null;
+}
 
 function Monitoreo() {
+  const { cliente } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [vehiculos, setVehiculos] = useState<VehiculoLive[]>([]);
+
+  useEffect(() => {
+    void load();
+    const i = setInterval(load, 30_000);
+    return () => clearInterval(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cliente]);
+
+  async function load() {
+    let q = supabase.from("vehiculos").select("id,placa,conductor,estado,marca,linea").order("placa");
+    if (cliente) q = q.eq("cliente", cliente);
+    const { data } = await q;
+    setVehiculos((data as VehiculoLive[]) ?? []);
+    setLoading(false);
+  }
+
+  const enOperacion = vehiculos.filter((v) => /servic|ruta|operac/i.test(v.estado));
+
   return (
     <AppLayout>
       <div className="space-y-5">
@@ -44,38 +74,45 @@ function Monitoreo() {
 
           {/* Live vehicles */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Vehículos en Vivo ({vehiculosEnVivo.length})</h3>
-            {vehiculosEnVivo.map((v) => (
-              <div key={v.placa} className="rounded-lg border border-border bg-card p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Car className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-bold">{v.placa}</span>
+            <h3 className="text-sm font-semibold">
+              Vehículos en Operación ({loading ? "—" : enOperacion.length})
+            </h3>
+            {loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            ) : enOperacion.length === 0 ? (
+              <div className="rounded-lg border border-border bg-card p-6 flex flex-col items-center text-center text-muted-foreground">
+                <Inbox className="h-8 w-8 mb-2 opacity-50" />
+                <p className="text-sm text-foreground">Sin vehículos en operación</p>
+                <p className="text-xs mt-1">
+                  Marca un vehículo como "En servicio" o "En ruta" para verlo aquí.
+                </p>
+              </div>
+            ) : (
+              enOperacion.map((v) => (
+                <div key={v.id} className="rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-bold">{v.placa}</span>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-success/15 text-success">
+                      {v.estado}
+                    </span>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    v.estado === "En ruta" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"
-                  }`}>
-                    {v.estado}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{v.conductor}</p>
-                <div className="mt-2 flex items-center gap-1 text-xs">
-                  <Navigation className="h-3 w-3 text-primary" />
-                  <span>{v.ruta}</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Velocidad: <span className="text-foreground font-medium">{v.velocidad} km/h</span></span>
-                  {v.progreso > 0 && (
-                    <span className="text-muted-foreground">{v.progreso}%</span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {v.conductor ?? "Sin conductor asignado"}
+                  </p>
+                  {(v.marca || v.linea) && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {[v.marca, v.linea].filter(Boolean).join(" ")}
+                    </p>
                   )}
                 </div>
-                {v.progreso > 0 && (
-                  <div className="mt-1.5 w-full h-1 rounded-full bg-secondary overflow-hidden">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${v.progreso}%` }} />
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
