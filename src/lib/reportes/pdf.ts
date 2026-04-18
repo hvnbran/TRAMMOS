@@ -2,28 +2,73 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fileName, formatDate, daysUntil } from "./utils";
 import type { ReportesData } from "./data";
+import logoUrl from "@/assets/logo-trammos.png?url";
 
 // TRAMMOS brand colors
 const CYAN: [number, number, number] = [0, 175, 200];
 const LIME: [number, number, number] = [170, 200, 30];
 const DARK: [number, number, number] = [60, 60, 65];
 
-function header(doc: jsPDF, title: string, cliente: string | null, desde?: string, hasta?: string) {
+let _logoCache: { dataUrl: string; w: number; h: number } | null = null;
+
+async function getLogo(): Promise<{ dataUrl: string; w: number; h: number } | null> {
+  if (_logoCache) return _logoCache;
+  try {
+    const res = await fetch(logoUrl);
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    _logoCache = { dataUrl, w: dims.w, h: dims.h };
+    return _logoCache;
+  } catch {
+    return null;
+  }
+}
+
+function drawHeader(
+  doc: jsPDF,
+  title: string,
+  cliente: string | null,
+  desde: string | undefined,
+  hasta: string | undefined,
+  logo: { dataUrl: string; w: number; h: number } | null
+) {
   doc.setFillColor(...CYAN);
-  doc.rect(0, 0, doc.internal.pageSize.getWidth(), 18, "F");
+  doc.rect(0, 0, doc.internal.pageSize.getWidth(), 22, "F");
+
+  if (logo) {
+    const targetH = 14;
+    const targetW = (logo.w / logo.h) * targetH;
+    // Center logo vertically inside the cyan band (band: 0..22)
+    doc.addImage(logo.dataUrl, "PNG", 8, 4, targetW, targetH);
+  } else {
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("TRAMMOS", 10, 14);
+  }
+
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("TRAMMOS", 10, 12);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(title, doc.internal.pageSize.getWidth() - 10, 12, { align: "right" });
+  doc.text(title, doc.internal.pageSize.getWidth() - 10, 14, { align: "right" });
 
   doc.setFillColor(...LIME);
-  doc.rect(0, 18, doc.internal.pageSize.getWidth(), 1.2, "F");
+  doc.rect(0, 22, doc.internal.pageSize.getWidth(), 1.2, "F");
 
   doc.setTextColor(...DARK);
   doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
   const meta = [
     `Cliente: ${cliente ?? "Todos"}`,
     desde && hasta ? `Período: ${formatDate(desde)} - ${formatDate(hasta)}` : "",
@@ -31,17 +76,18 @@ function header(doc: jsPDF, title: string, cliente: string | null, desde?: strin
   ]
     .filter(Boolean)
     .join("    |    ");
-  doc.text(meta, 10, 26);
+  doc.text(meta, 10, 30);
 }
 
-export function downloadCumplimientoANSPdf(
+export async function downloadCumplimientoANSPdf(
   data: ReportesData,
   cliente: string | null,
   desde?: string,
   hasta?: string
 ) {
   const doc = new jsPDF();
-  header(doc, "Cumplimiento ANS Detallado", cliente, desde, hasta);
+  const logo = await getLogo();
+  drawHeader(doc, "Cumplimiento ANS Detallado", cliente, desde, hasta, logo);
 
   // ---- Calculations ----
   const serv = data.servicios;
@@ -84,10 +130,10 @@ export function downloadCumplimientoANSPdf(
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...DARK);
-  doc.text(`Cumplimiento global: ${promedio.toFixed(1)}%`, 10, 36);
+  doc.text(`Cumplimiento global: ${promedio.toFixed(1)}%`, 10, 40);
 
   autoTable(doc, {
-    startY: 42,
+    startY: 46,
     head: [["Categoría", "Cumplidos / Total", "Cumplimiento"]],
     body: categorias,
     headStyles: { fillColor: CYAN, textColor: 255, fontStyle: "bold" },
