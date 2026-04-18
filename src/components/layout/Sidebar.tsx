@@ -89,17 +89,17 @@ export function Sidebar() {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+              className={`sidebar-item ${isActive ? "sidebar-item-active" : ""} flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
               }`}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
-              {!collapsed && <span>{item.label}</span>}
+              <item.icon className={`sidebar-icon h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
+              {!collapsed && <span className="sidebar-label">{item.label}</span>}
               {isActive && !collapsed && (
-                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
+                <div className="sidebar-dot ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
               )}
             </Link>
           );
