@@ -241,6 +241,16 @@ function Servicios() {
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />{s.fecha} · {s.hora}
                     </div>
+                    <select
+                      value={s.estado}
+                      onChange={(e) => handleEstadoChange(s.id, e.target.value)}
+                      className="text-xs rounded-md border border-input bg-background px-2 py-1 hover:border-primary/50 cursor-pointer"
+                      title="Cambiar estado"
+                    >
+                      {["Programado", "En curso", "Finalizado", "Cancelado"].map((x) => (
+                        <option key={x} value={x}>{x}</option>
+                      ))}
+                    </select>
                     <button onClick={() => handleDelete(s.id)} className="text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
