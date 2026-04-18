@@ -133,7 +133,7 @@ export async function downloadCumplimientoANSPdf(
   doc.text(`Cumplimiento global: ${promedio.toFixed(1)}%`, 10, 40);
 
   autoTable(doc, {
-    startY: 42,
+    startY: 46,
     head: [["Categoría", "Cumplidos / Total", "Cumplimiento"]],
     body: categorias,
     headStyles: { fillColor: CYAN, textColor: 255, fontStyle: "bold" },
