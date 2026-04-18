@@ -18,6 +18,7 @@ export const Route = createFileRoute("/servicios")({
 interface ServicioRow {
   id: string;
   cliente: "corona" | "sodimac";
+  numero_orden: string | null;
   fecha: string;
   hora: string | null;
   origen: string | null;
@@ -51,6 +52,7 @@ function Servicios() {
   // If client user, force cliente value; admin can pick
   const [form, setForm] = useState({
     cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    numero_orden: "",
     fecha: new Date().toISOString().slice(0, 10),
     hora: "08:00",
     origen: "",
@@ -94,7 +96,7 @@ function Servicios() {
       return;
     }
     setShowForm(false);
-    setForm({ ...form, origen: "", destino: "", pasajero: "", conductor: "", vehiculo: "" });
+    setForm({ ...form, numero_orden: "", origen: "", destino: "", pasajero: "", conductor: "", vehiculo: "" });
     load();
   }
 
@@ -141,6 +143,10 @@ function Servicios() {
                   </select>
                 </div>
               )}
+              <div>
+                <label className="text-xs text-muted-foreground">N° orden de servicio</label>
+                <input required value={form.numero_orden} onChange={(e) => setForm({ ...form, numero_orden: e.target.value })} placeholder="Ej. OS-001234" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+              </div>
               <div>
                 <label className="text-xs text-muted-foreground">Fecha</label>
                 <input type="date" required value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
@@ -213,8 +219,12 @@ function Servicios() {
             {filtered.map((s) => (
               <div key={s.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-muted-foreground">{s.id.slice(0, 8)}</span>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {s.numero_orden ? (
+                      <span className="text-xs font-bold text-foreground">OS: {s.numero_orden}</span>
+                    ) : (
+                      <span className="text-xs font-bold text-muted-foreground">{s.id.slice(0, 8)}</span>
+                    )}
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(s.estado)}`}>{s.estado}</span>
                     {role === "admin" && <span className="text-xs px-2 py-0.5 rounded-full bg-secondary capitalize">{s.cliente}</span>}
                   </div>
