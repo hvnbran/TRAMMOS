@@ -56,6 +56,54 @@ export type Database = {
         }
         Relationships: []
       }
+      centros_costo: {
+        Row: {
+          activo: boolean
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          codigo: string
+          created_at: string
+          created_by: string | null
+          departamento: string | null
+          descripcion: string | null
+          destino: string
+          id: string
+          origen: string
+          tarifa: number
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          departamento?: string | null
+          descripcion?: string | null
+          destino: string
+          id?: string
+          origen: string
+          tarifa?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          departamento?: string | null
+          descripcion?: string | null
+          destino?: string
+          id?: string
+          origen?: string
+          tarifa?: number
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conductor_documentos: {
         Row: {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
@@ -151,6 +199,54 @@ export type Database = {
           telefono?: string | null
           updated_at?: string
           vence_licencia?: string | null
+        }
+        Relationships: []
+      }
+      facturas: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at: string
+          created_by: string | null
+          estado: string
+          fecha_emision: string
+          fecha_pago: string | null
+          id: string
+          monto: number
+          notas: string | null
+          numero: string
+          periodo: string
+          servicios_incluidos: number
+          updated_at: string
+        }
+        Insert: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_emision?: string
+          fecha_pago?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          numero: string
+          periodo: string
+          servicios_incluidos?: number
+          updated_at?: string
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_emision?: string
+          fecha_pago?: string | null
+          id?: string
+          monto?: number
+          notas?: string | null
+          numero?: string
+          periodo?: string
+          servicios_incluidos?: number
+          updated_at?: string
         }
         Relationships: []
       }
