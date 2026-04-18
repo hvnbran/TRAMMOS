@@ -137,8 +137,12 @@ function Conductores() {
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay conductores registrados.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((c) => (
-              <div key={c.id} className="rounded-lg border border-border bg-card p-4">
+            {items.map((c, i) => (
+              <div
+                key={c.id}
+                className="stagger-item rounded-lg border border-border bg-card p-4"
+                style={{ ["--i" as string]: i } as React.CSSProperties}
+              >
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-semibold">{c.nombre}</p>
