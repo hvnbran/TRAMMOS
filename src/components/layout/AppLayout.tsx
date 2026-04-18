@@ -2,6 +2,8 @@ import { Sidebar } from "./Sidebar";
 import { Search } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import logoCorona from "@/assets/logo-corona.png";
+import logoSodimac from "@/assets/logo-sodimac-icon.png";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
@@ -15,12 +17,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const badge =
     role === "admin" ? "Administrador" : role === "corona" ? "Corona" : role === "sodimac" ? "Sodimac" : "";
 
+  const headerBrand =
+    role === "corona"
+      ? { name: "CORONA", logo: logoCorona }
+      : role === "sodimac"
+      ? { name: "SODIMAC", logo: logoSodimac }
+      : { name: "TRAMMOS", logo: null as string | null };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
-          <div className="flex items-center gap-3 flex-1">
+        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6 gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-2 shrink-0 pr-3 border-r border-border">
+              {headerBrand.logo && (
+                <img
+                  src={headerBrand.logo}
+                  alt={headerBrand.name}
+                  className="h-8 w-auto object-contain"
+                />
+              )}
+              <span className="text-sm font-bold tracking-wide text-foreground hidden sm:inline">
+                {headerBrand.name}
+              </span>
+            </div>
             <div className="relative max-w-sm flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
