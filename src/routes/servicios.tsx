@@ -107,6 +107,15 @@ function Servicios() {
     load();
   }
 
+  async function handleEstadoChange(id: string, nuevoEstado: string) {
+    setItems((prev) => prev.map((s) => (s.id === id ? { ...s, estado: nuevoEstado } : s)));
+    const { error } = await supabase.from("servicios").update({ estado: nuevoEstado }).eq("id", id);
+    if (error) {
+      alert("Error al actualizar estado: " + error.message);
+      load();
+    }
+  }
+
   const filtered = items.filter((s) => filtro === "Todos" || s.estado === filtro);
 
   return (
