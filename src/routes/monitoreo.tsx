@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AdminOnly } from "../components/layout/AdminOnly";
-import { Radar, Car, Navigation } from "lucide-react";
+import { Car, Navigation } from "lucide-react";
+import { Skeleton } from "../components/ui/skeleton";
+
+const MonitoreoMap = lazy(() => import("../components/MonitoreoMap"));
 
 export const Route = createFileRoute("/monitoreo")({
   component: () => <AdminOnly><Monitoreo /></AdminOnly>,
@@ -29,14 +33,12 @@ function Monitoreo() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Map placeholder */}
+          {/* Map */}
           <div className="lg:col-span-2 rounded-lg border border-border bg-card overflow-hidden">
-            <div className="h-[400px] flex items-center justify-center bg-secondary/30">
-              <div className="text-center">
-                <Radar className="h-12 w-12 text-muted-foreground mx-auto mb-3 animate-pulse" />
-                <p className="text-sm text-muted-foreground">Mapa de seguimiento GPS</p>
-                <p className="text-xs text-muted-foreground mt-1">Integración con Google Maps pendiente</p>
-              </div>
+            <div className="h-[400px] w-full">
+              <Suspense fallback={<Skeleton className="h-full w-full rounded-none" />}>
+                <MonitoreoMap />
+              </Suspense>
             </div>
           </div>
 
