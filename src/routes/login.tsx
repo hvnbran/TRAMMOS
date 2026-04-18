@@ -3,8 +3,8 @@ import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import banner from "@/assets/banner-trammos.png";
-import logoCorona from "@/assets/logo-corona.png";
-import logoSodimac from "@/assets/logo-sodimac-icon.png";
+import bannerCorona from "@/assets/banner-corona.png";
+import bannerSodimac from "@/assets/banner-sodimac.png";
 import { LogIn, Loader2, Check } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
