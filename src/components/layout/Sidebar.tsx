@@ -17,7 +17,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
-import logo from "@/assets/logo-trammos.jpeg";
+import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
 
 type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean };
