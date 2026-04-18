@@ -39,8 +39,10 @@ export const Route = createRootRoute({
       { name: "twitter:title", content: "TRAMMOS" },
       { property: "og:description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
       { name: "twitter:description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/src/assets/banner-trammos.png" },
+      { name: "twitter:image", content: "/src/assets/banner-trammos.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
