@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo-trammos.png";
+import logoCorona from "@/assets/logo-corona.png";
+import logoSodimac from "@/assets/logo-sodimac-icon.png";
 import { useAuth } from "@/lib/auth-context";
 
 type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean };
@@ -53,19 +55,26 @@ export function Sidebar() {
 
   const navItems = role === "admin" ? ADMIN_NAV : CLIENT_NAV;
 
+  const brand =
+    role === "corona"
+      ? { name: "CORONA", subtitle: "Cliente Corona", logo: logoCorona, rounded: "rounded-md" }
+      : role === "sodimac"
+      ? { name: "SODIMAC", subtitle: "Cliente Sodimac", logo: logoSodimac, rounded: "rounded-md" }
+      : { name: "TRAMMOS", subtitle: "Admin General", logo, rounded: "rounded-lg" };
+
   return (
     <aside
       className={`flex flex-col bg-sidebar-bg border-r border-sidebar-border transition-all duration-300 ${collapsed ? "w-[68px]" : "w-[240px]"}`}
     >
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-        <img src={logo} alt="TRAMMOS" className="h-9 w-9 rounded-lg object-cover shrink-0" />
+        <img src={brand.logo} alt={brand.name} className={`h-9 w-9 ${brand.rounded} object-contain bg-white p-0.5 shrink-0`} />
         {!collapsed && (
           <div className="overflow-hidden">
-            <span className="text-base font-bold text-foreground tracking-tight" style={{ color: "oklch(0.95 0.005 220)" }}>
-              TRAMMOS
+            <span className="text-base font-bold tracking-tight" style={{ color: "oklch(0.95 0.005 220)" }}>
+              {brand.name}
             </span>
             <p className="text-[10px] leading-none" style={{ color: "oklch(0.6 0.02 220)" }}>
-              {role === "admin" ? "Admin General" : displayName || "Transporte Especial"}
+              {brand.subtitle}
             </p>
           </div>
         )}
