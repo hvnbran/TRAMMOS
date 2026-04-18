@@ -206,8 +206,12 @@ function Facturacion() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((f) => (
-                    <tr key={f.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                  {rows.map((f, i) => (
+                    <tr
+                      key={f.id}
+                      className="stagger-item border-b border-border last:border-0 hover:bg-secondary/30 transition-colors"
+                      style={{ ["--i" as string]: i } as React.CSSProperties}
+                    >
                       <td className="px-4 py-3 font-medium">{f.numero}</td>
                       <td className="px-4 py-3">{f.periodo}</td>
                       <td className="px-4 py-3 capitalize">{f.cliente}</td>

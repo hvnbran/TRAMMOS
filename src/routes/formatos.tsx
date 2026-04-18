@@ -304,8 +304,12 @@ function Formatos() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {fmtFiltrados.map((f) => (
-              <div key={f.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors">
+            {fmtFiltrados.map((f, i) => (
+              <div
+                key={f.id}
+                className="stagger-item rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors"
+                style={{ ["--i" as string]: i } as React.CSSProperties}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />

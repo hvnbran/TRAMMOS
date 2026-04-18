@@ -348,8 +348,12 @@ function Dashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-border bg-card p-4">
+          {stats.map((stat, i) => (
+            <div
+              key={stat.label}
+              className="stagger-item rounded-lg border border-border bg-card p-4"
+              style={{ ["--i" as string]: i } as React.CSSProperties}
+            >
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-md ${stat.color}`}>
@@ -450,8 +454,12 @@ function Dashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {serviciosRecientes.map((srv) => (
-                  <div key={srv.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                {serviciosRecientes.map((srv, i) => (
+                  <div
+                    key={srv.id}
+                    className="stagger-item flex items-center justify-between py-2 border-b border-border last:border-0"
+                    style={{ ["--i" as string]: i } as React.CSSProperties}
+                  >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{srv.numero_orden ?? srv.id.slice(0, 8)}</span>

@@ -226,8 +226,12 @@ function Servicios() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map((s) => (
-              <div key={s.id} className="rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors">
+            {filtered.map((s, i) => (
+              <div
+                key={s.id}
+                className="stagger-item rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors"
+                style={{ ["--i" as string]: i } as React.CSSProperties}
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 flex-wrap">
                     {s.numero_orden ? (
