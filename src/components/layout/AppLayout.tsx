@@ -2,9 +2,11 @@ import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { useLocation } from "@tanstack/react-router";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
+  const location = useLocation();
   const initials = (displayName || "U")
     .split(" ")
     .map((w) => w[0])
@@ -36,7 +38,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main key={location.pathname} className="page-transition flex-1 overflow-y-auto p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
