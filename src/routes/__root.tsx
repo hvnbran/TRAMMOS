@@ -73,13 +73,16 @@ function AuthGate() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isLoginRoute = location.pathname === "/login";
+
   useEffect(() => {
     if (loading) return;
-    if (!user && location.pathname !== "/login") {
-      navigate({ to: "/login" });
+    if (!user && !isLoginRoute) {
+      navigate({ to: "/login", replace: true });
     }
-  }, [user, loading, location.pathname, navigate]);
+  }, [user, loading, isLoginRoute, navigate]);
 
+  // While checking session, show spinner (prevents flashing protected content)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -88,8 +91,13 @@ function AuthGate() {
     );
   }
 
-  if (!user && location.pathname !== "/login") {
-    return null;
+  // Not authenticated and not on login → render nothing while redirect happens
+  if (!user && !isLoginRoute) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   return <Outlet />;
