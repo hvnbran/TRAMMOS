@@ -79,14 +79,15 @@ function drawHeader(
   doc.text(meta, 10, 30);
 }
 
-export function downloadCumplimientoANSPdf(
+export async function downloadCumplimientoANSPdf(
   data: ReportesData,
   cliente: string | null,
   desde?: string,
   hasta?: string
 ) {
   const doc = new jsPDF();
-  header(doc, "Cumplimiento ANS Detallado", cliente, desde, hasta);
+  const logo = await getLogo();
+  drawHeader(doc, "Cumplimiento ANS Detallado", cliente, desde, hasta, logo);
 
   // ---- Calculations ----
   const serv = data.servicios;
@@ -129,7 +130,7 @@ export function downloadCumplimientoANSPdf(
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...DARK);
-  doc.text(`Cumplimiento global: ${promedio.toFixed(1)}%`, 10, 36);
+  doc.text(`Cumplimiento global: ${promedio.toFixed(1)}%`, 10, 40);
 
   autoTable(doc, {
     startY: 42,
