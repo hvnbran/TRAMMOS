@@ -1,7 +1,7 @@
 import { Sidebar } from "./Sidebar";
-import { Search } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
@@ -21,14 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center justify-between border-b border-border bg-card px-6">
           <div className="flex items-center gap-3 flex-1">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                className="h-9 w-full rounded-md bg-secondary pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
+            <GlobalSearch />
           </div>
           <div className="flex items-center gap-4">
             <NotificationsBell />
