@@ -26,6 +26,7 @@ import {
   Tooltip,
 } from "recharts";
 import { StatsGridSkeleton, ChartSkeleton, CardGridSkeleton, HeaderSkeleton } from "@/components/ui/loading-skeletons";
+import { SpeakButton } from "@/components/SpeakButton";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -357,11 +358,15 @@ function Dashboard() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-md ${stat.color}`}>
-                  <stat.icon className="h-4 w-4" />
+                  <stat.icon className="h-4 w-4" aria-hidden="true" />
                 </div>
               </div>
-              <div className="mt-2">
+              <div className="mt-2 flex items-end justify-between gap-2">
                 <span className="text-2xl font-bold">{loading ? "—" : stat.value}</span>
+                <SpeakButton
+                  text={`${stat.label}: ${loading ? "cargando" : stat.value}`}
+                  label={`Escuchar ${stat.label}`}
+                />
               </div>
             </div>
           ))}
