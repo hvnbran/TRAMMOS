@@ -56,13 +56,21 @@ export function NotificationsBell() {
       let vehQ = supabase
         .from("vehiculos")
         .select("id,placa,vence_soat,vence_rtm,cliente");
+      // Servicios desde hoy en adelante con estado Programado
+      const hoyISO = new Date().toISOString().slice(0, 10);
+      let servQ = supabase
+        .from("servicios")
+        .select("id,numero_orden,fecha,hora,origen,destino,conductor,cliente,estado")
+        .eq("estado", "Programado")
+        .gte("fecha", hoyISO);
 
       if (cliente) {
         condQ = condQ.eq("cliente", cliente);
         vehQ = vehQ.eq("cliente", cliente);
+        servQ = servQ.eq("cliente", cliente);
       }
 
-      const [{ data: conductores }, { data: vehiculos }] = await Promise.all([condQ, vehQ]);
+      const [{ data: conductores }, { data: vehiculos }, { data: servicios }] = await Promise.all([condQ, vehQ, servQ]);
 
       const list: Notif[] = [];
 
@@ -105,7 +113,48 @@ export function NotificationsBell() {
         }
       });
 
-      list.sort((a, b) => a.diasRestantes - b.diasRestantes);
+      servicios?.forEach((s) => {
+        const dias = diasHasta(s.fecha);
+        if (dias === null || dias > 7) return; // solo próximos 7 días
+        const sinConductor = !s.conductor || s.conductor.trim() === "";
+        const orden = s.numero_orden ? `OS ${s.numero_orden}` : `Servicio ${s.id.slice(0, 6)}`;
+        const cuando = dias < 0
+          ? `Atrasado ${Math.abs(dias)} d`
+          : dias === 0
+            ? `Hoy${s.hora ? ` ${s.hora}` : ""}`
+            : dias === 1
+              ? `Mañana${s.hora ? ` ${s.hora}` : ""}`
+              : `En ${dias} días`;
+        const ruta = [s.origen, s.destino].filter(Boolean).join(" → ");
+        if (sinConductor) {
+          list.push({
+            id: `serv-sc-${s.id}`,
+            tipo: "servicio_sin_conductor",
+            titulo: `URGENTE: ${orden} sin conductor`,
+            detalle: `${cuando}${ruta ? ` · ${ruta}` : ""} — Asignar conductor`,
+            // Forzar prioridad alta: tratamos como vencido (-1) si es hoy/mañana, o usar dias reales
+            diasRestantes: dias <= 1 ? -1 : dias,
+            to: "/servicios",
+            urgente: true,
+          });
+        } else {
+          list.push({
+            id: `serv-${s.id}`,
+            tipo: "servicio_programado",
+            titulo: `${orden} programado`,
+            detalle: `${cuando}${ruta ? ` · ${ruta}` : ""} · ${s.conductor}`,
+            diasRestantes: dias,
+            to: "/servicios",
+          });
+        }
+      });
+
+      list.sort((a, b) => {
+        // Urgentes (sin conductor) primero
+        if (a.urgente && !b.urgente) return -1;
+        if (!a.urgente && b.urgente) return 1;
+        return a.diasRestantes - b.diasRestantes;
+      });
       setNotifs(list);
     } finally {
       setLoading(false);
