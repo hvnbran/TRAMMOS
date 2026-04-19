@@ -1,10 +1,38 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Filter, Clock, MapPin, Loader2, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+
+function isVencido(fecha: string | null | undefined): boolean {
+  if (!fecha) return false;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const f = new Date(fecha);
+  f.setHours(0, 0, 0, 0);
+  return f.getTime() < hoy.getTime();
+}
+
+interface ConductorOpt {
+  id: string;
+  nombre: string;
+  cliente: "corona" | "sodimac";
+  estado: string;
+  vence_licencia: string | null;
+}
+
+interface VehiculoOpt {
+  id: string;
+  placa: string;
+  marca: string | null;
+  linea: string | null;
+  cliente: "corona" | "sodimac";
+  estado: string;
+  vence_soat: string | null;
+  vence_rtm: string | null;
+}
 
 export const Route = createFileRoute("/servicios")({
   component: Servicios,
@@ -45,12 +73,14 @@ function Servicios() {
   const navigate = useNavigate();
   const { role, cliente, loading: authLoading } = useAuth();
   const [items, setItems] = useState<ServicioRow[]>([]);
+  const [conductoresAll, setConductoresAll] = useState<ConductorOpt[]>([]);
+  const [vehiculosAll, setVehiculosAll] = useState<VehiculoOpt[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // If client user, force cliente value; admin can pick
+  // ... keep existing code (form state)
   const [form, setForm] = useState({
     cliente: (cliente ?? "corona") as "corona" | "sodimac",
     numero_orden: "",
@@ -77,14 +107,35 @@ function Servicios() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("servicios")
-      .select("*")
-      .order("fecha", { ascending: false })
-      .order("hora", { ascending: false });
-    if (!error && data) setItems(data as ServicioRow[]);
+    const [serviciosRes, conductoresRes, vehiculosRes] = await Promise.all([
+      supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
+      supabase.from("conductores").select("id,nombre,cliente,estado,vence_licencia"),
+      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,estado,vence_soat,vence_rtm"),
+    ]);
+    if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
+    if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
+    if (!vehiculosRes.error && vehiculosRes.data) setVehiculosAll(vehiculosRes.data as VehiculoOpt[]);
     setLoading(false);
   }
+
+  const conductoresDisponibles = useMemo(() => {
+    const clienteForm = cliente ?? form.cliente;
+    return conductoresAll.filter((c) =>
+      c.cliente === clienteForm &&
+      c.estado !== "Inactivo" &&
+      !isVencido(c.vence_licencia)
+    );
+  }, [conductoresAll, cliente, form.cliente]);
+
+  const vehiculosDisponibles = useMemo(() => {
+    const clienteForm = cliente ?? form.cliente;
+    return vehiculosAll.filter((v) =>
+      v.cliente === clienteForm &&
+      v.estado !== "Inactivo" &&
+      !isVencido(v.vence_soat) &&
+      !isVencido(v.vence_rtm)
+    );
+  }, [vehiculosAll, cliente, form.cliente]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -183,11 +234,43 @@ function Servicios() {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Conductor</label>
-                <input value={form.conductor} onChange={(e) => setForm({ ...form, conductor: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <select
+                  value={form.conductor}
+                  onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                  disabled={conductoresDisponibles.length === 0}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">{conductoresDisponibles.length === 0 ? "Sin conductores disponibles" : "Selecciona un conductor"}</option>
+                  {conductoresDisponibles.map((c) => (
+                    <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                  ))}
+                </select>
+                {conductoresDisponibles.length === 0 && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                    <AlertTriangle className="h-3 w-3" /> Actualiza licencias vencidas en Conductores
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Vehículo (placa)</label>
-                <input value={form.vehiculo} onChange={(e) => setForm({ ...form, vehiculo: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <select
+                  value={form.vehiculo}
+                  onChange={(e) => setForm({ ...form, vehiculo: e.target.value })}
+                  disabled={vehiculosDisponibles.length === 0}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">{vehiculosDisponibles.length === 0 ? "Sin vehículos disponibles" : "Selecciona un vehículo"}</option>
+                  {vehiculosDisponibles.map((v) => (
+                    <option key={v.id} value={v.placa}>
+                      {v.placa}{v.marca || v.linea ? ` — ${[v.marca, v.linea].filter(Boolean).join(" ")}` : ""}
+                    </option>
+                  ))}
+                </select>
+                {vehiculosDisponibles.length === 0 && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                    <AlertTriangle className="h-3 w-3" /> Actualiza SOAT/RTM vencidos en Vehículos
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Estado</label>
