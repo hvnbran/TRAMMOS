@@ -169,6 +169,18 @@ function Servicios() {
     }
   }
 
+  async function handleFieldChange(id: string, campo: "conductor" | "vehiculo", valor: string) {
+    const nuevoValor = valor === "" ? null : valor;
+    setItems((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: nuevoValor } : s)));
+    const payload: { conductor?: string | null; vehiculo?: string | null } =
+      campo === "conductor" ? { conductor: nuevoValor } : { vehiculo: nuevoValor };
+    const { error } = await supabase.from("servicios").update(payload).eq("id", id);
+    if (error) {
+      alert(`Error al actualizar ${campo}: ` + error.message);
+      load();
+    }
+  }
+
   const filtered = items.filter((s) => filtro === "Todos" || s.estado === filtro);
 
   return (
@@ -372,8 +384,47 @@ function Servicios() {
                 <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div><span className="text-muted-foreground">Pasajero</span><p className="font-medium">{s.pasajero || "—"}</p></div>
                   <div><span className="text-muted-foreground">Centro costo</span><p className="font-medium">{s.centro_costo || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Conductor</span><p className="font-medium">{s.conductor || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Vehículo</span><p className="font-medium">{s.vehiculo || "—"}</p></div>
+                  <div>
+                    <label className="text-muted-foreground" htmlFor={`cond-${s.id}`}>Conductor</label>
+                    <select
+                      id={`cond-${s.id}`}
+                      value={s.conductor ?? ""}
+                      onChange={(e) => handleFieldChange(s.id, "conductor", e.target.value)}
+                      aria-label="Asignar conductor"
+                      className={`mt-0.5 w-full rounded-md border bg-background px-2 py-1 text-xs hover:border-primary/50 cursor-pointer ${
+                        !s.conductor && s.estado === "Programado"
+                          ? "border-destructive/60 text-destructive font-medium"
+                          : "border-input font-medium"
+                      }`}
+                    >
+                      <option value="">{!s.conductor && s.estado === "Programado" ? "⚠ Sin asignar" : "— Sin asignar —"}</option>
+                      {/* Conductor actual aunque ya no esté disponible (ej. licencia vencida después) */}
+                      {s.conductor && !conductoresDisponibles.some((c) => c.nombre === s.conductor) && (
+                        <option value={s.conductor}>{s.conductor} (no disponible)</option>
+                      )}
+                      {conductoresDisponibles.map((c) => (
+                        <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-muted-foreground" htmlFor={`veh-${s.id}`}>Vehículo</label>
+                    <select
+                      id={`veh-${s.id}`}
+                      value={s.vehiculo ?? ""}
+                      onChange={(e) => handleFieldChange(s.id, "vehiculo", e.target.value)}
+                      aria-label="Asignar vehículo"
+                      className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:border-primary/50 cursor-pointer"
+                    >
+                      <option value="">— Sin asignar —</option>
+                      {s.vehiculo && !vehiculosDisponibles.some((v) => v.placa === s.vehiculo) && (
+                        <option value={s.vehiculo}>{s.vehiculo} (no disponible)</option>
+                      )}
+                      {vehiculosDisponibles.map((v) => (
+                        <option key={v.id} value={v.placa}>{v.placa}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             ))}
