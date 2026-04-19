@@ -119,9 +119,9 @@ function LoginPage() {
   return (
     <>
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md space-y-8 animate-fade-in">
-          <div className="text-center">
-            <img src={banner} alt="TRAMMOS - Transportes Especiales" className="w-64 md:w-72 mx-auto h-auto drop-shadow-sm" />
+        <div className="w-full max-w-md space-y-2 animate-fade-in">
+          <div className="text-center -mb-2">
+            <img src={banner} alt="TRAMMOS - Transportes Especiales" className="w-80 md:w-96 mx-auto h-auto drop-shadow-sm" />
           </div>
 
           <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
