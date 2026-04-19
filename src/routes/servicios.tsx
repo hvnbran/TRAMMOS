@@ -1,10 +1,38 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Filter, Clock, MapPin, Loader2, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+
+function isVencido(fecha: string | null | undefined): boolean {
+  if (!fecha) return false;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const f = new Date(fecha);
+  f.setHours(0, 0, 0, 0);
+  return f.getTime() < hoy.getTime();
+}
+
+interface ConductorOpt {
+  id: string;
+  nombre: string;
+  cliente: "corona" | "sodimac";
+  estado: string;
+  vence_licencia: string | null;
+}
+
+interface VehiculoOpt {
+  id: string;
+  placa: string;
+  marca: string | null;
+  linea: string | null;
+  cliente: "corona" | "sodimac";
+  estado: string;
+  vence_soat: string | null;
+  vence_rtm: string | null;
+}
 
 export const Route = createFileRoute("/servicios")({
   component: Servicios,
