@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Accessibility, X, RotateCcw, Type, Contrast, Eye, Zap, Underline, Maximize2, Layers, MousePointer2 } from "lucide-react";
 import { useA11y } from "@/lib/a11y-context";
 
+type A11yColorBlind = "off" | "protanopia" | "deuteranopia" | "tritanopia";
+
 export function AccessibilityPanel() {
   const [open, setOpen] = useState(false);
   const { prefs, setPref, reset } = useA11y();
