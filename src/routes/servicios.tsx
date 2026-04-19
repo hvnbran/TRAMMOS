@@ -172,7 +172,9 @@ function Servicios() {
   async function handleFieldChange(id: string, campo: "conductor" | "vehiculo", valor: string) {
     const nuevoValor = valor === "" ? null : valor;
     setItems((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: nuevoValor } : s)));
-    const { error } = await supabase.from("servicios").update({ [campo]: nuevoValor }).eq("id", id);
+    const payload: { conductor?: string | null; vehiculo?: string | null } =
+      campo === "conductor" ? { conductor: nuevoValor } : { vehiculo: nuevoValor };
+    const { error } = await supabase.from("servicios").update(payload).eq("id", id);
     if (error) {
       alert(`Error al actualizar ${campo}: ` + error.message);
       load();
