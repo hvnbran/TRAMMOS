@@ -157,7 +157,6 @@ export function AccessibilityPanel() {
   );
 }
 
-type A11yColorBlind = "off" | "protanopia" | "deuteranopia" | "tritanopia";
 
 function ToggleRow({
   icon,
