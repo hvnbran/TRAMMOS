@@ -299,8 +299,8 @@ export function NotificationsBell() {
                     </p>
                   </div>
                 </Link>
-              ))
-            )}
+              ));
+            })()}
           </div>
 
           {count > 0 && (
