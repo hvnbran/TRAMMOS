@@ -217,17 +217,62 @@ export function NotificationsBell() {
             </button>
           </div>
 
+          {count > 0 && (
+            <div className="flex items-center gap-1 px-2 py-2 border-b border-border overflow-x-auto">
+              {([
+                { id: "todos", label: "Todos", n: count },
+                { id: "urgentes", label: "Urgentes", n: notifs.filter((x) => x.urgente).length },
+                { id: "vencimientos", label: "Vencimientos", n: notifs.filter((x) => x.tipo === "licencia" || x.tipo === "soat" || x.tipo === "rtm").length },
+                { id: "servicios", label: "Servicios", n: notifs.filter((x) => x.tipo === "servicio_sin_conductor" || x.tipo === "servicio_programado").length },
+              ] as { id: Filtro; label: string; n: number }[]).map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setFiltro(opt.id)}
+                  aria-pressed={filtro === opt.id}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+                    filtro === opt.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                  <span className={`rounded-full px-1.5 text-[10px] ${filtro === opt.id ? "bg-primary-foreground/20" : "bg-background/60"}`}>
+                    {opt.n}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto">
-            {count === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-                <CheckCircle2 className="h-8 w-8 text-success mb-2" />
-                <p className="text-sm text-foreground">Todo en orden</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  No hay vencimientos ni servicios pendientes próximamente.
-                </p>
-              </div>
-            ) : (
-              notifs.map((n) => (
+            {(() => {
+              const visible = notifs.filter((n) => {
+                if (filtro === "urgentes") return !!n.urgente;
+                if (filtro === "vencimientos") return n.tipo === "licencia" || n.tipo === "soat" || n.tipo === "rtm";
+                if (filtro === "servicios") return n.tipo === "servicio_sin_conductor" || n.tipo === "servicio_programado";
+                return true;
+              });
+              if (count === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                    <CheckCircle2 className="h-8 w-8 text-success mb-2" />
+                    <p className="text-sm text-foreground">Todo en orden</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No hay vencimientos ni servicios pendientes próximamente.
+                    </p>
+                  </div>
+                );
+              }
+              if (visible.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                    <CheckCircle2 className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-foreground">Sin alertas en esta categoría</p>
+                    <p className="text-xs text-muted-foreground mt-1">Prueba con otro filtro.</p>
+                  </div>
+                );
+              }
+              return visible.map((n) => (
                 <Link
                   key={n.id}
                   to={n.to}
