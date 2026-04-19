@@ -220,7 +220,7 @@ export function NotificationsBell() {
                 <CheckCircle2 className="h-8 w-8 text-success mb-2" />
                 <p className="text-sm text-foreground">Todo en orden</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  No hay licencias, SOAT o RTM por vencer en los próximos 30 días.
+                  No hay vencimientos ni servicios pendientes próximamente.
                 </p>
               </div>
             ) : (
@@ -229,14 +229,18 @@ export function NotificationsBell() {
                   key={n.id}
                   to={n.to}
                   onClick={() => setOpen(false)}
-                  className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-secondary/50 transition-colors"
+                  className={`flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-secondary/50 transition-colors ${
+                    n.urgente ? "bg-destructive/5 border-l-2 border-l-destructive" : ""
+                  }`}
                 >
                   <div className="mt-0.5">{iconFor(n)}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{n.titulo}</p>
+                    <p className={`text-sm font-medium truncate ${n.urgente ? "text-destructive" : ""}`}>
+                      {n.titulo}
+                    </p>
                     <p
                       className={`text-xs ${
-                        n.diasRestantes < 0
+                        n.urgente || n.diasRestantes < 0
                           ? "text-destructive"
                           : n.diasRestantes <= 7
                             ? "text-destructive/80"
