@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+import { SpeakButton } from "@/components/SpeakButton";
 
 function isVencido(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
@@ -327,11 +328,25 @@ function Servicios() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />{s.fecha} · {s.hora}
+                      <Clock className="h-3 w-3" aria-hidden="true" />{s.fecha} · {s.hora}
                     </div>
+                    <SpeakButton
+                      text={[
+                        s.numero_orden ? `Orden ${s.numero_orden}` : `Servicio`,
+                        `Estado ${s.estado}`,
+                        `Fecha ${s.fecha}${s.hora ? ` a las ${s.hora}` : ""}`,
+                        s.origen ? `Origen ${s.origen}` : "",
+                        s.destino ? `Destino ${s.destino}` : "",
+                        s.pasajero ? `Pasajero ${s.pasajero}` : "",
+                        s.conductor ? `Conductor ${s.conductor}` : "",
+                        s.vehiculo ? `Vehículo ${s.vehiculo}` : "",
+                      ].filter(Boolean).join(". ")}
+                      label="Escuchar detalles del servicio"
+                    />
                     <select
                       value={s.estado}
                       onChange={(e) => handleEstadoChange(s.id, e.target.value)}
+                      aria-label="Cambiar estado del servicio"
                       className="text-xs rounded-md border border-input bg-background px-2 py-1 hover:border-primary/50 cursor-pointer"
                       title="Cambiar estado"
                     >
@@ -339,8 +354,12 @@ function Servicios() {
                         <option key={x} value={x}>{x}</option>
                       ))}
                     </select>
-                    <button onClick={() => handleDelete(s.id)} className="text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
+                    <button
+                      onClick={() => handleDelete(s.id)}
+                      aria-label="Eliminar servicio"
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
