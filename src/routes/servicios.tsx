@@ -234,11 +234,43 @@ function Servicios() {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Conductor</label>
-                <input value={form.conductor} onChange={(e) => setForm({ ...form, conductor: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <select
+                  value={form.conductor}
+                  onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                  disabled={conductoresDisponibles.length === 0}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">{conductoresDisponibles.length === 0 ? "Sin conductores disponibles" : "Selecciona un conductor"}</option>
+                  {conductoresDisponibles.map((c) => (
+                    <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                  ))}
+                </select>
+                {conductoresDisponibles.length === 0 && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                    <AlertTriangle className="h-3 w-3" /> Actualiza licencias vencidas en Conductores
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Vehículo (placa)</label>
-                <input value={form.vehiculo} onChange={(e) => setForm({ ...form, vehiculo: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <select
+                  value={form.vehiculo}
+                  onChange={(e) => setForm({ ...form, vehiculo: e.target.value })}
+                  disabled={vehiculosDisponibles.length === 0}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">{vehiculosDisponibles.length === 0 ? "Sin vehículos disponibles" : "Selecciona un vehículo"}</option>
+                  {vehiculosDisponibles.map((v) => (
+                    <option key={v.id} value={v.placa}>
+                      {v.placa}{v.marca || v.linea ? ` — ${[v.marca, v.linea].filter(Boolean).join(" ")}` : ""}
+                    </option>
+                  ))}
+                </select>
+                {vehiculosDisponibles.length === 0 && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                    <AlertTriangle className="h-3 w-3" /> Actualiza SOAT/RTM vencidos en Vehículos
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Estado</label>
