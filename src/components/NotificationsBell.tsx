@@ -23,11 +23,14 @@ function diasHasta(fechaISO: string | null): number | null {
   return Math.ceil((f.getTime() - hoy.getTime()) / 86_400_000);
 }
 
+type Filtro = "todos" | "urgentes" | "vencimientos" | "servicios";
+
 export function NotificationsBell() {
   const { user, cliente } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>("todos");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
