@@ -162,9 +162,12 @@ export function NotificationsBell() {
   }
 
   const count = notifs.length;
-  const criticas = notifs.filter((n) => n.diasRestantes < 0).length;
+  const urgentes = notifs.filter((n) => n.urgente).length;
+  const criticas = notifs.filter((n) => n.diasRestantes < 0 || n.urgente).length;
 
   function iconFor(n: Notif) {
+    if (n.tipo === "servicio_sin_conductor") return <UserPlus className="h-4 w-4 text-destructive" />;
+    if (n.tipo === "servicio_programado") return <CalendarClock className="h-4 w-4 text-primary" />;
     if (n.diasRestantes < 0) return <ShieldAlert className="h-4 w-4 text-destructive" />;
     if (n.diasRestantes <= 7) return <AlertTriangle className="h-4 w-4 text-destructive" />;
     return <FileWarning className="h-4 w-4 text-warning" />;
@@ -175,9 +178,9 @@ export function NotificationsBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="relative text-muted-foreground hover:text-foreground transition-colors"
-        aria-label="Notificaciones"
+        aria-label={`Notificaciones${urgentes > 0 ? ` — ${urgentes} urgentes` : ""}`}
       >
-        <Bell className="h-5 w-5" />
+        <Bell className={`h-5 w-5 ${urgentes > 0 ? "animate-pulse" : ""}`} />
         {count > 0 && (
           <span
             className={`absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] font-bold text-destructive-foreground ${
@@ -195,7 +198,11 @@ export function NotificationsBell() {
             <div>
               <h4 className="text-sm font-semibold">Notificaciones</h4>
               <p className="text-[11px] text-muted-foreground">
-                {count === 0 ? "Sin alertas" : `${count} vencimiento${count > 1 ? "s" : ""} próximo${count > 1 ? "s" : ""}`}
+                {count === 0
+                  ? "Sin alertas"
+                  : urgentes > 0
+                    ? `${urgentes} urgente${urgentes > 1 ? "s" : ""} · ${count} en total`
+                    : `${count} alerta${count > 1 ? "s" : ""}`}
               </p>
             </div>
             <button
