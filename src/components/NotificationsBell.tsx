@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, AlertTriangle, FileWarning, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Bell, AlertTriangle, FileWarning, ShieldAlert, CheckCircle2, UserPlus, CalendarClock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
 type Notif = {
   id: string;
-  tipo: "licencia" | "soat" | "rtm";
+  tipo: "licencia" | "soat" | "rtm" | "servicio_sin_conductor" | "servicio_programado";
   titulo: string;
   detalle: string;
   diasRestantes: number;
   to: string;
+  urgente?: boolean;
 };
 
 function diasHasta(fechaISO: string | null): number | null {
@@ -55,13 +56,21 @@ export function NotificationsBell() {
       let vehQ = supabase
         .from("vehiculos")
         .select("id,placa,vence_soat,vence_rtm,cliente");
+      // Servicios desde hoy en adelante con estado Programado
+      const hoyISO = new Date().toISOString().slice(0, 10);
+      let servQ = supabase
+        .from("servicios")
+        .select("id,numero_orden,fecha,hora,origen,destino,conductor,cliente,estado")
+        .eq("estado", "Programado")
+        .gte("fecha", hoyISO);
 
       if (cliente) {
         condQ = condQ.eq("cliente", cliente);
         vehQ = vehQ.eq("cliente", cliente);
+        servQ = servQ.eq("cliente", cliente);
       }
 
-      const [{ data: conductores }, { data: vehiculos }] = await Promise.all([condQ, vehQ]);
+      const [{ data: conductores }, { data: vehiculos }, { data: servicios }] = await Promise.all([condQ, vehQ, servQ]);
 
       const list: Notif[] = [];
 
@@ -104,7 +113,48 @@ export function NotificationsBell() {
         }
       });
 
-      list.sort((a, b) => a.diasRestantes - b.diasRestantes);
+      servicios?.forEach((s) => {
+        const dias = diasHasta(s.fecha);
+        if (dias === null || dias > 7) return; // solo próximos 7 días
+        const sinConductor = !s.conductor || s.conductor.trim() === "";
+        const orden = s.numero_orden ? `OS ${s.numero_orden}` : `Servicio ${s.id.slice(0, 6)}`;
+        const cuando = dias < 0
+          ? `Atrasado ${Math.abs(dias)} d`
+          : dias === 0
+            ? `Hoy${s.hora ? ` ${s.hora}` : ""}`
+            : dias === 1
+              ? `Mañana${s.hora ? ` ${s.hora}` : ""}`
+              : `En ${dias} días`;
+        const ruta = [s.origen, s.destino].filter(Boolean).join(" → ");
+        if (sinConductor) {
+          list.push({
+            id: `serv-sc-${s.id}`,
+            tipo: "servicio_sin_conductor",
+            titulo: `URGENTE: ${orden} sin conductor`,
+            detalle: `${cuando}${ruta ? ` · ${ruta}` : ""} — Asignar conductor`,
+            // Forzar prioridad alta: tratamos como vencido (-1) si es hoy/mañana, o usar dias reales
+            diasRestantes: dias <= 1 ? -1 : dias,
+            to: "/servicios",
+            urgente: true,
+          });
+        } else {
+          list.push({
+            id: `serv-${s.id}`,
+            tipo: "servicio_programado",
+            titulo: `${orden} programado`,
+            detalle: `${cuando}${ruta ? ` · ${ruta}` : ""} · ${s.conductor}`,
+            diasRestantes: dias,
+            to: "/servicios",
+          });
+        }
+      });
+
+      list.sort((a, b) => {
+        // Urgentes (sin conductor) primero
+        if (a.urgente && !b.urgente) return -1;
+        if (!a.urgente && b.urgente) return 1;
+        return a.diasRestantes - b.diasRestantes;
+      });
       setNotifs(list);
     } finally {
       setLoading(false);
@@ -112,9 +162,12 @@ export function NotificationsBell() {
   }
 
   const count = notifs.length;
-  const criticas = notifs.filter((n) => n.diasRestantes < 0).length;
+  const urgentes = notifs.filter((n) => n.urgente).length;
+  const criticas = notifs.filter((n) => n.diasRestantes < 0 || n.urgente).length;
 
   function iconFor(n: Notif) {
+    if (n.tipo === "servicio_sin_conductor") return <UserPlus className="h-4 w-4 text-destructive" />;
+    if (n.tipo === "servicio_programado") return <CalendarClock className="h-4 w-4 text-primary" />;
     if (n.diasRestantes < 0) return <ShieldAlert className="h-4 w-4 text-destructive" />;
     if (n.diasRestantes <= 7) return <AlertTriangle className="h-4 w-4 text-destructive" />;
     return <FileWarning className="h-4 w-4 text-warning" />;
@@ -125,9 +178,9 @@ export function NotificationsBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="relative text-muted-foreground hover:text-foreground transition-colors"
-        aria-label="Notificaciones"
+        aria-label={`Notificaciones${urgentes > 0 ? ` — ${urgentes} urgentes` : ""}`}
       >
-        <Bell className="h-5 w-5" />
+        <Bell className={`h-5 w-5 ${urgentes > 0 ? "animate-pulse" : ""}`} />
         {count > 0 && (
           <span
             className={`absolute -top-1 -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[10px] font-bold text-destructive-foreground ${
@@ -145,7 +198,11 @@ export function NotificationsBell() {
             <div>
               <h4 className="text-sm font-semibold">Notificaciones</h4>
               <p className="text-[11px] text-muted-foreground">
-                {count === 0 ? "Sin alertas" : `${count} vencimiento${count > 1 ? "s" : ""} próximo${count > 1 ? "s" : ""}`}
+                {count === 0
+                  ? "Sin alertas"
+                  : urgentes > 0
+                    ? `${urgentes} urgente${urgentes > 1 ? "s" : ""} · ${count} en total`
+                    : `${count} alerta${count > 1 ? "s" : ""}`}
               </p>
             </div>
             <button
@@ -163,7 +220,7 @@ export function NotificationsBell() {
                 <CheckCircle2 className="h-8 w-8 text-success mb-2" />
                 <p className="text-sm text-foreground">Todo en orden</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  No hay licencias, SOAT o RTM por vencer en los próximos 30 días.
+                  No hay vencimientos ni servicios pendientes próximamente.
                 </p>
               </div>
             ) : (
@@ -172,14 +229,18 @@ export function NotificationsBell() {
                   key={n.id}
                   to={n.to}
                   onClick={() => setOpen(false)}
-                  className="flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-secondary/50 transition-colors"
+                  className={`flex items-start gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-secondary/50 transition-colors ${
+                    n.urgente ? "bg-destructive/5 border-l-2 border-l-destructive" : ""
+                  }`}
                 >
                   <div className="mt-0.5">{iconFor(n)}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{n.titulo}</p>
+                    <p className={`text-sm font-medium truncate ${n.urgente ? "text-destructive" : ""}`}>
+                      {n.titulo}
+                    </p>
                     <p
                       className={`text-xs ${
-                        n.diasRestantes < 0
+                        n.urgente || n.diasRestantes < 0
                           ? "text-destructive"
                           : n.diasRestantes <= 7
                             ? "text-destructive/80"
