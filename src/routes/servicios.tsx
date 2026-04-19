@@ -73,37 +73,6 @@ function Servicios() {
   const navigate = useNavigate();
   const { role, cliente, loading: authLoading } = useAuth();
   const [items, setItems] = useState<ServicioRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filtro, setFiltro] = useState("Todos");
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // If client user, force cliente value; admin can pick
-  const [form, setForm] = useState({
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
-    numero_orden: "",
-    fecha: new Date().toISOString().slice(0, 10),
-    hora: "08:00",
-    origen: "",
-    destino: "",
-    pasajero: "",
-    centro_costo: "",
-    conductor: "",
-    vehiculo: "",
-    estado: "Programado",
-  });
-
-  useEffect(() => {
-    if (!authLoading && !role) navigate({ to: "/login" });
-  }, [authLoading, role, navigate]);
-
-  useEffect(() => {
-    if (!role) return;
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role]);
-
-  const [items, setItems] = useState<ServicioRow[]>([]);
   const [conductoresAll, setConductoresAll] = useState<ConductorOpt[]>([]);
   const [vehiculosAll, setVehiculosAll] = useState<VehiculoOpt[]>([]);
   const [loading, setLoading] = useState(true);
