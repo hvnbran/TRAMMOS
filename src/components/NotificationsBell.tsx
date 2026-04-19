@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, AlertTriangle, FileWarning, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Bell, AlertTriangle, FileWarning, ShieldAlert, CheckCircle2, UserPlus, CalendarClock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
 type Notif = {
   id: string;
-  tipo: "licencia" | "soat" | "rtm";
+  tipo: "licencia" | "soat" | "rtm" | "servicio_sin_conductor" | "servicio_programado";
   titulo: string;
   detalle: string;
   diasRestantes: number;
   to: string;
+  urgente?: boolean;
 };
 
 function diasHasta(fechaISO: string | null): number | null {
