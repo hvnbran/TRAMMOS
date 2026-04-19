@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Loader2, Trash2, Car, FileText, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -32,11 +32,33 @@ interface VehiculoRow {
   conductor: string | null;
 }
 
+const EMPTY_FORM = {
+  cliente: "corona" as "corona" | "sodimac",
+  placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
+  num_interno: "", estado: "Disponible", vence_soat: "", vence_rtm: "", conductor: "",
+};
+
+function isVencido(fechaISO: string | null): boolean {
+  if (!fechaISO) return false;
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const f = new Date(fechaISO); f.setHours(0, 0, 0, 0);
+  return f.getTime() < hoy.getTime();
+}
+
+function estadoEfectivo(v: VehiculoRow): { estado: string; vencido: boolean; motivos: string[] } {
+  const motivos: string[] = [];
+  if (isVencido(v.vence_soat)) motivos.push("SOAT");
+  if (isVencido(v.vence_rtm)) motivos.push("Técnico mecánica");
+  if (motivos.length > 0) return { estado: "Inactivo", vencido: true, motivos };
+  return { estado: v.estado, vencido: false, motivos };
+}
+
 function estadoStyle(e: string) {
   switch (e) {
     case "Disponible": return "bg-success/15 text-success";
     case "En servicio": return "bg-primary/15 text-primary";
     case "En mantenimiento": return "bg-warning/15 text-warning";
+    case "Inactivo": return "bg-destructive/15 text-destructive";
     default: return "bg-muted text-muted-foreground";
   }
 }
@@ -49,11 +71,8 @@ function Vehiculos() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
-    placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
-    num_interno: "", estado: "Disponible", vence_soat: "", vence_rtm: "", conductor: "",
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
@@ -65,21 +84,53 @@ function Vehiculos() {
     setLoading(false);
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  function startCreate() {
+    setEditingId(null);
+    setForm({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+    setShowForm(true);
+  }
+
+  function startEdit(v: VehiculoRow) {
+    setEditingId(v.id);
+    setForm({
+      cliente: v.cliente,
+      placa: v.placa,
+      marca: v.marca ?? "",
+      linea: v.linea ?? "",
+      modelo: v.modelo ?? new Date().getFullYear(),
+      color: v.color ?? "",
+      num_interno: v.num_interno ?? "",
+      estado: v.estado,
+      vence_soat: v.vence_soat ?? "",
+      vence_rtm: v.vence_rtm ?? "",
+      conductor: v.conductor ?? "",
+    });
+    setShowForm(true);
+  }
+
+  function cancelForm() {
+    setShowForm(false);
+    setEditingId(null);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    const algunoVencido = isVencido(form.vence_soat || null) || isVencido(form.vence_rtm || null);
     const payload = {
       ...form,
       cliente: cliente ?? form.cliente,
       modelo: Number(form.modelo) || null,
       vence_soat: form.vence_soat || null,
       vence_rtm: form.vence_rtm || null,
+      estado: algunoVencido ? "Inactivo" : form.estado,
     };
-    const { error } = await supabase.from("vehiculos").insert(payload);
+    const { error } = editingId
+      ? await supabase.from("vehiculos").update(payload).eq("id", editingId)
+      : await supabase.from("vehiculos").insert(payload);
     setSaving(false);
     if (error) { alert(error.message); return; }
-    setShowForm(false);
-    setForm({ ...form, placa: "", marca: "", linea: "", color: "", num_interno: "", vence_soat: "", vence_rtm: "", conductor: "" });
+    cancelForm();
     load();
   }
 
@@ -98,13 +149,14 @@ function Vehiculos() {
             <h1 className="text-2xl font-bold flex items-center gap-2"><Car className="h-5 w-5" /> Vehículos</h1>
             <p className="text-sm text-muted-foreground">{role === "admin" ? "Todos los clientes" : `Cliente: ${cliente}`}</p>
           </div>
-          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <button onClick={() => showForm ? cancelForm() : startCreate()} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo Vehículo
           </button>
         </div>
 
         {showForm && (
-          <form onSubmit={handleCreate} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
+          <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
+            <p className="text-sm font-semibold">{editingId ? "Editar vehículo" : "Nuevo vehículo"}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {role === "admin" && (
                 <div>
@@ -126,13 +178,13 @@ function Vehiculos() {
               <div><label className="text-xs text-muted-foreground">Conductor asignado</label><input value={form.conductor} onChange={(e) => setForm({ ...form, conductor: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  {["Disponible", "En servicio", "En mantenimiento"].map((x) => <option key={x}>{x}</option>)}
+                  {["Disponible", "En servicio", "En mantenimiento", "Inactivo"].map((x) => <option key={x}>{x}</option>)}
                 </select>
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-md text-sm text-muted-foreground">Cancelar</button>
-              <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : "Guardar"}</button>
+              <button type="button" onClick={cancelForm} className="px-4 py-2 rounded-md text-sm text-muted-foreground">Cancelar</button>
+              <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}</button>
             </div>
           </form>
         )}
@@ -143,50 +195,61 @@ function Vehiculos() {
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay vehículos registrados.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((v, i) => (
-              <div
-                key={v.id}
-                className="stagger-item rounded-lg border border-border bg-card p-4"
-                style={{ ["--i" as string]: i } as React.CSSProperties}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-bold text-lg">{v.placa}</p>
-                    <p className="text-xs text-muted-foreground">{v.marca} {v.linea} {v.modelo}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(v.estado)}`}>{v.estado}</span>
-                    <button onClick={() => handleDelete(v.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
-                  <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
-                  <div><span className="text-muted-foreground">SOAT</span><p>{v.vence_soat || "—"}</p></div>
-                  <div><span className="text-muted-foreground">RTM</span><p>{v.vence_rtm || "—"}</p></div>
-                  <div className="col-span-2"><span className="text-muted-foreground">Conductor</span><p>{v.conductor || "Sin asignar"}</p></div>
-                  {role === "admin" && <div className="col-span-2"><span className="text-muted-foreground">Cliente</span><p className="capitalize">{v.cliente}</p></div>}
-                </div>
-                <button
-                  onClick={() => setExpanded(expanded === v.id ? null : v.id)}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+            {items.map((v, i) => {
+              const { estado: eff, vencido, motivos } = estadoEfectivo(v);
+              const soatVenc = isVencido(v.vence_soat);
+              const rtmVenc = isVencido(v.vence_rtm);
+              return (
+                <div
+                  key={v.id}
+                  className={`stagger-item rounded-lg border bg-card p-4 ${vencido ? "border-destructive/40" : "border-border"}`}
+                  style={{ ["--i" as string]: i } as React.CSSProperties}
                 >
-                  <FileText className="h-3.5 w-3.5" />
-                  Documentos
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === v.id ? "rotate-180" : ""}`} />
-                </button>
-                {expanded === v.id && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <DocumentManager
-                      kind="vehiculo"
-                      entityId={v.id}
-                      cliente={v.cliente}
-                      tipos={TIPOS_VEHICULO}
-                    />
+                  <div className="flex items-start justify-between">
+                    <div className={vencido ? "opacity-70" : ""}>
+                      <p className={`font-bold text-lg ${vencido ? "line-through" : ""}`}>{v.placa}</p>
+                      <p className="text-xs text-muted-foreground">{v.marca} {v.linea} {v.modelo}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(eff)}`}>{eff}</span>
+                      <button onClick={() => startEdit(v)} className="text-muted-foreground hover:text-primary" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleDelete(v.id)} className="text-muted-foreground hover:text-destructive" title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  {vencido && (
+                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-destructive">
+                      <AlertTriangle className="h-3 w-3" /> {motivos.join(" y ")} vencido — actualice la fecha para reactivar
+                    </div>
+                  )}
+                  <div className={`mt-3 grid grid-cols-2 gap-2 text-xs ${vencido ? "opacity-70" : ""}`}>
+                    <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
+                    <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
+                    <div><span className="text-muted-foreground">SOAT</span><p className={soatVenc ? "text-destructive font-medium" : ""}>{v.vence_soat || "—"}</p></div>
+                    <div><span className="text-muted-foreground">RTM</span><p className={rtmVenc ? "text-destructive font-medium" : ""}>{v.vence_rtm || "—"}</p></div>
+                    <div className="col-span-2"><span className="text-muted-foreground">Conductor</span><p>{v.conductor || "Sin asignar"}</p></div>
+                    {role === "admin" && <div className="col-span-2"><span className="text-muted-foreground">Cliente</span><p className="capitalize">{v.cliente}</p></div>}
+                  </div>
+                  <button
+                    onClick={() => setExpanded(expanded === v.id ? null : v.id)}
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Documentos
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === v.id ? "rotate-180" : ""}`} />
+                  </button>
+                  {expanded === v.id && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <DocumentManager
+                        kind="vehiculo"
+                        entityId={v.id}
+                        cliente={v.cliente}
+                        tipos={TIPOS_VEHICULO}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

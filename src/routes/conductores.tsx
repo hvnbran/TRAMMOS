@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Loader2, Trash2, Users, FileText, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Users, FileText, ChevronDown, Pencil, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -31,6 +31,24 @@ interface ConductorRow {
   cumplimiento: number | null;
 }
 
+const EMPTY_FORM = {
+  cliente: "corona" as "corona" | "sodimac",
+  nombre: "", cedula: "", telefono: "", licencia: "", categoria_lic: "C1",
+  estado: "Activo", vence_licencia: "",
+};
+
+function isVencido(fechaISO: string | null): boolean {
+  if (!fechaISO) return false;
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const f = new Date(fechaISO); f.setHours(0, 0, 0, 0);
+  return f.getTime() < hoy.getTime();
+}
+
+function estadoEfectivo(c: ConductorRow): string {
+  if (isVencido(c.vence_licencia)) return "Vencido";
+  return c.estado;
+}
+
 function estadoStyle(e: string) {
   switch (e) {
     case "Activo": return "bg-success/15 text-success";
@@ -48,11 +66,8 @@ function Conductores() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
-    nombre: "", cedula: "", telefono: "", licencia: "", categoria_lic: "C1",
-    estado: "Activo", vence_licencia: "",
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
@@ -64,15 +79,48 @@ function Conductores() {
     setLoading(false);
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  function startCreate() {
+    setEditingId(null);
+    setForm({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+    setShowForm(true);
+  }
+
+  function startEdit(c: ConductorRow) {
+    setEditingId(c.id);
+    setForm({
+      cliente: c.cliente,
+      nombre: c.nombre,
+      cedula: c.cedula ?? "",
+      telefono: c.telefono ?? "",
+      licencia: c.licencia ?? "",
+      categoria_lic: c.categoria_lic ?? "C1",
+      estado: c.estado,
+      vence_licencia: c.vence_licencia ?? "",
+    });
+    setShowForm(true);
+  }
+
+  function cancelForm() {
+    setShowForm(false);
+    setEditingId(null);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const payload = { ...form, cliente: cliente ?? form.cliente, vence_licencia: form.vence_licencia || null };
-    const { error } = await supabase.from("conductores").insert(payload);
+    const payload = {
+      ...form,
+      cliente: cliente ?? form.cliente,
+      vence_licencia: form.vence_licencia || null,
+      // Si la licencia ya está vencida, fuerza estado Vencido al guardar
+      estado: isVencido(form.vence_licencia || null) ? "Vencido" : form.estado,
+    };
+    const { error } = editingId
+      ? await supabase.from("conductores").update(payload).eq("id", editingId)
+      : await supabase.from("conductores").insert(payload);
     setSaving(false);
     if (error) { alert(error.message); return; }
-    setShowForm(false);
-    setForm({ ...form, nombre: "", cedula: "", telefono: "", licencia: "", vence_licencia: "" });
+    cancelForm();
     load();
   }
 
@@ -91,13 +139,14 @@ function Conductores() {
             <h1 className="text-2xl font-bold flex items-center gap-2"><Users className="h-5 w-5" /> Conductores</h1>
             <p className="text-sm text-muted-foreground">{role === "admin" ? "Todos los clientes" : `Cliente: ${cliente}`}</p>
           </div>
-          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <button onClick={() => showForm ? cancelForm() : startCreate()} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo Conductor
           </button>
         </div>
 
         {showForm && (
-          <form onSubmit={handleCreate} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
+          <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
+            <p className="text-sm font-semibold">{editingId ? "Editar conductor" : "Nuevo conductor"}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {role === "admin" && (
                 <div>
@@ -125,8 +174,8 @@ function Conductores() {
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-md text-sm text-muted-foreground">Cancelar</button>
-              <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : "Guardar"}</button>
+              <button type="button" onClick={cancelForm} className="px-4 py-2 rounded-md text-sm text-muted-foreground">Cancelar</button>
+              <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}</button>
             </div>
           </form>
         )}
@@ -137,48 +186,58 @@ function Conductores() {
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay conductores registrados.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((c, i) => (
-              <div
-                key={c.id}
-                className="stagger-item rounded-lg border border-border bg-card p-4"
-                style={{ ["--i" as string]: i } as React.CSSProperties}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold">{c.nombre}</p>
-                    <p className="text-xs text-muted-foreground">{c.cedula || "Sin cédula"}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(c.estado)}`}>{c.estado}</span>
-                    <button onClick={() => handleDelete(c.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-muted-foreground">Teléfono</span><p>{c.telefono || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Licencia</span><p>{c.licencia || "—"} · {c.categoria_lic}</p></div>
-                  <div><span className="text-muted-foreground">Vence</span><p>{c.vence_licencia || "—"}</p></div>
-                  {role === "admin" && <div><span className="text-muted-foreground">Cliente</span><p className="capitalize">{c.cliente}</p></div>}
-                </div>
-                <button
-                  onClick={() => setExpanded(expanded === c.id ? null : c.id)}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+            {items.map((c, i) => {
+              const eff = estadoEfectivo(c);
+              const vencido = eff === "Vencido";
+              return (
+                <div
+                  key={c.id}
+                  className={`stagger-item rounded-lg border bg-card p-4 ${vencido ? "border-destructive/40" : "border-border"}`}
+                  style={{ ["--i" as string]: i } as React.CSSProperties}
                 >
-                  <FileText className="h-3.5 w-3.5" />
-                  Documentos
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === c.id ? "rotate-180" : ""}`} />
-                </button>
-                {expanded === c.id && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <DocumentManager
-                      kind="conductor"
-                      entityId={c.id}
-                      cliente={c.cliente}
-                      tipos={TIPOS_CONDUCTOR}
-                    />
+                  <div className="flex items-start justify-between">
+                    <div className={vencido ? "opacity-70" : ""}>
+                      <p className={`font-semibold ${vencido ? "line-through" : ""}`}>{c.nombre}</p>
+                      <p className="text-xs text-muted-foreground">{c.cedula || "Sin cédula"}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(eff)}`}>{eff}</span>
+                      <button onClick={() => startEdit(c)} className="text-muted-foreground hover:text-primary" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleDelete(c.id)} className="text-muted-foreground hover:text-destructive" title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  {vencido && (
+                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-destructive">
+                      <AlertTriangle className="h-3 w-3" /> Licencia vencida — actualice la fecha para reactivar
+                    </div>
+                  )}
+                  <div className={`mt-3 grid grid-cols-2 gap-2 text-xs ${vencido ? "opacity-70" : ""}`}>
+                    <div><span className="text-muted-foreground">Teléfono</span><p>{c.telefono || "—"}</p></div>
+                    <div><span className="text-muted-foreground">Licencia</span><p>{c.licencia || "—"} · {c.categoria_lic}</p></div>
+                    <div><span className="text-muted-foreground">Vence</span><p className={isVencido(c.vence_licencia) ? "text-destructive font-medium" : ""}>{c.vence_licencia || "—"}</p></div>
+                    {role === "admin" && <div><span className="text-muted-foreground">Cliente</span><p className="capitalize">{c.cliente}</p></div>}
+                  </div>
+                  <button
+                    onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Documentos
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === c.id ? "rotate-180" : ""}`} />
+                  </button>
+                  {expanded === c.id && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <DocumentManager
+                        kind="conductor"
+                        entityId={c.id}
+                        cliente={c.cliente}
+                        tipos={TIPOS_CONDUCTOR}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
