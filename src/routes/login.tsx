@@ -175,12 +175,6 @@ function LoginPage() {
             </button>
           </form>
 
-          <div className="text-center text-xs text-muted-foreground space-y-1">
-            <p><strong>Usuarios demo:</strong></p>
-            <p>Corona / CoronaAdmin123</p>
-            <p>Sodimac / SodimacAdmin123</p>
-            <p>Admin / AdministrativosTrammos123</p>
-          </div>
         </div>
       </div>
 
