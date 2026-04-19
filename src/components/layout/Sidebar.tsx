@@ -64,10 +64,15 @@ export function Sidebar() {
 
   return (
     <aside
+      aria-label="Navegación principal"
       className={`flex flex-col bg-sidebar-bg border-r border-sidebar-border transition-all duration-300 ${collapsed ? "w-[68px]" : "w-[240px]"}`}
     >
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-        <img src={brand.logo} alt={brand.name} className={`h-9 w-9 ${brand.rounded} object-contain bg-white p-0.5 shrink-0`} />
+        <img
+          src={brand.logo}
+          alt={`Logo ${brand.name}`}
+          className={`h-9 w-9 ${brand.rounded} object-contain bg-white p-0.5 shrink-0`}
+        />
         {!collapsed && (
           <div className="overflow-hidden">
             <span className="text-base font-bold tracking-tight" style={{ color: "oklch(0.95 0.005 220)" }}>
@@ -80,7 +85,7 @@ export function Sidebar() {
         )}
       </div>
 
-      <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+      <nav role="navigation" aria-label="Menú principal" className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = item.exact
             ? location.pathname === item.to
@@ -90,6 +95,8 @@ export function Sidebar() {
               key={item.to}
               to={item.to}
               preload="intent"
+              aria-current={isActive ? "page" : undefined}
+              aria-label={item.label}
               className={`sidebar-item ${isActive ? "sidebar-item-active" : ""} flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
@@ -97,10 +104,13 @@ export function Sidebar() {
               }`}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className={`sidebar-icon h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
+              <item.icon
+                className={`sidebar-icon h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`}
+                aria-hidden="true"
+              />
               {!collapsed && <span className="sidebar-label">{item.label}</span>}
               {isActive && !collapsed && (
-                <div className="sidebar-dot ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
+                <div className="sidebar-dot ml-auto h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
               )}
             </Link>
           );
@@ -109,18 +119,25 @@ export function Sidebar() {
 
       <button
         onClick={() => signOut()}
+        aria-label="Cerrar sesión"
         className="flex items-center gap-3 px-4 h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-destructive transition-colors text-sm"
         title="Cerrar sesión"
       >
-        <LogOut className="h-4 w-4 shrink-0" />
+        <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
         {!collapsed && <span>Cerrar sesión</span>}
       </button>
 
       <button
         onClick={() => setCollapsed(!collapsed)}
+        aria-label={collapsed ? "Expandir menú lateral" : "Contraer menú lateral"}
+        aria-expanded={!collapsed}
         className="flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-foreground hover:text-sidebar-accent-foreground transition-colors"
       >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        {collapsed ? (
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        )}
       </button>
     </aside>
   );

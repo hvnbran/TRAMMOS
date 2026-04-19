@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AuthProvider, useAuth } from "../lib/auth-context";
+import { A11yProvider } from "../lib/a11y-context";
+import { ColorBlindFilters } from "../components/layout/ColorBlindFilters";
 
 function NotFoundComponent() {
   return (
@@ -105,8 +107,11 @@ function AuthGate() {
 
 function RootComponent() {
   return (
-    <AuthProvider>
-      <AuthGate />
-    </AuthProvider>
+    <A11yProvider>
+      <AuthProvider>
+        <ColorBlindFilters />
+        <AuthGate />
+      </AuthProvider>
+    </A11yProvider>
   );
 }
