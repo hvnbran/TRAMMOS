@@ -103,16 +103,70 @@ function Servicios() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
+  const [items, setItems] = useState<ServicioRow[]>([]);
+  const [conductoresAll, setConductoresAll] = useState<ConductorOpt[]>([]);
+  const [vehiculosAll, setVehiculosAll] = useState<VehiculoOpt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState("Todos");
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // ... keep existing code (form state)
+  const [form, setForm] = useState({
+    cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    numero_orden: "",
+    fecha: new Date().toISOString().slice(0, 10),
+    hora: "08:00",
+    origen: "",
+    destino: "",
+    pasajero: "",
+    centro_costo: "",
+    conductor: "",
+    vehiculo: "",
+    estado: "Programado",
+  });
+
+  useEffect(() => {
+    if (!authLoading && !role) navigate({ to: "/login" });
+  }, [authLoading, role, navigate]);
+
+  useEffect(() => {
+    if (!role) return;
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
+
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("servicios")
-      .select("*")
-      .order("fecha", { ascending: false })
-      .order("hora", { ascending: false });
-    if (!error && data) setItems(data as ServicioRow[]);
+    const [serviciosRes, conductoresRes, vehiculosRes] = await Promise.all([
+      supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
+      supabase.from("conductores").select("id,nombre,cliente,estado,vence_licencia"),
+      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,estado,vence_soat,vence_rtm"),
+    ]);
+    if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
+    if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
+    if (!vehiculosRes.error && vehiculosRes.data) setVehiculosAll(vehiculosRes.data as VehiculoOpt[]);
     setLoading(false);
   }
+
+  const conductoresDisponibles = useMemo(() => {
+    const clienteForm = cliente ?? form.cliente;
+    return conductoresAll.filter((c) =>
+      c.cliente === clienteForm &&
+      c.estado !== "Inactivo" &&
+      !isVencido(c.vence_licencia)
+    );
+  }, [conductoresAll, cliente, form.cliente]);
+
+  const vehiculosDisponibles = useMemo(() => {
+    const clienteForm = cliente ?? form.cliente;
+    return vehiculosAll.filter((v) =>
+      v.cliente === clienteForm &&
+      v.estado !== "Inactivo" &&
+      !isVencido(v.vence_soat) &&
+      !isVencido(v.vence_rtm)
+    );
+  }, [vehiculosAll, cliente, form.cliente]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
