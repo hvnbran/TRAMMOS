@@ -1,78 +1,61 @@
 
 
-## Recomendación: TRAMMOS Accesible — Valor agregado para inclusión
+## Plan: Dos presentaciones PPTX ejecutivas — TRAMMOS Accesible para Corona y Sodimac
 
-Esta es una **recomendación estratégica + plan técnico**. La accesibilidad no es solo ética: es un **diferenciador comercial** frente a Corona, Sodimac y futuros clientes corporativos que tienen políticas de inclusión (ESG, sostenibilidad social).
+Generaré **dos archivos PPTX separados**, uno por cliente, con cifras adaptadas a su tamaño y contexto. Ambas usarán la identidad visual TRAMMOS (cyan #00B8DE, lime #C5E86C, gris oscuro K:70) y se entregarán en `/mnt/documents/`.
 
-### Marco legal y argumento comercial
+### Estructura común (10 slides cada una)
 
-- **Ley 1618 de 2013** (Colombia): obliga a garantizar el ejercicio efectivo de los derechos de personas con discapacidad, incluyendo acceso a TIC.
-- **NTC 5854** (norma técnica colombiana): basada en WCAG 2.1, exige nivel AA para aplicaciones digitales.
-- **WCAG 2.1 AA** (estándar internacional): requerido por empresas con políticas ESG.
-- **Argumento de venta**: "TRAMMOS es la única plataforma de transporte especial en Colombia certificada accesible WCAG 2.1 AA, lo que les permite cumplir con políticas de inclusión y reportar en sus indicadores ESG."
+1. **Portada** — Logo TRAMMOS + "Caso de Negocio: Accesibilidad como ROI" + nombre del cliente
+2. **El problema** — Costo de NO ser accesible (multas Ley 1618, exclusión de licitaciones, pérdida ESG)
+3. **Marco regulatorio** — Tabla Ley 1618, Resolución 1519, Decreto 1421, NTC 5854 con sanciones cuantificadas
+4. **Beneficio tributario directo** — Deducción 200% Ley 361 con cálculo específico para el cliente
+5. **Mercado desbloqueado** — Estadísticas DANE (3.1M discapacidad, 6.8M adultos mayores) aplicadas al cliente
+6. **Reducción de costos operativos** — Tabla comparativa SIN vs CON TRAMMOS Accesible
+7. **Impacto ESG y costo de capital** — Cifras de rating MSCI aplicadas al tamaño del cliente
+8. **Resumen ROI** — Slide de impacto con número grande: "Por cada $1 invertido, recupera $X"
+9. **Cómo lo entregamos** — Las funciones reales ya implementadas en TRAMMOS (panel de accesibilidad, lectura por voz, alto contraste, modo simple, daltonismo, navegación por teclado)
+10. **Cierre** — Llamado a la acción + datos de contacto
 
-### Quién se beneficia y cómo
+### Diferencias por cliente
 
-| Usuario | Necesidad | Solución TRAMMOS |
-|---|---|---|
-| Adultos mayores | Vista cansada, manos temblorosas | Modo "Texto grande" + botones de mínimo 44px |
-| Personas ciegas | Lectores de pantalla (NVDA, JAWS, VoiceOver) | Etiquetas ARIA, navegación por teclado, alt text |
-| Baja visión | Bajo contraste | Modo "Alto contraste" + zoom hasta 200% |
-| Personas sordas | Notificaciones auditivas | Alertas visuales (banners + parpadeo) en lugar de solo sonido |
-| Daltonismo | Confusión rojo/verde | Iconos + texto en estados (no solo color) |
-| Discapacidad motriz | Solo teclado | Focus visible + atajos Alt+1, Alt+2... |
-| Tercera edad | Confusión con interfaces complejas | Modo "Simple" con menús más grandes y menos opciones |
+**Corona** (manufactura, ~14.000 empleados, ingresos ~$3 billones COP):
+- Cifras grandes en costo de capital (~$24-36 mil millones/año por mejora ESG)
+- Foco en transporte de personal a plantas (Madrid, Sopó, Girardota)
+- Beneficio tributario sobre 50-100 empleados con discapacidad potenciales
+- Paleta: cyan dominante (corporativo, manufactura)
 
-### Plan técnico (3 fases)
+**Sodimac** (retail, ~8.000 empleados, alta rotación):
+- Foco en transporte a 40+ tiendas en Colombia
+- Costo de rotación reducido como argumento principal
+- Inclusión de cuidadores y adultos mayores como segmento de clientes finales
+- Cifras de licitaciones con grandes superficies y contratos públicos
+- Paleta: lime más presente (retail, energía, dinamismo)
 
-**Fase 1 — Fundamentos accesibles (base WCAG AA)**
-1. Agregar `lang="es"` (ya está) y atributos ARIA en sidebar, header, formularios y tablas (`role="navigation"`, `aria-label`, `aria-current`, `aria-live` para notificaciones).
-2. Asegurar **focus visible** en todos los elementos interactivos (anillo cyan claro, mínimo 2px).
-3. Agregar **skip link** "Saltar al contenido principal" (visible al tabular).
-4. Verificar contraste de los colores actuales (cyan #00B8DE sobre blanco puede no pasar AA en texto pequeño) y ajustar variantes en `styles.css` solo donde falle.
-5. Reemplazar todos los iconos-botón sin texto con `aria-label`.
-6. Agregar `alt` descriptivo a logos e imágenes.
+### Diseño visual
 
-**Fase 2 — Panel de Accesibilidad (botón flotante visible siempre)**
+- Tema "Charcoal Minimal" + acentos cyan/lime TRAMMOS
+- Tipografía: Calibri títulos bold + Calibri Light cuerpo
+- Cada slide con elemento visual: tablas de ROI, callouts con cifras grandes (60-72pt), iconos en círculos cyan
+- Layouts variados: dos columnas, grid 2x2, stat callouts grandes, comparativos antes/después
+- Imágenes embebidas como base64 (logo TRAMMOS desde `src/assets/logo-trammos.jpeg`)
 
-Crear un **botón flotante en la esquina inferior derecha** (icono de persona con brazos abiertos, universalmente reconocido) que abra un panel con:
+### Proceso técnico
 
-- **Tamaño de texto**: Normal / Grande / Muy grande (multiplica `font-size` raíz).
-- **Alto contraste**: alterna a tema blanco/negro puro con bordes gruesos.
-- **Modo daltonismo**: filtros CSS (protanopia, deuteranopia, tritanopia).
-- **Reducir movimiento**: respeta `prefers-reduced-motion` y desactiva animaciones (incluyendo el splash de login y el stagger del dashboard).
-- **Subrayar enlaces**: añade `text-decoration` a todos los `<Link>`.
-- **Espaciado amplio**: aumenta padding y line-height.
-- **Modo simple**: oculta columnas no esenciales en tablas y agranda botones (útil para tercera edad).
-- **Cursor grande**: aumenta el tamaño del cursor con CSS.
+1. Leer logo TRAMMOS y paleta de colores oficial desde `mem://design/brand-colors`
+2. Generar `trammos_accesible_corona.pptx` y `trammos_accesible_sodimac.pptx` con `pptxgenjs`
+3. **QA obligatorio**: convertir cada PPTX a PDF con LibreOffice → imágenes con `pdftoppm` → inspeccionar TODAS las slides (overflow, contraste, alineación, ortografía de cifras)
+4. Iterar hasta que ambas presentaciones estén impecables
+5. Entregar con tags `<lov-artifact>`
 
-Las preferencias se guardan en `localStorage` y se aplican como clase en `<html>` (`a11y-large-text`, `a11y-high-contrast`, etc.) con reglas en `styles.css`.
+### Entregables finales
 
-**Fase 3 — Inclusión específica del dominio**
-- **Notificaciones multicanal**: cada alerta del `NotificationsBell` muestra banner visual + (opcional) vibración en móvil + notificación push del navegador, no solo sonido.
-- **Lectura por voz** (Web Speech API, gratis): botón "Escuchar" en cada tarjeta KPI del dashboard y en detalles de servicio, útil para personas ciegas o con baja alfabetización digital.
-- **Modo conductor sénior**: vista simplificada para que conductores mayores reciban su asignación del día con tipografía grande y un solo botón "Iniciar ruta".
-- **Documentación accesible**: los PDFs generados en `lib/reportes/pdf.ts` deben incluir metadatos (title, author, lang) y estructura tagged-PDF para lectores de pantalla.
+- `/mnt/documents/trammos_accesible_corona.pptx`
+- `/mnt/documents/trammos_accesible_sodimac.pptx`
 
-### Archivos a tocar (cuando apruebes)
+### Lo que NO hace este plan
 
-- `src/styles.css` — añadir clases `.a11y-*`, mejorar focus rings, ajustes de contraste.
-- `src/components/layout/AccessibilityPanel.tsx` (nuevo) — panel flotante con todos los controles.
-- `src/lib/a11y-context.tsx` (nuevo) — contexto que persiste preferencias en localStorage.
-- `src/routes/__root.tsx` — montar `A11yProvider` y aplicar clases al `<html>`.
-- `src/components/layout/AppLayout.tsx` — agregar skip link y botón flotante.
-- `src/components/layout/Sidebar.tsx` — atributos ARIA + `aria-current`.
-- `src/components/NotificationsBell.tsx` — `aria-live="polite"` y banners visuales.
-- `src/lib/reportes/pdf.ts` — metadatos accesibles en PDFs.
-
-### Mi recomendación
-
-**Empieza por Fase 1 + Fase 2** (1–2 días de trabajo). Esto te da:
-- Cumplimiento legal con Ley 1618 / NTC 5854.
-- Un panel de accesibilidad **visible**, que es lo que clientes corporativos quieren ver en una demo.
-- Argumento sólido para licitaciones: "Cumplimos WCAG 2.1 AA y Ley 1618".
-
-La Fase 3 (lectura por voz, modo conductor sénior) la puedes vender como **módulo Premium** o incluirla según el cliente.
-
-¿Quieres que arranque con **Fase 1 + Fase 2** ahora?
+- No modifica código de la aplicación TRAMMOS (las funciones de accesibilidad ya están implementadas en Fases 1, 2 y 3 anteriores)
+- No requiere base de datos ni edge functions
+- Es un entregable comercial puro para tu equipo de ventas
 
