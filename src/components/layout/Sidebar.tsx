@@ -29,6 +29,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/conductores", icon: Users, label: "Conductores" },
   { to: "/vehiculos", icon: Car, label: "Vehículos" },
+  { to: "/pasajeros-pcd", icon: Accessibility, label: "Pasajeros PCD" },
   { to: "/operacion", icon: MapPin, label: "Operación" },
   { to: "/servicios", icon: RouteIcon, label: "Servicios" },
   { to: "/cumplimiento", icon: ClipboardCheck, label: "Cumplimiento ANS" },
@@ -40,12 +41,13 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/alertas", icon: Bell, label: "Alertas" },
 ];
 
-// Corona y Sodimac sólo ven estas 4
+// Corona y Sodimac sólo ven estas
 const CLIENT_NAV: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/servicios", icon: RouteIcon, label: "Servicios" },
   { to: "/conductores", icon: Users, label: "Conductores" },
   { to: "/vehiculos", icon: Car, label: "Vehículos" },
+  { to: "/pasajeros-pcd", icon: Accessibility, label: "Pasajeros PCD" },
   { to: "/feedback", icon: Star, label: "Feedback" },
 ];
 
