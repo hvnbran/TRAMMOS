@@ -60,6 +60,7 @@ interface ServicioRow {
   conductor: string | null;
   vehiculo: string | null;
   estado: string;
+  pasajero_pcd_id: string | null;
 }
 
 function estadoStyle(e: string) {
