@@ -158,18 +158,70 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
 
       {adding && (
         <div className="rounded-md border border-primary/30 p-2 space-y-2 bg-primary/5">
+          {/* Filtros por estado */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Filter className="h-3 w-3" /> Filtrar por estado:
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {([
+                { key: "aptos", label: `Aptos (${conteoEstados.Activo})`, cls: "bg-success/15 text-success border-success/30" },
+                { key: "todos", label: `Todos (${conductoresDisponibles.length})`, cls: "bg-secondary text-foreground border-border" },
+                { key: "Suspendido", label: `Suspendidos (${conteoEstados.Suspendido})`, cls: "bg-warning/15 text-warning border-warning/30" },
+                { key: "Vencido", label: `Vencidos (${conteoEstados.Vencido})`, cls: "bg-destructive/15 text-destructive border-destructive/30" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => { setFiltro(opt.key); setSelectedConductor(""); }}
+                  className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
+                    filtro === opt.key ? opt.cls + " ring-1 ring-current" : "bg-background text-muted-foreground border-border hover:bg-secondary"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <select
             value={selectedConductor}
             onChange={(e) => setSelectedConductor(e.target.value)}
             className="w-full text-xs rounded border border-input bg-background px-2 py-1.5"
           >
-            <option value="">Selecciona conductor...</option>
-            {conductoresDisponibles.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nombre} {c.cedula ? `(${c.cedula})` : ""}
-              </option>
-            ))}
+            <option value="">
+              {conductoresFiltrados.length === 0
+                ? "— Sin conductores que coincidan —"
+                : `Selecciona conductor... (${conductoresFiltrados.length})`}
+            </option>
+            {conductoresFiltrados.map((c) => {
+              const eff = estadoEfectivoCond(c);
+              const marca = eff === "Activo" ? "✓" : eff === "Suspendido" ? "⚠" : "✗";
+              return (
+                <option key={c.id} value={c.id}>
+                  {marca} {c.nombre} {c.cedula ? `(${c.cedula})` : ""} — {eff}
+                </option>
+              );
+            })}
           </select>
+
+          {/* Advertencia si el conductor seleccionado no es apto */}
+          {conductorSeleccionado && !esApto && (
+            <div className="flex items-start gap-1.5 text-[10px] px-2 py-1.5 rounded border border-warning/40 bg-warning/10 text-warning">
+              <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+              <p>
+                Este conductor está <strong>{estadoSel}</strong> y no se considera apto para asignación.
+                Verifica su licencia o estado antes de continuar.
+              </p>
+            </div>
+          )}
+          {conductorSeleccionado && esApto && (
+            <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded border border-success/40 bg-success/10 text-success">
+              <CheckCircle2 className="h-3 w-3 shrink-0" />
+              Conductor apto para asignación
+            </div>
+          )}
+
           <label className="flex items-center gap-1.5 text-[11px]">
             <input
               type="checkbox"
@@ -180,7 +232,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
           </label>
           <div className="flex gap-1.5 justify-end">
             <button
-              onClick={() => { setAdding(false); setSelectedConductor(""); }}
+              onClick={() => { setAdding(false); setSelectedConductor(""); setFiltro("aptos"); }}
               className="text-[11px] px-2 py-1 rounded text-muted-foreground"
             >
               Cancelar
@@ -190,7 +242,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
               disabled={!selectedConductor || saving}
               className="text-[11px] px-2 py-1 rounded bg-primary text-primary-foreground disabled:opacity-50"
             >
-              {saving ? "Guardando..." : "Asignar"}
+              {saving ? "Guardando..." : esApto ? "Asignar" : "Asignar de todos modos"}
             </button>
           </div>
         </div>
