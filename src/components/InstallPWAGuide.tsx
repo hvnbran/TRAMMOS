@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Share, Plus, MoreVertical, Download, Smartphone, Apple, Chrome, Globe } from "lucide-react";
+import { X, Share, Plus, MoreVertical, Download, Smartphone, Apple, Monitor, Globe } from "lucide-react";
 
 type Platform = "ios-safari" | "ios-chrome" | "android-chrome" | "android-samsung" | "android-firefox" | "desktop" | "unknown";
 
