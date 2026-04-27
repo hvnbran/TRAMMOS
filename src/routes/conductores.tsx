@@ -145,6 +145,13 @@ function Conductores() {
     load();
   }
 
+  const itemsFiltrados = items.filter((c) => {
+    const cs = (c.clientes && c.clientes.length > 0) ? c.clientes : (c.cliente ? [c.cliente] : []);
+    if (filtroCliente === "todos") return true;
+    if (filtroCliente === "sin_asignar") return cs.length === 0;
+    return cs.includes(filtroCliente);
+  });
+
   return (
     <AppLayout>
       <div className="space-y-5">
@@ -156,6 +163,26 @@ function Conductores() {
           <button onClick={() => showForm ? cancelForm() : startCreate()} className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo Conductor
           </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Filtrar:</span>
+          {([
+            { v: "todos", l: "Todos" },
+            { v: "corona", l: "Corona" },
+            { v: "sodimac", l: "Sodimac" },
+            { v: "sin_asignar", l: "Sin asignar" },
+          ] as const).map((opt) => (
+            <button
+              key={opt.v}
+              type="button"
+              onClick={() => setFiltroCliente(opt.v)}
+              className={`px-2.5 py-1 rounded-full border ${filtroCliente === opt.v ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-secondary/40"}`}
+            >
+              {opt.l}
+            </button>
+          ))}
+          <span className="text-muted-foreground ml-auto">{itemsFiltrados.length} de {items.length}</span>
         </div>
 
         {showForm && (
