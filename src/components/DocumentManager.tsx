@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Download, Trash2, FileText, Loader2, Eye } from "lucide-react";
+import {
+  Upload, Download, Trash2, FileText, Loader2, Eye, X, Sparkles,
+  AlertTriangle, CheckCircle2, Clock, Calendar,
+} from "lucide-react";
 
 export type DocKind = "conductor" | "vehiculo";
 
@@ -12,14 +15,23 @@ interface DocItem {
   mime_type: string | null;
   size_bytes: number | null;
   created_at: string;
+  fecha_vencimiento: string | null;
+  fecha_emision: string | null;
+  numero_documento: string | null;
+  verificado: boolean;
+}
+
+interface TipoDef {
+  value: string;
+  label: string;
+  obligatorio?: boolean;
 }
 
 interface Props {
   kind: DocKind;
   entityId: string;
   cliente: "corona" | "sodimac";
-  /** [{value,label}] tipos permitidos */
-  tipos: { value: string; label: string }[];
+  tipos: TipoDef[];
 }
 
 const TABLE = {
@@ -44,10 +56,59 @@ function formatSize(b: number | null) {
   return `${(b / 1024 / 1024).toFixed(1)} MB`;
 }
 
+type EstadoVenc = "vigente" | "por_vencer" | "vencido" | "sin_fecha";
+
+function estadoVencimiento(fechaISO: string | null): { estado: EstadoVenc; dias: number | null } {
+  if (!fechaISO) return { estado: "sin_fecha", dias: null };
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const f = new Date(fechaISO);
+  f.setHours(0, 0, 0, 0);
+  const diffMs = f.getTime() - hoy.getTime();
+  const dias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (dias < 0) return { estado: "vencido", dias };
+  if (dias <= 30) return { estado: "por_vencer", dias };
+  return { estado: "vigente", dias };
+}
+
+function VencimientoBadge({ fecha }: { fecha: string | null }) {
+  const { estado, dias } = estadoVencimiento(fecha);
+  if (estado === "sin_fecha") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+        <Calendar className="h-2.5 w-2.5" /> Sin fecha
+      </span>
+    );
+  }
+  if (estado === "vencido") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive font-medium">
+        <AlertTriangle className="h-2.5 w-2.5" /> Vencido hace {Math.abs(dias!)}d
+      </span>
+    );
+  }
+  if (estado === "por_vencer") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-medium">
+        <Clock className="h-2.5 w-2.5" /> Vence en {dias}d
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success font-medium">
+      <CheckCircle2 className="h-2.5 w-2.5" /> Vigente · {dias}d
+    </span>
+  );
+}
+
 export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
   const [docs, setDocs] = useState<DocItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<{ url: string; mime: string; name: string } | null>(null);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [dateValue, setDateValue] = useState<string>("");
 
   async function load() {
     setLoading(true);
@@ -64,6 +125,39 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     if (entityId) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityId]);
+
+  async function tryExtractDate(docId: string, storagePath: string, mime: string, tipo: string) {
+    setAnalyzing(docId);
+    try {
+      const { data: signed } = await supabase.storage
+        .from("documentos")
+        .createSignedUrl(storagePath, 60 * 5);
+      if (!signed?.signedUrl) {
+        setAnalyzing(null);
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke("extract-doc-date", {
+        body: { signedUrl: signed.signedUrl, mimeType: mime, tipo },
+      });
+      if (error) {
+        console.error("OCR error:", error);
+        setAnalyzing(null);
+        return;
+      }
+      const updates: Record<string, unknown> = {};
+      if (data?.fecha_vencimiento) updates.fecha_vencimiento = data.fecha_vencimiento;
+      if (data?.fecha_emision) updates.fecha_emision = data.fecha_emision;
+      if (data?.numero_documento) updates.numero_documento = data.numero_documento;
+      if (Object.keys(updates).length > 0) {
+        updates.verificado = true;
+        await (supabase.from(TABLE[kind]) as any).update(updates).eq("id", docId);
+        load();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setAnalyzing(null);
+  }
 
   async function handleUpload(tipo: string, file: File) {
     if (file.size > 20 * 1024 * 1024) {
@@ -97,22 +191,30 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
       [FK[kind]]: entityId,
     };
 
-    const { error: insErr } = await (supabase.from(TABLE[kind]) as any).insert(insertPayload);
+    const { data: inserted, error: insErr } = await (supabase
+      .from(TABLE[kind]) as any)
+      .insert(insertPayload)
+      .select()
+      .single();
     setUploading(null);
     if (insErr) {
       await supabase.storage.from("documentos").remove([path]);
       alert("Error registrando: " + insErr.message);
       return;
     }
-    load();
+    await load();
+    // OCR automático en background si es imagen o PDF
+    if (inserted?.id && (file.type.startsWith("image/") || file.type === "application/pdf")) {
+      tryExtractDate(inserted.id, path, file.type, tipo);
+    }
   }
 
-  async function handleView(d: DocItem) {
+  async function openViewer(d: DocItem) {
     const { data, error } = await supabase.storage
       .from("documentos")
-      .createSignedUrl(d.storage_path, 60 * 5);
+      .createSignedUrl(d.storage_path, 60 * 10);
     if (error || !data) return alert("No se pudo abrir el archivo");
-    window.open(data.signedUrl, "_blank");
+    setViewer({ url: data.signedUrl, mime: d.mime_type ?? "application/octet-stream", name: d.file_name });
   }
 
   async function handleDownload(d: DocItem) {
@@ -135,36 +237,101 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     load();
   }
 
+  async function saveDate(docId: string) {
+    await (supabase.from(TABLE[kind]) as any)
+      .update({ fecha_vencimiento: dateValue || null })
+      .eq("id", docId);
+    setEditingDate(null);
+    setDateValue("");
+    load();
+  }
+
+  // Resumen de cumplimiento
+  const resumen = useMemo(() => {
+    const obligatorios = tipos.filter((t) => t.obligatorio);
+    const cargados = obligatorios.filter((t) => docs.some((d) => d.tipo === t.value));
+    const vencidos = docs.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "vencido").length;
+    const porVencer = docs.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "por_vencer").length;
+    return {
+      obligatoriosTotal: obligatorios.length,
+      obligatoriosCargados: cargados.length,
+      vencidos,
+      porVencer,
+    };
+  }, [docs, tipos]);
+
   return (
     <div className="space-y-3">
+      {/* Resumen */}
+      {tipos.some((t) => t.obligatorio) && (
+        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <span className={`px-2 py-1 rounded-md font-medium ${
+            resumen.obligatoriosCargados === resumen.obligatoriosTotal
+              ? "bg-success/15 text-success"
+              : "bg-warning/15 text-warning"
+          }`}>
+            Obligatorios: {resumen.obligatoriosCargados}/{resumen.obligatoriosTotal}
+          </span>
+          {resumen.vencidos > 0 && (
+            <span className="px-2 py-1 rounded-md bg-destructive/15 text-destructive font-medium">
+              {resumen.vencidos} vencido{resumen.vencidos > 1 ? "s" : ""}
+            </span>
+          )}
+          {resumen.porVencer > 0 && (
+            <span className="px-2 py-1 rounded-md bg-warning/15 text-warning font-medium">
+              {resumen.porVencer} por vencer (30 días)
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Botones de subida por tipo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-        {tipos.map((t) => (
-          <label
-            key={t.value}
-            className="flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-input bg-background px-3 py-3 text-xs cursor-pointer hover:bg-secondary/40 transition-colors"
-          >
-            {uploading === t.value ? (
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            ) : (
-              <Upload className="h-4 w-4 text-primary" />
-            )}
-            <span className="font-medium">{t.label}</span>
-            <span className="text-muted-foreground">Click para subir</span>
-            <input
-              type="file"
-              className="hidden"
-              accept=".pdf,.jpg,.jpeg,.png,.webp"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleUpload(t.value, f);
-                e.target.value = "";
-              }}
-              disabled={!!uploading}
-            />
-          </label>
-        ))}
+        {tipos.map((t) => {
+          const doc = docs.find((d) => d.tipo === t.value);
+          const cargado = !!doc;
+          return (
+            <label
+              key={t.value}
+              className={`relative flex flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-3 text-xs cursor-pointer transition-colors ${
+                cargado
+                  ? "border-success/50 bg-success/5 hover:bg-success/10"
+                  : t.obligatorio
+                    ? "border-warning/50 bg-warning/5 hover:bg-warning/10"
+                    : "border-input bg-background hover:bg-secondary/40"
+              }`}
+            >
+              {uploading === t.value ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : cargado ? (
+                <CheckCircle2 className="h-4 w-4 text-success" />
+              ) : (
+                <Upload className="h-4 w-4 text-primary" />
+              )}
+              <span className="font-medium text-center leading-tight">
+                {t.label}
+                {t.obligatorio && <span className="text-destructive">*</span>}
+              </span>
+              <span className="text-muted-foreground text-[10px]">
+                {cargado ? "Reemplazar" : "Click para subir"}
+              </span>
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleUpload(t.value, f);
+                  e.target.value = "";
+                }}
+                disabled={!!uploading}
+              />
+            </label>
+          );
+        })}
       </div>
 
+      {/* Lista de documentos */}
       <div className="rounded-md border border-border">
         {loading ? (
           <div className="flex justify-center py-4">
@@ -177,55 +344,173 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
         ) : (
           <ul className="divide-y divide-border">
             {docs.map((d) => {
-              const label = tipos.find((t) => t.value === d.tipo)?.label ?? d.tipo;
+              const tipoDef = tipos.find((t) => t.value === d.tipo);
+              const label = tipoDef?.label ?? d.tipo;
               return (
-                <li key={d.id} className="flex items-center gap-3 px-3 py-2 text-xs">
-                  <FileText className="h-4 w-4 text-primary shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{d.file_name}</p>
-                    <p className="text-muted-foreground">
-                      {label} · {formatSize(d.size_bytes)}
-                    </p>
+                <li key={d.id} className="px-3 py-2 text-xs space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{label}</p>
+                      <p className="text-muted-foreground truncate">
+                        {d.file_name} · {formatSize(d.size_bytes)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => openViewer(d)}
+                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary"
+                      title="Ver"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDownload(d)}
+                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary"
+                      title="Descargar"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => tryExtractDate(d.id, d.storage_path, d.mime_type ?? "", d.tipo)}
+                      disabled={analyzing === d.id}
+                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary disabled:opacity-50"
+                      title="Detectar fecha automáticamente"
+                    >
+                      {analyzing === d.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(d)}
+                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-destructive"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleView(d)}
-                    className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary"
-                    title="Ver"
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDownload(d)}
-                    className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary"
-                    title="Descargar"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(d)}
-                    className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-destructive"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center flex-wrap gap-2 pl-6">
+                    <VencimientoBadge fecha={d.fecha_vencimiento} />
+                    {d.numero_documento && (
+                      <span className="text-[10px] text-muted-foreground">
+                        N°: {d.numero_documento}
+                      </span>
+                    )}
+                    {d.verificado && (
+                      <span className="text-[10px] text-success inline-flex items-center gap-0.5">
+                        <Sparkles className="h-2.5 w-2.5" /> IA
+                      </span>
+                    )}
+                    {editingDate === d.id ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="date"
+                          value={dateValue}
+                          onChange={(e) => setDateValue(e.target.value)}
+                          className="text-[10px] px-1 py-0.5 rounded border border-input bg-background"
+                        />
+                        <button
+                          onClick={() => saveDate(d.id)}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground"
+                        >
+                          OK
+                        </button>
+                        <button
+                          onClick={() => { setEditingDate(null); setDateValue(""); }}
+                          className="text-[10px] px-1.5 py-0.5 rounded text-muted-foreground"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingDate(d.id);
+                          setDateValue(d.fecha_vencimiento ?? "");
+                        }}
+                        className="text-[10px] text-primary hover:underline"
+                      >
+                        {d.fecha_vencimiento ? "Editar fecha" : "Agregar vencimiento"}
+                      </button>
+                    )}
+                  </div>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
+
+      {/* Visor inline */}
+      {viewer && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setViewer(null)}
+        >
+          <div
+            className="bg-card rounded-lg w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+              <p className="text-sm font-medium truncate">{viewer.name}</p>
+              <button
+                onClick={() => setViewer(null)}
+                className="p-1 rounded hover:bg-secondary"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 bg-muted/20 overflow-auto">
+              {viewer.mime.startsWith("image/") ? (
+                <img src={viewer.url} alt={viewer.name} className="max-w-full max-h-full mx-auto" />
+              ) : viewer.mime === "application/pdf" ? (
+                <iframe src={viewer.url} className="w-full h-full" title={viewer.name} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-3 p-6 text-sm text-muted-foreground text-center">
+                  <FileText className="h-8 w-8" />
+                  <p>Este tipo de archivo no se puede previsualizar.</p>
+                  <a
+                    href={viewer.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-1.5 rounded bg-primary text-primary-foreground text-xs"
+                  >
+                    Abrir en nueva pestaña
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export const TIPOS_CONDUCTOR = [
-  { value: "poliza_arl", label: "Pólizas ARL/SST" },
-  { value: "licencia_conduccion", label: "Licencia conducción" },
-  { value: "tarjeta_operacion", label: "Tarjeta operación" },
+// Tipos completos de documentos para conductores
+export const TIPOS_CONDUCTOR: TipoDef[] = [
+  { value: "cedula", label: "Cédula de ciudadanía", obligatorio: true },
+  { value: "licencia_conduccion", label: "Licencia de conductor", obligatorio: true },
+  { value: "seguridad_social", label: "Planilla seguridad social", obligatorio: true },
+  { value: "examenes_medicos", label: "Exámenes médicos", obligatorio: true },
+  { value: "antecedentes", label: "Antecedentes", obligatorio: true },
+  { value: "simit", label: "SIMIT", obligatorio: true },
+  { value: "curso_defensivo", label: "Curso manejo defensivo", obligatorio: true },
+  { value: "curso_teorico_practico", label: "Curso teórico-práctico", obligatorio: true },
+  { value: "hoja_vida", label: "Hoja de vida", obligatorio: true },
 ];
 
-export const TIPOS_VEHICULO = [
-  { value: "tarjeta_operacion", label: "Tarjeta operación" },
-  { value: "soat", label: "SOAT" },
-  { value: "tecnico_mecanica", label: "Técnico mecánica" },
+// Tipos completos de documentos para vehículos
+export const TIPOS_VEHICULO: TipoDef[] = [
+  { value: "tarjeta_propiedad", label: "Tarjeta de propiedad", obligatorio: true },
+  { value: "cedula_propietario", label: "Cédula del propietario", obligatorio: true },
+  { value: "seguro_rc", label: "Seguro responsabilidad civil", obligatorio: true },
+  { value: "soat", label: "SOAT", obligatorio: true },
+  { value: "tecnico_mecanica", label: "Revisión técnico-mecánica", obligatorio: true },
+  { value: "revision_preventiva", label: "Revisión preventiva", obligatorio: true },
+  { value: "tarjeta_operacion", label: "Tarjeta de operación", obligatorio: true },
+  { value: "certificado_gps", label: "Certificado GPS", obligatorio: false },
+  { value: "antecedentes_propietario", label: "Antecedentes propietario", obligatorio: true },
+  { value: "simit_vehiculo", label: "SIMIT", obligatorio: true },
 ];
