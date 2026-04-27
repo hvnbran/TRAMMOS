@@ -58,7 +58,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
         .order("es_principal", { ascending: false }),
       supabase
         .from("conductores")
-        .select("id, nombre, cedula, estado")
+        .select("id, nombre, cedula, estado, vence_licencia")
         .order("nombre"),
     ]);
     setAsignaciones((a.data ?? []) as Asignacion[]);
