@@ -50,6 +50,8 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
   const [saving, setSaving] = useState(false);
   const [filtro, setFiltro] = useState<FiltroEstado>("aptos");
 
+  const [refreshingConductores, setRefreshingConductores] = useState(false);
+
   async function load() {
     setLoading(true);
     const [a, c] = await Promise.all([
@@ -65,6 +67,21 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
     setAsignaciones((a.data ?? []) as Asignacion[]);
     setConductores((c.data ?? []) as Conductor[]);
     setLoading(false);
+  }
+
+  async function refrescarConductores() {
+    setRefreshingConductores(true);
+    const { data } = await supabase
+      .from("conductores")
+      .select("id, nombre, cedula, estado, vence_licencia")
+      .order("nombre");
+    if (data) setConductores(data as Conductor[]);
+    setRefreshingConductores(false);
+  }
+
+  function abrirFormulario() {
+    setAdding(true);
+    refrescarConductores();
   }
 
   useEffect(() => {
