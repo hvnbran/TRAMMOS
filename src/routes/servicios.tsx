@@ -251,9 +251,64 @@ function Servicios() {
                 <label className="text-xs text-muted-foreground">Destino</label>
                 <input required value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
               </div>
+              <div className="md:col-span-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Accessibility className="h-3 w-3 text-primary" aria-hidden="true" />
+                  Pasajero registrado con perfil PCD (opcional, recomendado)
+                </label>
+                <select
+                  value={form.pasajero_pcd_id}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const sel = pasajerosPCD.find((p) => p.id === id);
+                    setForm({
+                      ...form,
+                      pasajero_pcd_id: id,
+                      pasajero: sel ? sel.nombre : form.pasajero,
+                    });
+                  }}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">— Sin perfil PCD (pasajero ocasional) —</option>
+                  {pasajerosPCD
+                    .filter((p) => p.cliente === (cliente ?? form.cliente))
+                    .map((p) => {
+                      const tipo = TIPOS_DISC.find((t) => t.value === p.tipo_discapacidad)!;
+                      const tag = p.tipo_discapacidad === "ninguna" ? "" : ` · ${tipo.label}`;
+                      const adapt = p.requiere_vehiculo_adaptado ? " · Vehículo adaptado" : "";
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}{tag}{adapt}
+                        </option>
+                      );
+                    })}
+                </select>
+                {form.pasajero_pcd_id && (() => {
+                  const sel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
+                  if (!sel) return null;
+                  const brief = generarBrief(sel);
+                  return (
+                    <div className="mt-2 rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                          <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                          Brief automático para el conductor
+                        </div>
+                        <SpeakButton text={brief} label="Escuchar brief del pasajero" />
+                      </div>
+                      <p className="text-foreground leading-relaxed">{brief}</p>
+                    </div>
+                  );
+                })()}
+              </div>
               <div>
-                <label className="text-xs text-muted-foreground">Pasajero</label>
-                <input value={form.pasajero} onChange={(e) => setForm({ ...form, pasajero: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <label className="text-xs text-muted-foreground">Pasajero (texto libre)</label>
+                <input
+                  value={form.pasajero}
+                  onChange={(e) => setForm({ ...form, pasajero: e.target.value })}
+                  placeholder={form.pasajero_pcd_id ? "Auto-completado del perfil PCD" : "Nombre del pasajero"}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Centro de costo</label>
