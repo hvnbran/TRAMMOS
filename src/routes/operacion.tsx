@@ -175,8 +175,7 @@ function Operacion() {
           </button>
         </div>
 
-        {/* Solicitudes entrantes (realtime) */}
-        <SolicitudesEntrantes />
+        {/* Las solicitudes entrantes en vivo se gestionan ahora desde "Servicios" */}
 
         {/* Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
