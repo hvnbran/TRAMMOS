@@ -222,6 +222,26 @@ function PasajeroPage() {
     return () => { mounted = false; };
   }, [solicitud?.vehiculo_placa, perfil]);
 
+  // Cargar teléfono del conductor asignado vía RPC seguro
+  useEffect(() => {
+    const nombre = solicitud?.conductor_nombre?.trim();
+    if (!nombre) {
+      setConductorTelefono(null);
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase
+        .rpc("get_conductor_publico_por_nombre", { _nombre: nombre });
+      if (error) {
+        console.warn("[pasajero] No se pudo cargar teléfono del conductor:", error.message);
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (mounted) setConductorTelefono(row?.telefono ?? null);
+    })();
+    return () => { mounted = false; };
+  }, [solicitud?.conductor_nombre]);
+
   const etaMinutos = useMemo(() => {
     if (!solicitud) return 0;
     if (solicitud.estado === "solicitada") return 8;
