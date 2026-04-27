@@ -48,6 +48,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
   const [selectedConductor, setSelectedConductor] = useState<string>("");
   const [esPrincipal, setEsPrincipal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filtro, setFiltro] = useState<FiltroEstado>("aptos");
 
   async function load() {
     setLoading(true);
