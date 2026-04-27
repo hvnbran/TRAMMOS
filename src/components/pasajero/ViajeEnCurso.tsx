@@ -1,5 +1,5 @@
 import { SpeakButton } from "@/components/SpeakButton";
-import { Phone, AlertOctagon, X, Loader2, CheckCircle2, Car, User } from "lucide-react";
+import { Phone, AlertOctagon, X, Loader2, CheckCircle2, Car, User, AlertTriangle } from "lucide-react";
 import { Pictograma } from "@/components/Pictograma";
 
 export type EstadoSolicitud = "solicitada" | "aceptada" | "en_camino" | "a_bordo" | "finalizada" | "cancelada";
@@ -18,6 +18,7 @@ interface Props {
   cancelando: boolean;
   onCancel: () => void;
   onPanic: () => void;
+  onReportarIncidente?: () => void;
 }
 
 const LABELS: Record<EstadoSolicitud, { titulo: string; sub: string }> = {
@@ -48,8 +49,11 @@ export function ViajeEnCurso({
   cancelando,
   onCancel,
   onPanic,
+  onReportarIncidente,
 }: Props) {
   const info = LABELS[estado];
+  const puedeReportar =
+    estado === "aceptada" || estado === "en_camino" || estado === "a_bordo";
   const narracion = `${info.titulo}. ${info.sub}${conductor ? ` Tu conductor es ${conductor}.` : ""}${vehiculo ? ` Placa ${vehiculo}.` : ""}`;
   const puedeCancelar = estado === "solicitada" || estado === "aceptada" || estado === "en_camino";
   const mostrarConductor =
@@ -169,6 +173,16 @@ export function ViajeEnCurso({
       >
         <AlertOctagon className="h-5 w-5" /> Botón de pánico
       </button>
+
+      {puedeReportar && onReportarIncidente && (
+        <button
+          type="button"
+          onClick={onReportarIncidente}
+          className="w-full h-12 rounded-xl border-2 border-warning/60 bg-warning/10 text-foreground text-sm font-semibold flex items-center justify-center gap-2 hover:bg-warning/20 transition-all active:scale-[0.99]"
+        >
+          <AlertTriangle className="h-4 w-4 text-warning" /> Reportar incidente
+        </button>
+      )}
 
       {puedeCancelar && (
         <button
