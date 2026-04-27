@@ -59,6 +59,7 @@ function PasajeroPage() {
   const [cancelando, setCancelando] = useState(false);
   const [ultima, setUltima] = useState<{ origen: string; destino: string } | null>(null);
   const [vehiculoInfo, setVehiculoInfo] = useState<VehiculoInfo | null>(null);
+  const [conductorTelefono, setConductorTelefono] = useState<string | null>(null);
   const [pendienteCalif, setPendienteCalif] = useState<SolicitudPendienteCalif | null>(null);
   const [savingCalif, setSavingCalif] = useState(false);
   const [showIncidente, setShowIncidente] = useState(false);
@@ -221,6 +222,26 @@ function PasajeroPage() {
     return () => { mounted = false; };
   }, [solicitud?.vehiculo_placa, perfil]);
 
+  // Cargar teléfono del conductor asignado vía RPC seguro
+  useEffect(() => {
+    const nombre = solicitud?.conductor_nombre?.trim();
+    if (!nombre) {
+      setConductorTelefono(null);
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase
+        .rpc("get_conductor_publico_por_nombre", { _nombre: nombre });
+      if (error) {
+        console.warn("[pasajero] No se pudo cargar teléfono del conductor:", error.message);
+      }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (mounted) setConductorTelefono(row?.telefono ?? null);
+    })();
+    return () => { mounted = false; };
+  }, [solicitud?.conductor_nombre]);
+
   const etaMinutos = useMemo(() => {
     if (!solicitud) return 0;
     if (solicitud.estado === "solicitada") return 8;
@@ -373,6 +394,7 @@ function PasajeroPage() {
             origen={solicitud.origen}
             destino={solicitud.destino}
             conductor={solicitud.conductor_nombre}
+            conductorTelefono={conductorTelefono}
             vehiculo={solicitud.vehiculo_placa}
             vehiculoFoto={vehiculoInfo?.foto_url ?? null}
             vehiculoMarca={vehiculoInfo?.marca ?? null}

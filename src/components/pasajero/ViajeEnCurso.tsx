@@ -9,6 +9,7 @@ interface Props {
   origen: string;
   destino: string;
   conductor?: string | null;
+  conductorTelefono?: string | null;
   vehiculo?: string | null;
   vehiculoFoto?: string | null;
   vehiculoMarca?: string | null;
@@ -40,6 +41,7 @@ export function ViajeEnCurso({
   origen,
   destino,
   conductor,
+  conductorTelefono,
   vehiculo,
   vehiculoFoto,
   vehiculoMarca,
@@ -132,10 +134,10 @@ export function ViajeEnCurso({
                 <div className="text-xs text-muted-foreground truncate mt-0.5">{detalleVehiculo}</div>
               )}
             </div>
-            {conductor && (
+            {conductor && conductorTelefono && (
               <a
-                href="tel:+573000000000"
-                aria-label={`Llamar a ${conductor}`}
+                href={`tel:${conductorTelefono.replace(/[^\d+]/g, "")}`}
+                aria-label={`Llamar a ${conductor} al ${conductorTelefono}`}
                 className="h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm hover:opacity-90 active:scale-95 transition-all"
               >
                 <Phone className="h-5 w-5" />

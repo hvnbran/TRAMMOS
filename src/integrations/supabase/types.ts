@@ -1042,6 +1042,13 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_conductor_publico_por_nombre: {
+        Args: { _nombre: string }
+        Returns: {
+          nombre: string
+          telefono: string
+        }[]
+      }
       get_vehiculo_publico_por_placa: {
         Args: { _placa: string }
         Returns: {
