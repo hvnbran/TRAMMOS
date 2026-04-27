@@ -96,6 +96,25 @@ function Vehiculos() {
     setLoading(false);
   }
 
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  async function handleFotoUpload(v: VehiculoRow, file: File) {
+    if (!file.type.startsWith("image/")) { alert("Selecciona una imagen"); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("Máximo 5 MB"); return; }
+    setUploadingId(v.id);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${v.cliente}/${v.id}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("vehiculos-fotos")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { alert(upErr.message); setUploadingId(null); return; }
+    const { data: pub } = supabase.storage.from("vehiculos-fotos").getPublicUrl(path);
+    const url = pub.publicUrl;
+    await supabase.from("vehiculos").update({ foto_url: url } as any).eq("id", v.id);
+    setUploadingId(null);
+    load();
+  }
+
   function startCreate() {
     setEditingId(null);
     setNuevoConductor(false);
