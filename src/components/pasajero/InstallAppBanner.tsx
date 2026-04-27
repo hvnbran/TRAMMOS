@@ -1,21 +1,34 @@
 import { useEffect, useState } from "react";
-import { Download, Smartphone, X } from "lucide-react";
+import { Download, Smartphone, X, CheckCircle2 } from "lucide-react";
 import { InstallPWAGuide } from "@/components/InstallPWAGuide";
 
 const DISMISS_KEY = "trammos_install_banner_dismissed_at";
 const REAPPEAR_DAYS = 7;
 
+// Tipo del evento estándar (no expuesto en libdom)
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+  prompt(): Promise<void>;
+}
+
 export function InstallAppBanner() {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [installed, setInstalled] = useState(false);
+  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // No mostrar si ya está instalada
+
     const isStandalone =
       window.matchMedia?.("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-    if (isStandalone) return;
+    if (isStandalone) {
+      setInstalled(true);
+      return;
+    }
 
     // Respetar dismiss reciente
     try {
@@ -27,6 +40,22 @@ export function InstallAppBanner() {
     } catch { /* ignore */ }
 
     setVisible(true);
+
+    // Capturar evento nativo de instalación (Chrome/Edge/Android)
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferred(e as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => {
+      setInstalled(true);
+      setDeferred(null);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   const dismiss = () => {
@@ -34,7 +63,43 @@ export function InstallAppBanner() {
     setVisible(false);
   };
 
+  const handleInstallClick = async () => {
+    // Si el navegador soporta instalación nativa, dispararla directamente
+    if (deferred) {
+      setInstalling(true);
+      try {
+        await deferred.prompt();
+        const choice = await deferred.userChoice;
+        if (choice.outcome === "accepted") {
+          setInstalled(true);
+          setVisible(false);
+        }
+      } catch { /* ignore */ }
+      setDeferred(null);
+      setInstalling(false);
+      return;
+    }
+    // Fallback: abrir guía por plataforma
+    setOpen(true);
+  };
+
+  if (installed) {
+    return (
+      <section
+        aria-label="App instalada"
+        className="rounded-2xl border-2 border-success/30 bg-success/10 p-3 flex items-center gap-3"
+      >
+        <CheckCircle2 className="h-5 w-5 text-success shrink-0" aria-hidden="true" />
+        <div className="text-xs text-foreground">
+          Estás usando TRAMMOS como app instalada. ¡Listo!
+        </div>
+      </section>
+    );
+  }
+
   if (!visible) return null;
+
+  const ctaLabel = deferred ? "Instalar ahora" : "Cómo instalar";
 
   return (
     <>
@@ -51,24 +116,29 @@ export function InstallAppBanner() {
               Instala TRAMMOS en tu celular
             </h3>
             <p className="text-xs text-muted-foreground mt-1 leading-snug">
-              Acceso directo desde tu pantalla de inicio, sin abrir el navegador.
+              {deferred
+                ? "Toca instalar y tendrás TRAMMOS como una app más en tu pantalla de inicio."
+                : "Acceso directo desde tu pantalla de inicio, sin abrir el navegador."}
             </p>
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
               <button
                 type="button"
-                onClick={() => setOpen(true)}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
+                onClick={handleInstallClick}
+                disabled={installing}
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
               >
                 <Download className="h-3.5 w-3.5" />
-                Cómo instalar
+                {installing ? "Instalando…" : ctaLabel}
               </button>
-              <button
-                type="button"
-                onClick={dismiss}
-                className="h-9 px-3 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-              >
-                Más tarde
-              </button>
+              {!deferred && (
+                <button
+                  type="button"
+                  onClick={dismiss}
+                  className="h-9 px-3 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                >
+                  Más tarde
+                </button>
+              )}
             </div>
           </div>
           <button
