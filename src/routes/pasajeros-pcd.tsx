@@ -281,7 +281,14 @@ function PasajerosPCD() {
         ) : (
           <ul className="grid gap-3" role="list">
             {filtrados.map((p) => (
-              <PasajeroCard key={p.id} p={p} onEdit={() => openEdit(p)} onDelete={() => remove(p.id)} />
+              <PasajeroCard
+                key={p.id}
+                p={p}
+                onEdit={() => openEdit(p)}
+                onDelete={() => remove(p.id)}
+                isAdmin={role === "admin"}
+                onChange={load}
+              />
             ))}
           </ul>
         )}
