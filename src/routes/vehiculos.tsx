@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
