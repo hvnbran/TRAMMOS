@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle, Accessibility, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { SpeakButton } from "@/components/SpeakButton";
+import { Pictograma } from "@/components/Pictograma";
+import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 
 function isVencido(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
@@ -58,6 +60,7 @@ interface ServicioRow {
   conductor: string | null;
   vehiculo: string | null;
   estado: string;
+  pasajero_pcd_id: string | null;
 }
 
 function estadoStyle(e: string) {
@@ -82,6 +85,7 @@ function Servicios() {
   const [saving, setSaving] = useState(false);
 
   // ... keep existing code (form state)
+  const [pasajerosPCD, setPasajerosPCD] = useState<PasajeroPCD[]>([]);
   const [form, setForm] = useState({
     cliente: (cliente ?? "corona") as "corona" | "sodimac",
     numero_orden: "",
@@ -90,6 +94,7 @@ function Servicios() {
     origen: "",
     destino: "",
     pasajero: "",
+    pasajero_pcd_id: "" as string,
     centro_costo: "",
     conductor: "",
     vehiculo: "",
@@ -108,14 +113,16 @@ function Servicios() {
 
   async function load() {
     setLoading(true);
-    const [serviciosRes, conductoresRes, vehiculosRes] = await Promise.all([
+    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes] = await Promise.all([
       supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
       supabase.from("conductores").select("id,nombre,cliente,estado,vence_licencia"),
       supabase.from("vehiculos").select("id,placa,marca,linea,cliente,estado,vence_soat,vence_rtm"),
+      supabase.from("pasajeros_pcd").select("*").order("nombre"),
     ]);
     if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
     if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
     if (!vehiculosRes.error && vehiculosRes.data) setVehiculosAll(vehiculosRes.data as VehiculoOpt[]);
+    if (!pcdRes.error && pcdRes.data) setPasajerosPCD(pcdRes.data as PasajeroPCD[]);
     setLoading(false);
   }
 
@@ -141,7 +148,14 @@ function Servicios() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const payload = { ...form, cliente: cliente ?? form.cliente };
+    // Si seleccionó un pasajero PCD, usamos su nombre como "pasajero" textual también
+    const pcdSel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
+    const payload = {
+      ...form,
+      cliente: cliente ?? form.cliente,
+      pasajero: pcdSel ? pcdSel.nombre : form.pasajero,
+      pasajero_pcd_id: form.pasajero_pcd_id || null,
+    };
     const { error } = await supabase.from("servicios").insert(payload);
     setSaving(false);
     if (error) {
@@ -149,7 +163,7 @@ function Servicios() {
       return;
     }
     setShowForm(false);
-    setForm({ ...form, numero_orden: "", origen: "", destino: "", pasajero: "", conductor: "", vehiculo: "" });
+    setForm({ ...form, numero_orden: "", origen: "", destino: "", pasajero: "", pasajero_pcd_id: "", conductor: "", vehiculo: "" });
     load();
   }
 
@@ -237,9 +251,64 @@ function Servicios() {
                 <label className="text-xs text-muted-foreground">Destino</label>
                 <input required value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
               </div>
+              <div className="md:col-span-2">
+                <label className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Accessibility className="h-3 w-3 text-primary" aria-hidden="true" />
+                  Pasajero registrado con perfil PCD (opcional, recomendado)
+                </label>
+                <select
+                  value={form.pasajero_pcd_id}
+                  onChange={(e) => {
+                    const id = e.target.value;
+                    const sel = pasajerosPCD.find((p) => p.id === id);
+                    setForm({
+                      ...form,
+                      pasajero_pcd_id: id,
+                      pasajero: sel ? sel.nombre : form.pasajero,
+                    });
+                  }}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">— Sin perfil PCD (pasajero ocasional) —</option>
+                  {pasajerosPCD
+                    .filter((p) => p.cliente === (cliente ?? form.cliente))
+                    .map((p) => {
+                      const tipo = TIPOS_DISC.find((t) => t.value === p.tipo_discapacidad)!;
+                      const tag = p.tipo_discapacidad === "ninguna" ? "" : ` · ${tipo.label}`;
+                      const adapt = p.requiere_vehiculo_adaptado ? " · Vehículo adaptado" : "";
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.nombre}{tag}{adapt}
+                        </option>
+                      );
+                    })}
+                </select>
+                {form.pasajero_pcd_id && (() => {
+                  const sel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
+                  if (!sel) return null;
+                  const brief = generarBrief(sel);
+                  return (
+                    <div className="mt-2 rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                          <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                          Brief automático para el conductor
+                        </div>
+                        <SpeakButton text={brief} label="Escuchar brief del pasajero" />
+                      </div>
+                      <p className="text-foreground leading-relaxed">{brief}</p>
+                    </div>
+                  );
+                })()}
+              </div>
               <div>
-                <label className="text-xs text-muted-foreground">Pasajero</label>
-                <input value={form.pasajero} onChange={(e) => setForm({ ...form, pasajero: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <label className="text-xs text-muted-foreground">Pasajero (texto libre)</label>
+                <input
+                  value={form.pasajero}
+                  onChange={(e) => setForm({ ...form, pasajero: e.target.value })}
+                  placeholder={form.pasajero_pcd_id ? "Auto-completado del perfil PCD" : "Nombre del pasajero"}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Centro de costo</label>
@@ -426,6 +495,33 @@ function Servicios() {
                     </select>
                   </div>
                 </div>
+
+                {s.pasajero_pcd_id && (() => {
+                  const pcd = pasajerosPCD.find((p) => p.id === s.pasajero_pcd_id);
+                  if (!pcd) return null;
+                  const tipo = TIPOS_DISC.find((t) => t.value === pcd.tipo_discapacidad)!;
+                  const brief = generarBrief(pcd);
+                  return (
+                    <div className="mt-3 rounded-lg bg-primary/5 border border-primary/20 p-3">
+                      <div className="flex items-start gap-3">
+                        <Pictograma name={tipo.picto} size="md" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                              <Accessibility className="h-3.5 w-3.5" aria-hidden="true" />
+                              Pasajero con perfil PCD · {tipo.label}
+                              {pcd.requiere_vehiculo_adaptado && (
+                                <span className="text-warning">· Vehículo adaptado</span>
+                              )}
+                            </div>
+                            <SpeakButton text={brief} label="Escuchar brief para el conductor" />
+                          </div>
+                          <p className="text-xs text-foreground leading-relaxed">{brief}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
           </div>
