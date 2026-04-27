@@ -1,0 +1,35 @@
+{
+  "name": "TRAMMOS - Transporte Especial",
+  "short_name": "TRAMMOS",
+  "description": "Solicita y monitorea tu transporte especial accesible",
+  "start_url": "/pasajero",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#00B7E0",
+  "lang": "es",
+  "categories": ["travel", "transportation", "accessibility"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Pedir mi carro",
+      "short_name": "Pedir",
+      "description": "Solicitar un servicio rápido",
+      "url": "/pasajero"
+    }
+  ]
+}
