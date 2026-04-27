@@ -394,6 +394,7 @@ function PasajeroPage() {
             origen={solicitud.origen}
             destino={solicitud.destino}
             conductor={solicitud.conductor_nombre}
+            conductorTelefono={conductorTelefono}
             vehiculo={solicitud.vehiculo_placa}
             vehiculoFoto={vehiculoInfo?.foto_url ?? null}
             vehiculoMarca={vehiculoInfo?.marca ?? null}
