@@ -1,61 +1,108 @@
+## TRAMMOS Accesible+ — Valor diferencial para personas con discapacidad
 
+Hoy ya tienes lo "obligatorio" (panel de accesibilidad, lectura por voz, daltonismo, etc.). Esto **te equipara** a la competencia. Para **diferenciarte** y volverlo una experiencia única, propongo construir 6 módulos que ningún competidor de transporte empresarial en Colombia ofrece junto:
 
-## Plan: Dos presentaciones PPTX ejecutivas — TRAMMOS Accesible para Corona y Sodimac
+---
 
-Generaré **dos archivos PPTX separados**, uno por cliente, con cifras adaptadas a su tamaño y contexto. Ambas usarán la identidad visual TRAMMOS (cyan #00B8DE, lime #C5E86C, gris oscuro K:70) y se entregarán en `/mnt/documents/`.
+### 1. Perfil de Accesibilidad del Pasajero (PCD Profile)
 
-### Estructura común (10 slides cada una)
+Cada pasajero (ej. empleado de Corona o Sodimac) tiene un perfil con sus necesidades, y la app **se adapta automáticamente** a él en cada servicio.
 
-1. **Portada** — Logo TRAMMOS + "Caso de Negocio: Accesibilidad como ROI" + nombre del cliente
-2. **El problema** — Costo de NO ser accesible (multas Ley 1618, exclusión de licitaciones, pérdida ESG)
-3. **Marco regulatorio** — Tabla Ley 1618, Resolución 1519, Decreto 1421, NTC 5854 con sanciones cuantificadas
-4. **Beneficio tributario directo** — Deducción 200% Ley 361 con cálculo específico para el cliente
-5. **Mercado desbloqueado** — Estadísticas DANE (3.1M discapacidad, 6.8M adultos mayores) aplicadas al cliente
-6. **Reducción de costos operativos** — Tabla comparativa SIN vs CON TRAMMOS Accesible
-7. **Impacto ESG y costo de capital** — Cifras de rating MSCI aplicadas al tamaño del cliente
-8. **Resumen ROI** — Slide de impacto con número grande: "Por cada $1 invertido, recupera $X"
-9. **Cómo lo entregamos** — Las funciones reales ya implementadas en TRAMMOS (panel de accesibilidad, lectura por voz, alto contraste, modo simple, daltonismo, navegación por teclado)
-10. **Cierre** — Llamado a la acción + datos de contacto
+Datos del perfil (opcional, voluntario):
+- Tipo de discapacidad: visual, auditiva, motriz, cognitiva, múltiple, ninguna
+- Ayudas técnicas: silla de ruedas (medidas), bastón, perro guía, audífono, intérprete LSC
+- Comunicación preferida: voz, texto grande, pictogramas, Lengua de Señas Colombiana
+- Asistencia requerida: nivel 0–3 (autónomo → requiere acompañante)
+- Contacto de emergencia + condiciones médicas relevantes (opcional, cifrado)
 
-### Diferencias por cliente
+Beneficio diferencial: el conductor recibe automáticamente un **brief del pasajero** antes de cada servicio (sin tener que preguntar nada incómodo). Corona/Sodimac demuestran ajustes razonables documentados (Ley 1618).
 
-**Corona** (manufactura, ~14.000 empleados, ingresos ~$3 billones COP):
-- Cifras grandes en costo de capital (~$24-36 mil millones/año por mejora ESG)
-- Foco en transporte de personal a plantas (Madrid, Sopó, Girardota)
-- Beneficio tributario sobre 50-100 empleados con discapacidad potenciales
-- Paleta: cyan dominante (corporativo, manufactura)
+---
 
-**Sodimac** (retail, ~8.000 empleados, alta rotación):
-- Foco en transporte a 40+ tiendas en Colombia
-- Costo de rotación reducido como argumento principal
-- Inclusión de cuidadores y adultos mayores como segmento de clientes finales
-- Cifras de licitaciones con grandes superficies y contratos públicos
-- Paleta: lime más presente (retail, energía, dinamismo)
+### 2. Asistente de Voz Conversacional (TRAMI)
 
-### Diseño visual
+Más allá del botón "leer texto", un asistente de voz por IA (Lovable AI · Gemini) que permite:
+- "¿A qué hora llega mi carro?" → consulta el servicio activo
+- "Llama a mi conductor" → marca al teléfono
+- "Necesito ayuda" → activa protocolo de emergencia (módulo 5)
+- "Cancela mi servicio" → con confirmación por voz
 
-- Tema "Charcoal Minimal" + acentos cyan/lime TRAMMOS
-- Tipografía: Calibri títulos bold + Calibri Light cuerpo
-- Cada slide con elemento visual: tablas de ROI, callouts con cifras grandes (60-72pt), iconos en círculos cyan
-- Layouts variados: dos columnas, grid 2x2, stat callouts grandes, comparativos antes/después
-- Imágenes embebidas como base64 (logo TRAMMOS desde `src/assets/logo-trammos.jpeg`)
+Implementación: Web Speech API para entrada/salida + edge function que enruta intención. Funciona manos libres y es navegable solo con voz (ideal para visión cero o motricidad reducida).
 
-### Proceso técnico
+---
 
-1. Leer logo TRAMMOS y paleta de colores oficial desde `mem://design/brand-colors`
-2. Generar `trammos_accesible_corona.pptx` y `trammos_accesible_sodimac.pptx` con `pptxgenjs`
-3. **QA obligatorio**: convertir cada PPTX a PDF con LibreOffice → imágenes con `pdftoppm` → inspeccionar TODAS las slides (overflow, contraste, alineación, ortografía de cifras)
-4. Iterar hasta que ambas presentaciones estén impecables
-5. Entregar con tags `<lov-artifact>`
+### 3. Modo Lectura Fácil + Pictogramas (ARASAAC)
 
-### Entregables finales
+Un toggle nuevo en el panel de accesibilidad: "Modo Lectura Fácil".
+Cuando se activa:
+- Reescribe textos largos en frases cortas (sujeto + verbo + complemento) usando IA
+- Acompaña cada acción con un **pictograma estandarizado ARASAAC** (Carro, Reloj, Casa, Documento, etc.)
+- Confirmaciones con tres pasos visuales: "1. Pediste un carro 🚗 → 2. Llegará a las 3pm ⏰ → 3. Te llevará a Corona 🏢"
 
-- `/mnt/documents/trammos_accesible_corona.pptx`
-- `/mnt/documents/trammos_accesible_sodimac.pptx`
+Beneficio: cubre discapacidad cognitiva (Síndrome de Down, autismo, daño cerebral), analfabetismo funcional y adultos mayores. Casi nadie en transporte hace esto.
 
-### Lo que NO hace este plan
+---
 
-- No modifica código de la aplicación TRAMMOS (las funciones de accesibilidad ya están implementadas en Fases 1, 2 y 3 anteriores)
-- No requiere base de datos ni edge functions
-- Es un entregable comercial puro para tu equipo de ventas
+### 4. Mapa Accesible y Tiempo Real Multimodal
 
+Mejora del módulo de monitoreo para el pasajero PCD:
+- ETA narrado por voz cada cierto tiempo configurable (cada 2 min)
+- Vibración del teléfono cuando el carro está a 200 m (Vibration API)
+- Notificación con Lengua de Señas Colombiana: video corto del conductor saludando en LSC (pre-grabado por conductor o avatar IA)
+- Botón gigante "¿Dónde estoy?" que dice en voz alta la dirección actual del pasajero (Geolocation reversa)
+
+---
+
+### 5. Botón Pánico + Protocolo de Asistencia
+
+Un botón flotante rojo siempre accesible. Al pulsarlo (o decir "TRAMI ayuda"):
+- Llama simultáneamente a: contacto de emergencia + supervisor TRAMMOS + conductor asignado
+- Comparte ubicación en vivo durante 30 min
+- Activa grabación de audio ambiente local (descargable luego como evidencia)
+- Genera incidente automáticamente en `incidentes` con plan de mejoramiento sugerido por IA
+
+---
+
+### 6. Panel de Cumplimiento de Inclusión (para Corona y Sodimac)
+
+Un dashboard ejecutivo que tu cliente NUNCA ha visto en sus operadores actuales:
+- # servicios PCD / mes, por tipo de discapacidad
+- Tiempo promedio de espera PCD vs general (debe ser igual o menor)
+- Incidentes de inclusión (Si/no se brindó asistencia)
+- Conductores certificados en atención PCD (cruce con curso teórico-práctico)
+- **Reporte PDF descargable**: "Cumplimiento Ley 1618 — Periodo X" listo para auditoría / reporte ESG / Pacto Global
+
+Esto convierte la accesibilidad en **métrica vendible y auditable** — el verdadero diferenciador.
+
+---
+
+### Cómo se construye (técnico)
+
+- Migración: tabla `pasajeros_pcd` (id, cliente, nombre/cedula, perfil_a11y JSONB, contacto_emergencia, condiciones), nueva FK opcional en `servicios.pasajero_pcd_id`. Tabla `incidentes_pcd` heredando de `incidentes`.
+- Componente `PerfilPCDForm.tsx` + ruta `/pasajeros-pcd` con CRUD y vista resumida.
+- `TramiAssistant.tsx`: botón flotante (junto al de accesibilidad), Web Speech Recognition + edge function `trami-router` que usa `google/gemini-2.5-flash` para clasificar intención y devolver acción.
+- Pictogramas: importar set ARASAAC libre (CC-BY-NC-SA) en `public/pictogramas/`. Componente `<Pictograma name="carro" />` con fallback a Lucide.
+- Modo Lectura Fácil: util `simplificarTexto()` con IA (cache local por hash) + clase CSS `a11y-easy-read` que aumenta interlineado, oculta detalle decorativo, ancla pictograma a párrafos clave.
+- Botón pánico: componente `PanicoButton.tsx` con Web Vibration, Geolocation watchPosition, MediaRecorder (audio).
+- Dashboard inclusión: nueva ruta `/cumplimiento/inclusion` que reusa estilos de `cumplimiento.tsx` con queries específicas y export PDF (`src/lib/reportes/pdf.ts`).
+
+Cumplimiento normativo cubierto: Ley 1618/2013 (artículo 14 — accesibilidad), NTC 5854, NTC 6047 (espacios), WCAG 2.1 AA, Decreto 1660/2003 (transporte PCD).
+
+---
+
+### Plan de entrega por fases
+
+Fase A (este turno): Perfil PCD + brief automático al conductor + pictogramas básicos en accesos críticos.
+Fase B: Asistente TRAMI + modo lectura fácil con IA.
+Fase C: Mapa accesible (vibración + ETA hablado) + botón pánico.
+Fase D: Dashboard de cumplimiento + PDF auditable.
+
+Empiezo por la Fase A para que veas el cambio rápido y confirmes el rumbo. ¿Procedo así, o prefieres que construya las 4 fases en este turno?
+
+---
+
+### Lo que NO hace el plan
+
+- No reemplaza el panel de accesibilidad actual; lo extiende.
+- No requiere apps nativas — todo es web responsive (PWA opcional luego).
+- No fuerza al pasajero a registrar perfil; es 100% opcional.

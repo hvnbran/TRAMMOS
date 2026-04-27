@@ -382,6 +382,87 @@ export type Database = {
         }
         Relationships: []
       }
+      pasajeros_pcd: {
+        Row: {
+          alergias: string | null
+          ayudas_tecnicas: string[]
+          cedula: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          comunicacion_preferida: string
+          condiciones_medicas: string | null
+          consentimiento_datos: boolean
+          contacto_emergencia_nombre: string | null
+          contacto_emergencia_relacion: string | null
+          contacto_emergencia_telefono: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          medicamentos: string | null
+          nivel_asistencia: number
+          nombre: string
+          notas_conductor: string | null
+          permite_acompanante: boolean
+          requiere_vehiculo_adaptado: boolean
+          silla_ruedas_medidas: string | null
+          telefono: string | null
+          tipo_discapacidad: string
+          updated_at: string
+        }
+        Insert: {
+          alergias?: string | null
+          ayudas_tecnicas?: string[]
+          cedula?: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          comunicacion_preferida?: string
+          condiciones_medicas?: string | null
+          consentimiento_datos?: boolean
+          contacto_emergencia_nombre?: string | null
+          contacto_emergencia_relacion?: string | null
+          contacto_emergencia_telefono?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          medicamentos?: string | null
+          nivel_asistencia?: number
+          nombre: string
+          notas_conductor?: string | null
+          permite_acompanante?: boolean
+          requiere_vehiculo_adaptado?: boolean
+          silla_ruedas_medidas?: string | null
+          telefono?: string | null
+          tipo_discapacidad?: string
+          updated_at?: string
+        }
+        Update: {
+          alergias?: string | null
+          ayudas_tecnicas?: string[]
+          cedula?: string | null
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          comunicacion_preferida?: string
+          condiciones_medicas?: string | null
+          consentimiento_datos?: boolean
+          contacto_emergencia_nombre?: string | null
+          contacto_emergencia_relacion?: string | null
+          contacto_emergencia_telefono?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          medicamentos?: string | null
+          nivel_asistencia?: number
+          nombre?: string
+          notas_conductor?: string | null
+          permite_acompanante?: boolean
+          requiere_vehiculo_adaptado?: boolean
+          silla_ruedas_medidas?: string | null
+          telefono?: string | null
+          tipo_discapacidad?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -424,6 +505,7 @@ export type Database = {
           numero_orden: string | null
           origen: string | null
           pasajero: string | null
+          pasajero_pcd_id: string | null
           updated_at: string
           vehiculo: string | null
         }
@@ -441,6 +523,7 @@ export type Database = {
           numero_orden?: string | null
           origen?: string | null
           pasajero?: string | null
+          pasajero_pcd_id?: string | null
           updated_at?: string
           vehiculo?: string | null
         }
@@ -458,10 +541,19 @@ export type Database = {
           numero_orden?: string | null
           origen?: string | null
           pasajero?: string | null
+          pasajero_pcd_id?: string | null
           updated_at?: string
           vehiculo?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "servicios_pasajero_pcd_id_fkey"
+            columns: ["pasajero_pcd_id"]
+            isOneToOne: false
+            referencedRelation: "pasajeros_pcd"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
