@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import banner from "@/assets/banner-trammos.png";
 import bannerCorona from "@/assets/banner-corona.png";
 import bannerSodimac from "@/assets/banner-sodimac.png";
-import { LogIn, Loader2, Check } from "lucide-react";
+import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -25,16 +25,32 @@ const SEED_USERS: Record<SeedKey, { email: string; password: string; display_nam
   admin: { email: "admin@trammos.app", password: "AdministrativosTrammos123", display_name: "Admin General", role: "admin" },
 };
 
+type Tab = "operador" | "pasajero";
+type PasajeroStep = "email" | "otp";
+
 function LoginPage() {
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, loading, role } = useAuth();
   const navigate = useNavigate();
+  const [tab, setTab] = useState<Tab>("operador");
+
+  // Operador
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Pasajero
+  const [pStep, setPStep] = useState<PasajeroStep>("email");
+  const [pEmail, setPEmail] = useState("");
+  const [pCode, setPCode] = useState("");
+  const [pInfo, setPInfo] = useState<string | null>(null);
+  const [pError, setPError] = useState<string | null>(null);
+  const [pLoading, setPLoading] = useState(false);
+
+  // Splash
   const [showSplash, setShowSplash] = useState(false);
   const [splashName, setSplashName] = useState("");
-  const [splashClient, setSplashClient] = useState<"corona" | "sodimac" | "admin" | null>(null);
+  const [splashClient, setSplashClient] = useState<"corona" | "sodimac" | "admin" | "pasajero" | null>(null);
   const [progress, setProgress] = useState(0);
   const [splashFadeOut, setSplashFadeOut] = useState(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -45,9 +61,15 @@ function LoginPage() {
     };
   }, []);
 
-  if (!loading && user && !showSplash) {
-    navigate({ to: "/" });
-  }
+  // Auto-redirect once authenticated and role known
+  useEffect(() => {
+    if (loading || showSplash || !user) return;
+    if (role === "pasajero") {
+      navigate({ to: "/pasajero" });
+    } else if (role) {
+      navigate({ to: "/" });
+    }
+  }, [user, role, loading, showSplash, navigate]);
 
   async function ensureUserBootstrapped(key: SeedKey, expectedPassword: string) {
     if (expectedPassword !== SEED_USERS[key].password) return;
@@ -62,22 +84,20 @@ function LoginPage() {
     }
   }
 
-  const startSplashSequence = (displayName: string, clientKey: "corona" | "sodimac" | "admin" | null) => {
+  const startSplashSequence = (
+    displayName: string,
+    clientKey: "corona" | "sodimac" | "admin" | "pasajero" | null,
+    target: "/" | "/pasajero",
+  ) => {
     setSplashName(displayName);
     setSplashClient(clientKey);
     setShowSplash(true);
-
-    // Animate progress bar after a tiny delay so the transition kicks in
     timersRef.current.push(setTimeout(() => setProgress(100), 200));
-
-    // Begin fade-out near the end
     timersRef.current.push(setTimeout(() => setSplashFadeOut(true), 1800));
-
-    // Navigate at ~2s
-    timersRef.current.push(setTimeout(() => navigate({ to: "/" }), 2050));
+    timersRef.current.push(setTimeout(() => navigate({ to: target }), 2050));
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmitOperador = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
@@ -110,71 +130,257 @@ function LoginPage() {
       return;
     }
 
-    // Success: trigger splash sequence
     const displayName = preset ? preset.display_name : email.split("@")[0];
     const clientKey = preset ? preset.role : null;
-    startSplashSequence(displayName, clientKey);
+    startSplashSequence(displayName, clientKey, "/");
+  };
+
+  const handleRequestCode = async (e: FormEvent) => {
+    e.preventDefault();
+    setPError(null);
+    setPInfo(null);
+    setPLoading(true);
+    const email = pEmail.trim();
+    if (!email) {
+      setPError("Escribe tu correo.");
+      setPLoading(false);
+      return;
+    }
+    // 1) Validate authorization
+    const { data: authorized, error: rpcErr } = await supabase.rpc("is_pasajero_email_authorized", { _email: email });
+    if (rpcErr) {
+      setPError("No pudimos verificar tu correo. Intenta de nuevo.");
+      setPLoading(false);
+      return;
+    }
+    if (!authorized) {
+      setPError("Este correo no está autorizado. Contacta al equipo TRAMMOS.");
+      setPLoading(false);
+      return;
+    }
+    // 2) Send OTP
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true, emailRedirectTo: window.location.origin + "/pasajero" },
+    });
+    if (otpErr) {
+      setPError("No pudimos enviar el código. Intenta de nuevo en unos segundos.");
+      setPLoading(false);
+      return;
+    }
+    setPInfo(`Te enviamos un código de 6 dígitos a ${email}. Revisa tu correo.`);
+    setPStep("otp");
+    setPLoading(false);
+  };
+
+  const handleVerifyCode = async (e: FormEvent) => {
+    e.preventDefault();
+    setPError(null);
+    setPLoading(true);
+    const code = pCode.trim();
+    if (code.length < 4) {
+      setPError("Ingresa el código que llegó a tu correo.");
+      setPLoading(false);
+      return;
+    }
+    const { error: vErr } = await supabase.auth.verifyOtp({
+      email: pEmail.trim(),
+      token: code,
+      type: "email",
+    });
+    if (vErr) {
+      setPError("Código incorrecto o vencido. Pide uno nuevo.");
+      setPLoading(false);
+      return;
+    }
+    // Link to pasajero profile + assign role
+    await supabase.rpc("link_pasajero_to_auth");
+    setPLoading(false);
+    startSplashSequence(pEmail.split("@")[0], "pasajero", "/pasajero");
   };
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
         <div className="w-full max-w-md animate-fade-in">
-          <div className="text-center -mb-8">
-            <img src={banner} alt="TRAMMOS - Transportes Especiales" className="w-80 md:w-96 mx-auto h-auto drop-shadow-sm" />
+          <div className="text-center -mb-6">
+            <img src={banner} alt="TRAMMOS - Transportes Especiales" className="w-72 md:w-80 mx-auto h-auto drop-shadow-sm" />
           </div>
 
-          <form onSubmit={handleSubmit} className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Usuario</label>
-              <input
-                type="text"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                required
-                disabled={submitting}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Contraseña</label>
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                required
-                disabled={submitting}
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive animate-fade-in">
-                {error}
-              </div>
-            )}
-
+          {/* Tabs */}
+          <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-muted/40 border border-border mb-3">
             <button
-              type="submit"
-              disabled={submitting}
-              className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-80 hover:shadow-md"
+              type="button"
+              onClick={() => setTab("operador")}
+              className={`flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-medium transition-all ${
+                tab === "operador"
+                  ? "bg-card text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={tab === "operador"}
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                <>
-                  <LogIn className="h-4 w-4" />
-                  Iniciar sesión
-                </>
-              )}
+              <Briefcase className="h-4 w-4" />
+              Soy operador
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => setTab("pasajero")}
+              className={`flex items-center justify-center gap-2 h-10 rounded-lg text-sm font-medium transition-all ${
+                tab === "pasajero"
+                  ? "bg-card text-foreground shadow-sm border border-border"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={tab === "pasajero"}
+            >
+              <Accessibility className="h-4 w-4" />
+              Soy pasajero
+            </button>
+          </div>
 
+          {tab === "operador" ? (
+            <form onSubmit={handleSubmitOperador} className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Usuario</label>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                  required
+                  disabled={submitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Contraseña</label>
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                  required
+                  disabled={submitting}
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive animate-fade-in">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-80 hover:shadow-md"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4" />
+                    Iniciar sesión
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <div className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
+              {pStep === "email" ? (
+                <form onSubmit={handleRequestCode} className="space-y-4">
+                  <div className="text-center space-y-1">
+                    <h2 className="text-base font-semibold text-foreground">Pide tu carro con TRAMMOS</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Te enviaremos un código a tu correo. Sin contraseñas que recordar.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5" /> Tu correo
+                    </label>
+                    <input
+                      type="email"
+                      autoComplete="email"
+                      inputMode="email"
+                      value={pEmail}
+                      onChange={(e) => setPEmail(e.target.value)}
+                      placeholder="tunombre@correo.com"
+                      className="w-full h-12 rounded-md border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                      required
+                      disabled={pLoading}
+                    />
+                  </div>
+                  {pError && (
+                    <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
+                      {pError}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={pLoading}
+                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-80"
+                  >
+                    {pLoading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Enviando código...</>
+                    ) : (
+                      <><Mail className="h-4 w-4" /> Enviarme el código</>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyCode} className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={() => { setPStep("email"); setPCode(""); setPError(null); }}
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <ArrowLeft className="h-3 w-3" /> Cambiar correo
+                  </button>
+                  {pInfo && (
+                    <div className="rounded-md bg-primary/10 border border-primary/30 px-3 py-2 text-xs text-foreground">
+                      {pInfo}
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <KeyRound className="h-3.5 w-3.5" /> Código de 6 dígitos
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      value={pCode}
+                      onChange={(e) => setPCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="••••••"
+                      className="w-full h-14 rounded-md border border-input bg-background px-3 text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-ring"
+                      required
+                      disabled={pLoading}
+                    />
+                  </div>
+                  {pError && (
+                    <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
+                      {pError}
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={pLoading || pCode.length < 4}
+                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {pLoading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Verificando...</>
+                    ) : (
+                      <><Check className="h-4 w-4" /> Entrar</>
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -217,7 +423,7 @@ function LoginPage() {
               className="text-xs text-muted-foreground animate-fade-in"
               style={{ animationDelay: "800ms", animationFillMode: "backwards" }}
             >
-              Cargando tu panel de control...
+              {splashClient === "pasajero" ? "Preparando tu viaje..." : "Cargando tu panel de control..."}
             </p>
           </div>
         </div>
