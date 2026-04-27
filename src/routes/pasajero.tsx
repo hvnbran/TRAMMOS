@@ -59,6 +59,7 @@ function PasajeroPage() {
   const [cancelando, setCancelando] = useState(false);
   const [ultima, setUltima] = useState<{ origen: string; destino: string } | null>(null);
   const [vehiculoInfo, setVehiculoInfo] = useState<VehiculoInfo | null>(null);
+  const [conductorTelefono, setConductorTelefono] = useState<string | null>(null);
   const [pendienteCalif, setPendienteCalif] = useState<SolicitudPendienteCalif | null>(null);
   const [savingCalif, setSavingCalif] = useState(false);
   const [showIncidente, setShowIncidente] = useState(false);
