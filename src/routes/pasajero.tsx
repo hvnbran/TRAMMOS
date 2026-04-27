@@ -30,6 +30,13 @@ interface SolicitudActiva {
   vehiculo_placa: string | null;
 }
 
+interface VehiculoInfo {
+  foto_url: string | null;
+  marca: string | null;
+  linea: string | null;
+  color: string | null;
+}
+
 function PasajeroPage() {
   const { user, role, loading, signOut, displayName } = useAuth();
   const navigate = useNavigate();
@@ -39,6 +46,7 @@ function PasajeroPage() {
   const [submitting, setSubmitting] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [ultima, setUltima] = useState<{ origen: string; destino: string } | null>(null);
+  const [vehiculoInfo, setVehiculoInfo] = useState<VehiculoInfo | null>(null);
 
   // Guard: solo pasajeros
   useEffect(() => {
@@ -122,6 +130,32 @@ function PasajeroPage() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [user]);
+
+  // Cargar info del vehículo (foto, marca, etc.) cuando llega la placa asignada
+  useEffect(() => {
+    const placa = solicitud?.vehiculo_placa?.trim();
+    if (!placa || !perfil) {
+      setVehiculoInfo(null);
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("vehiculos")
+        .select("foto_url,marca,linea,color")
+        .eq("cliente", perfil.cliente)
+        .ilike("placa", placa)
+        .maybeSingle();
+      if (mounted) {
+        setVehiculoInfo(
+          data
+            ? { foto_url: data.foto_url, marca: data.marca, linea: data.linea, color: data.color }
+            : { foto_url: null, marca: null, linea: null, color: null },
+        );
+      }
+    })();
+    return () => { mounted = false; };
+  }, [solicitud?.vehiculo_placa, perfil]);
 
   const etaMinutos = useMemo(() => {
     if (!solicitud) return 0;
@@ -219,6 +253,10 @@ function PasajeroPage() {
             destino={solicitud.destino}
             conductor={solicitud.conductor_nombre}
             vehiculo={solicitud.vehiculo_placa}
+            vehiculoFoto={vehiculoInfo?.foto_url ?? null}
+            vehiculoMarca={vehiculoInfo?.marca ?? null}
+            vehiculoLinea={vehiculoInfo?.linea ?? null}
+            vehiculoColor={vehiculoInfo?.color ?? null}
             etaMinutos={etaMinutos}
             cancelando={cancelando}
             onCancel={handleCancel}
