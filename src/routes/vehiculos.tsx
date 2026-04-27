@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { DocumentManager, TIPOS_VEHICULO } from "@/components/DocumentManager";
 import { VehiculoConductores } from "@/components/VehiculoConductores";
+import { ChecklistANS } from "@/components/ChecklistANS";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 
 export const Route = createFileRoute("/vehiculos")({
@@ -281,7 +282,10 @@ function Vehiculos() {
                   </button>
                   {expanded === v.id && (
                     <div className="mt-3 pt-3 border-t border-border space-y-4">
-                      <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
+                      <ChecklistANS vehiculoId={v.id} />
+                      <div className="pt-3 border-t border-border">
+                        <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
+                      </div>
                       <div className="pt-3 border-t border-border">
                         <DocumentManager
                           kind="vehiculo"
