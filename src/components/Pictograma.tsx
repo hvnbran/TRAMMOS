@@ -95,6 +95,8 @@ interface Props {
   /** Override de etiqueta */
   label?: string;
   className?: string;
+  /** Forzar uso de ARASAAC (por defecto: respeta a11y.pictoMode) */
+  useArasaac?: boolean;
 }
 
 const SIZE_MAP = {
@@ -104,10 +106,16 @@ const SIZE_MAP = {
   xl: { box: "h-24 w-24", icon: "h-12 w-12", text: "text-base" },
 };
 
-export function Pictograma({ name, size = "md", showLabel = false, label, className = "" }: Props) {
+import { useA11y } from "@/lib/a11y-context";
+import { ARASAAC, arasaacUrl } from "@/lib/arasaac";
+
+export function Pictograma({ name, size = "md", showLabel = false, label, className = "", useArasaac }: Props) {
+  const { prefs } = useA11y();
   const Icon = MAP[name] ?? Accessibility;
   const sz = SIZE_MAP[size];
   const accessibleLabel = label ?? LABELS[name];
+  const arasaac = ARASAAC[name];
+  const showArasaac = (useArasaac ?? prefs.pictoMode) && !!arasaac;
 
   return (
     <span className={`inline-flex flex-col items-center gap-1 ${className}`}>
@@ -115,9 +123,22 @@ export function Pictograma({ name, size = "md", showLabel = false, label, classN
         role="img"
         aria-label={accessibleLabel}
         title={accessibleLabel}
-        className={`${sz.box} rounded-xl bg-primary/10 border-2 border-primary/30 flex items-center justify-center text-primary shrink-0`}
+        className={`${sz.box} rounded-xl bg-primary/10 border-2 border-primary/30 flex items-center justify-center text-primary shrink-0 overflow-hidden`}
       >
-        <Icon className={sz.icon} aria-hidden="true" />
+        {showArasaac ? (
+          <img
+            src={arasaacUrl(arasaac.id)}
+            alt={accessibleLabel}
+            loading="lazy"
+            className={`${sz.box} object-contain p-1 bg-white`}
+            onError={(e) => {
+              // fallback a icono lucide si la imagen no carga
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <Icon className={sz.icon} aria-hidden="true" />
+        )}
       </span>
       {showLabel && (
         <span className={`${sz.text} font-medium text-center text-foreground max-w-[6rem] leading-tight`}>
