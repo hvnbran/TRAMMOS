@@ -21,7 +21,8 @@ export const Route = createFileRoute("/vehiculos")({
 
 interface VehiculoRow {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | null;
+  clientes: ("corona" | "sodimac")[];
   placa: string;
   marca: string | null;
   linea: string | null;
@@ -36,7 +37,7 @@ interface VehiculoRow {
 }
 
 const EMPTY_FORM = {
-  cliente: "corona" as "corona" | "sodimac",
+  clientes: [] as ("corona" | "sodimac")[],
   placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
   num_interno: "", estado: "Disponible", conductor: "",
 };
@@ -77,7 +78,9 @@ function Vehiculos() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+  const initialClientes: ("corona" | "sodimac")[] = cliente ? [cliente as "corona" | "sodimac"] : [];
+  const [form, setForm] = useState({ ...EMPTY_FORM, clientes: initialClientes });
+  const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "sin_asignar">("todos");
   const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
   const [nuevoConductor, setNuevoConductor] = useState(false);
   const [asignacionesPorVehiculo, setAsignacionesPorVehiculo] = useState<Record<string, number>>({});
@@ -112,7 +115,7 @@ function Vehiculos() {
     if (file.size > 5 * 1024 * 1024) { alert("Máximo 5 MB"); return; }
     setUploadingId(v.id);
     const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${v.cliente}/${v.id}-${Date.now()}.${ext}`;
+    const path = `${(v.clientes?.[0] ?? v.cliente ?? "general")}/${v.id}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("vehiculos-fotos")
       .upload(path, file, { upsert: true, contentType: file.type });
@@ -127,7 +130,7 @@ function Vehiculos() {
   function startCreate() {
     setEditingId(null);
     setNuevoConductor(false);
-    setForm({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+    setForm({ ...EMPTY_FORM, clientes: initialClientes });
     setShowForm(true);
   }
 
@@ -135,7 +138,7 @@ function Vehiculos() {
     setEditingId(v.id);
     setNuevoConductor(false);
     setForm({
-      cliente: v.cliente,
+      clientes: (v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : []),
       placa: v.placa,
       marca: v.marca ?? "",
       linea: v.linea ?? "",
@@ -148,6 +151,13 @@ function Vehiculos() {
     setShowForm(true);
   }
 
+  function toggleCliente(c: "corona" | "sodimac") {
+    setForm((f) => ({
+      ...f,
+      clientes: f.clientes.includes(c) ? f.clientes.filter((x) => x !== c) : [...f.clientes, c],
+    }));
+  }
+
   function cancelForm() {
     setShowForm(false);
     setEditingId(null);
@@ -158,14 +168,21 @@ function Vehiculos() {
     e.preventDefault();
     setSaving(true);
     const payload = {
-      ...form,
-      cliente: cliente ?? form.cliente,
+      placa: form.placa,
+      marca: form.marca,
+      linea: form.linea,
       modelo: Number(form.modelo) || null,
+      color: form.color,
+      num_interno: form.num_interno,
+      estado: form.estado,
       conductor: form.conductor.trim() || null,
+      // Multi-cliente: array + columna legacy en NULL si está vacío o el primero del array
+      clientes: form.clientes,
+      cliente: form.clientes[0] ?? null,
     };
     const { error } = editingId
-      ? await supabase.from("vehiculos").update(payload).eq("id", editingId)
-      : await supabase.from("vehiculos").insert(payload);
+      ? await supabase.from("vehiculos").update(payload as any).eq("id", editingId)
+      : await supabase.from("vehiculos").insert(payload as any);
     setSaving(false);
     if (error) { alert(error.message); return; }
     cancelForm();
@@ -178,6 +195,13 @@ function Vehiculos() {
     if (error) { alert(error.message); return; }
     load();
   }
+
+  const itemsFiltrados = items.filter((v) => {
+    const cs = (v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : []);
+    if (filtroCliente === "todos") return true;
+    if (filtroCliente === "sin_asignar") return cs.length === 0;
+    return cs.includes(filtroCliente);
+  });
 
   return (
     <AppLayout>
