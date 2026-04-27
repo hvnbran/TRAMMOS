@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Loader2, Star, UserCheck } from "lucide-react";
+import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle } from "lucide-react";
 
 interface Conductor {
   id: string;
