@@ -84,6 +84,7 @@ function Servicios() {
   const [saving, setSaving] = useState(false);
 
   // ... keep existing code (form state)
+  const [pasajerosPCD, setPasajerosPCD] = useState<PasajeroPCD[]>([]);
   const [form, setForm] = useState({
     cliente: (cliente ?? "corona") as "corona" | "sodimac",
     numero_orden: "",
@@ -92,6 +93,7 @@ function Servicios() {
     origen: "",
     destino: "",
     pasajero: "",
+    pasajero_pcd_id: "" as string,
     centro_costo: "",
     conductor: "",
     vehiculo: "",
