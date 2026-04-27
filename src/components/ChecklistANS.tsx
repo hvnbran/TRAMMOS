@@ -119,7 +119,7 @@ export function ChecklistANS({ vehiculoId }: Props) {
       const db = diasHasta(b.fecha_vencimiento) ?? Number.MAX_SAFE_INTEGER;
       return db - da;
     })[0];
-    return evaluar(t, mejor);
+    return evaluar({ value: t.value, label: t.label, obligatorio: t.obligatorio ?? false }, mejor);
   });
 
   const obligatorios = items.filter((i) => i.obligatorio);
