@@ -131,6 +131,32 @@ function PasajeroPage() {
     return () => { supabase.removeChannel(ch); };
   }, [user]);
 
+  // Cargar info del vehículo (foto, marca, etc.) cuando llega la placa asignada
+  useEffect(() => {
+    const placa = solicitud?.vehiculo_placa?.trim();
+    if (!placa || !perfil) {
+      setVehiculoInfo(null);
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("vehiculos")
+        .select("foto_url,marca,linea,color")
+        .eq("cliente", perfil.cliente)
+        .ilike("placa", placa)
+        .maybeSingle();
+      if (mounted) {
+        setVehiculoInfo(
+          data
+            ? { foto_url: data.foto_url, marca: data.marca, linea: data.linea, color: data.color }
+            : { foto_url: null, marca: null, linea: null, color: null },
+        );
+      }
+    })();
+    return () => { mounted = false; };
+  }, [solicitud?.vehiculo_placa, perfil]);
+
   const etaMinutos = useMemo(() => {
     if (!solicitud) return 0;
     if (solicitud.estado === "solicitada") return 8;
