@@ -24,6 +24,7 @@ import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiTestLoginRouteImport } from './routes/api/test-login'
 import { Route as ApiSeedRouteImport } from './routes/api/seed'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -104,6 +105,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTestLoginRoute = ApiTestLoginRouteImport.update({
+  id: '/api/test-login',
+  path: '/api/test-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSeedRoute = ApiSeedRouteImport.update({
   id: '/api/seed',
   path: '/api/seed',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
+  '/api/test-login': typeof ApiTestLoginRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
+  '/api/test-login': typeof ApiTestLoginRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/servicios': typeof ServiciosRoute
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
+  '/api/test-login': typeof ApiTestLoginRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/vehiculos'
     | '/api/seed'
+    | '/api/test-login'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/vehiculos'
     | '/api/seed'
+    | '/api/test-login'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/vehiculos'
     | '/api/seed'
+    | '/api/test-login'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   ServiciosRoute: typeof ServiciosRoute
   VehiculosRoute: typeof VehiculosRoute
   ApiSeedRoute: typeof ApiSeedRoute
+  ApiTestLoginRoute: typeof ApiTestLoginRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -385,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/test-login': {
+      id: '/api/test-login'
+      path: '/api/test-login'
+      fullPath: '/api/test-login'
+      preLoaderRoute: typeof ApiTestLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/seed': {
       id: '/api/seed'
       path: '/api/seed'
@@ -433,6 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServiciosRoute: ServiciosRoute,
   VehiculosRoute: VehiculosRoute,
   ApiSeedRoute: ApiSeedRoute,
+  ApiTestLoginRoute: ApiTestLoginRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,

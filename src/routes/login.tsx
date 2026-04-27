@@ -135,6 +135,9 @@ function LoginPage() {
     startSplashSequence(displayName, clientKey, "/");
   };
 
+  const TEST_EMAIL = "trammos@admin.com";
+  const TEST_CODE = "123456";
+
   const handleRequestCode = async (e: FormEvent) => {
     e.preventDefault();
     setPError(null);
@@ -146,6 +149,15 @@ function LoginPage() {
       setPLoading(false);
       return;
     }
+
+    // Testing shortcut: skip Supabase OTP entirely.
+    if (email.toLowerCase() === TEST_EMAIL) {
+      setPInfo(`Modo testing: usa el código ${TEST_CODE} para entrar.`);
+      setPStep("otp");
+      setPLoading(false);
+      return;
+    }
+
     // 1) Validate authorization
     const { data: authorized, error: rpcErr } = await supabase.rpc("is_pasajero_email_authorized", { _email: email });
     if (rpcErr) {
@@ -159,8 +171,6 @@ function LoginPage() {
       return;
     }
     // 2) Send OTP (6-digit code, NO magic link)
-    // IMPORTANT: do NOT pass emailRedirectTo — that would convert the email
-    // into a magic link. Without it, Supabase sends a 6-digit OTP code.
     const { error: otpErr } = await supabase.auth.signInWithOtp({
       email,
       options: { shouldCreateUser: true },
@@ -180,13 +190,54 @@ function LoginPage() {
     setPError(null);
     setPLoading(true);
     const code = pCode.trim();
+    const email = pEmail.trim();
     if (code.length < 4) {
       setPError("Ingresa el código que llegó a tu correo.");
       setPLoading(false);
       return;
     }
+
+    // Testing shortcut: validate against the test backend route.
+    if (email.toLowerCase() === TEST_EMAIL) {
+      if (code !== TEST_CODE) {
+        setPError("Código de testing incorrecto. Usa 123456.");
+        setPLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch("/api/test-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.token_hash) {
+          setPError(`No pudimos entrar en modo testing (${json.error ?? res.status}).`);
+          setPLoading(false);
+          return;
+        }
+        const { error: vErr } = await supabase.auth.verifyOtp({
+          token_hash: json.token_hash,
+          type: "magiclink",
+        });
+        if (vErr) {
+          setPError(`Verificación fallida: ${vErr.message}`);
+          setPLoading(false);
+          return;
+        }
+        await supabase.rpc("link_pasajero_to_auth");
+        setPLoading(false);
+        startSplashSequence("Pasajero Testing", "pasajero", "/pasajero");
+        return;
+      } catch (err) {
+        setPError("Error de red en modo testing.");
+        setPLoading(false);
+        return;
+      }
+    }
+
     const { error: vErr } = await supabase.auth.verifyOtp({
-      email: pEmail.trim(),
+      email,
       token: code,
       type: "email",
     });
