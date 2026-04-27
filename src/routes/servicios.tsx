@@ -6,8 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { SpeakButton } from "@/components/SpeakButton";
-import { Pictograma, type PictogramaName } from "@/components/Pictograma";
-import { generarBrief } from "@/routes/pasajeros-pcd";
+import { Pictograma } from "@/components/Pictograma";
+import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 
 function isVencido(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
