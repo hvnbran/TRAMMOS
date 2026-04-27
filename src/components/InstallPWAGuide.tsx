@@ -54,7 +54,7 @@ const GUIDES: Record<Platform, { title: string; subtitle: string; icon: React.Re
   "android-chrome": {
     title: "Instalar en Android (Chrome)",
     subtitle: "Sigue estos pasos para instalar TRAMMOS como app",
-    icon: <Chrome className="h-6 w-6" />,
+    icon: <Monitor className="h-6 w-6" />,
     steps: [
       { text: "Toca el menú ⋮ en la esquina superior derecha de Chrome", icon: <MoreVertical className="h-5 w-5 text-primary" /> },
       { text: 'Toca "Instalar app" o "Añadir a pantalla principal"', icon: <Download className="h-5 w-5 text-primary" /> },
@@ -87,7 +87,7 @@ const GUIDES: Record<Platform, { title: string; subtitle: string; icon: React.Re
   "desktop": {
     title: "Instalar en computadora",
     subtitle: "Disponible en Chrome, Edge y otros navegadores compatibles",
-    icon: <Chrome className="h-6 w-6" />,
+    icon: <Monitor className="h-6 w-6" />,
     steps: [
       { text: 'Busca el icono de "Instalar" ⊕ en la barra de direcciones', icon: <Download className="h-5 w-5 text-primary" /> },
       { text: 'O abre el menú ⋮ y selecciona "Instalar TRAMMOS…"', icon: <MoreVertical className="h-5 w-5 text-primary" /> },
@@ -178,7 +178,7 @@ export function InstallPWAGuide({ open, onClose }: Props) {
           <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-muted/40 border border-border">
             <PlatformTab active={selected.startsWith("ios")} onClick={() => setSelected("ios-safari")} icon={<Apple className="h-4 w-4" />} label="iPhone" />
             <PlatformTab active={selected.startsWith("android")} onClick={() => setSelected("android-chrome")} icon={<Smartphone className="h-4 w-4" />} label="Android" />
-            <PlatformTab active={selected === "desktop"} onClick={() => setSelected("desktop")} icon={<Chrome className="h-4 w-4" />} label="PC" />
+            <PlatformTab active={selected === "desktop"} onClick={() => setSelected("desktop")} icon={<Monitor className="h-4 w-4" />} label="PC" />
           </div>
 
           {/* Sub-browser selector for iOS / Android */}
