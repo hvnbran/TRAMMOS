@@ -385,8 +385,11 @@ export type Database = {
       pasajeros_pcd: {
         Row: {
           alergias: string | null
+          auth_user_id: string | null
+          autorizado: boolean
           ayudas_tecnicas: string[]
           cedula: string | null
+          centros_costo_permitidos: string[]
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           comunicacion_preferida: string
           condiciones_medicas: string | null
@@ -396,13 +399,16 @@ export type Database = {
           contacto_emergencia_telefono: string | null
           created_at: string
           created_by: string | null
+          direccion_habitual: string | null
           email: string | null
           id: string
           medicamentos: string | null
           nivel_asistencia: number
           nombre: string
           notas_conductor: string | null
+          password_backup: string | null
           permite_acompanante: boolean
+          primer_login_at: string | null
           requiere_vehiculo_adaptado: boolean
           silla_ruedas_medidas: string | null
           telefono: string | null
@@ -411,8 +417,11 @@ export type Database = {
         }
         Insert: {
           alergias?: string | null
+          auth_user_id?: string | null
+          autorizado?: boolean
           ayudas_tecnicas?: string[]
           cedula?: string | null
+          centros_costo_permitidos?: string[]
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           comunicacion_preferida?: string
           condiciones_medicas?: string | null
@@ -422,13 +431,16 @@ export type Database = {
           contacto_emergencia_telefono?: string | null
           created_at?: string
           created_by?: string | null
+          direccion_habitual?: string | null
           email?: string | null
           id?: string
           medicamentos?: string | null
           nivel_asistencia?: number
           nombre: string
           notas_conductor?: string | null
+          password_backup?: string | null
           permite_acompanante?: boolean
+          primer_login_at?: string | null
           requiere_vehiculo_adaptado?: boolean
           silla_ruedas_medidas?: string | null
           telefono?: string | null
@@ -437,8 +449,11 @@ export type Database = {
         }
         Update: {
           alergias?: string | null
+          auth_user_id?: string | null
+          autorizado?: boolean
           ayudas_tecnicas?: string[]
           cedula?: string | null
+          centros_costo_permitidos?: string[]
           cliente?: Database["public"]["Enums"]["cliente_tipo"]
           comunicacion_preferida?: string
           condiciones_medicas?: string | null
@@ -448,13 +463,16 @@ export type Database = {
           contacto_emergencia_telefono?: string | null
           created_at?: string
           created_by?: string | null
+          direccion_habitual?: string | null
           email?: string | null
           id?: string
           medicamentos?: string | null
           nivel_asistencia?: number
           nombre?: string
           notas_conductor?: string | null
+          password_backup?: string | null
           permite_acompanante?: boolean
+          primer_login_at?: string | null
           requiere_vehiculo_adaptado?: boolean
           silla_ruedas_medidas?: string | null
           telefono?: string | null
@@ -554,6 +572,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      solicitudes_pasajero: {
+        Row: {
+          cancelado_motivo: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_nombre: string | null
+          created_at: string
+          created_by_pasajero: string
+          destino: string
+          estado: string
+          hora_recogida: string
+          id: string
+          notas: string | null
+          origen: string
+          pasajero_pcd_id: string
+          programado: boolean
+          servicio_id: string | null
+          updated_at: string
+          vehiculo_placa: string | null
+        }
+        Insert: {
+          cancelado_motivo?: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_nombre?: string | null
+          created_at?: string
+          created_by_pasajero: string
+          destino: string
+          estado?: string
+          hora_recogida?: string
+          id?: string
+          notas?: string | null
+          origen: string
+          pasajero_pcd_id: string
+          programado?: boolean
+          servicio_id?: string | null
+          updated_at?: string
+          vehiculo_placa?: string | null
+        }
+        Update: {
+          cancelado_motivo?: string | null
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_nombre?: string | null
+          created_at?: string
+          created_by_pasajero?: string
+          destino?: string
+          estado?: string
+          hora_recogida?: string
+          id?: string
+          notas?: string | null
+          origen?: string
+          pasajero_pcd_id?: string
+          programado?: boolean
+          servicio_id?: string | null
+          updated_at?: string
+          vehiculo_placa?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -753,13 +828,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_pasajero_email_authorized: {
+        Args: { _email: string }
+        Returns: boolean
+      }
+      link_pasajero_to_auth: { Args: never; Returns: Json }
       user_client: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["cliente_tipo"]
       }
     }
     Enums: {
-      app_role: "admin" | "corona" | "sodimac"
+      app_role: "admin" | "corona" | "sodimac" | "pasajero"
       cliente_tipo: "corona" | "sodimac"
     }
     CompositeTypes: {
@@ -888,7 +968,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "corona", "sodimac"],
+      app_role: ["admin", "corona", "sodimac", "pasajero"],
       cliente_tipo: ["corona", "sodimac"],
     },
   },
