@@ -282,7 +282,10 @@ function Vehiculos() {
                   </button>
                   {expanded === v.id && (
                     <div className="mt-3 pt-3 border-t border-border space-y-4">
-                      <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
+                      <ChecklistANS vehiculoId={v.id} />
+                      <div className="pt-3 border-t border-border">
+                        <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
+                      </div>
                       <div className="pt-3 border-t border-border">
                         <DocumentManager
                           kind="vehiculo"
