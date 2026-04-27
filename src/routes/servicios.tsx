@@ -148,7 +148,14 @@ function Servicios() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const payload = { ...form, cliente: cliente ?? form.cliente };
+    // Si seleccionó un pasajero PCD, usamos su nombre como "pasajero" textual también
+    const pcdSel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
+    const payload = {
+      ...form,
+      cliente: cliente ?? form.cliente,
+      pasajero: pcdSel ? pcdSel.nombre : form.pasajero,
+      pasajero_pcd_id: form.pasajero_pcd_id || null,
+    };
     const { error } = await supabase.from("servicios").insert(payload);
     setSaving(false);
     if (error) {
@@ -156,7 +163,7 @@ function Servicios() {
       return;
     }
     setShowForm(false);
-    setForm({ ...form, numero_orden: "", origen: "", destino: "", pasajero: "", conductor: "", vehiculo: "" });
+    setForm({ ...form, numero_orden: "", origen: "", destino: "", pasajero: "", pasajero_pcd_id: "", conductor: "", vehiculo: "" });
     load();
   }
 
