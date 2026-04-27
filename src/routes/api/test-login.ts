@@ -55,8 +55,7 @@ export const Route = createFileRoute("/api/test-login")({
             );
           }
 
-          const tokenHash =
-            linkData.properties?.hashed_token ?? linkData.properties?.token_hash ?? null;
+          const tokenHash = linkData.properties?.hashed_token ?? null;
 
           if (!tokenHash) {
             return Response.json({ error: "no_token_hash" }, { status: 500 });
