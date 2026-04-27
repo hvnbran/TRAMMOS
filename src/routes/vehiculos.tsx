@@ -96,12 +96,14 @@ function Vehiculos() {
 
   function startCreate() {
     setEditingId(null);
+    setNuevoConductor(false);
     setForm({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
     setShowForm(true);
   }
 
   function startEdit(v: VehiculoRow) {
     setEditingId(v.id);
+    setNuevoConductor(false);
     setForm({
       cliente: v.cliente,
       placa: v.placa,
@@ -111,8 +113,6 @@ function Vehiculos() {
       color: v.color ?? "",
       num_interno: v.num_interno ?? "",
       estado: v.estado,
-      vence_soat: v.vence_soat ?? "",
-      vence_rtm: v.vence_rtm ?? "",
       conductor: v.conductor ?? "",
     });
     setShowForm(true);
@@ -121,19 +121,17 @@ function Vehiculos() {
   function cancelForm() {
     setShowForm(false);
     setEditingId(null);
+    setNuevoConductor(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const algunoVencido = isVencido(form.vence_soat || null) || isVencido(form.vence_rtm || null);
     const payload = {
       ...form,
       cliente: cliente ?? form.cliente,
       modelo: Number(form.modelo) || null,
-      vence_soat: form.vence_soat || null,
-      vence_rtm: form.vence_rtm || null,
-      estado: algunoVencido ? "Inactivo" : form.estado,
+      conductor: form.conductor.trim() || null,
     };
     const { error } = editingId
       ? await supabase.from("vehiculos").update(payload).eq("id", editingId)
