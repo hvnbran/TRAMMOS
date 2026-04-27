@@ -384,6 +384,15 @@ function Vehiculos() {
                       <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
                       <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
                     </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {((v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : [])).length === 0 ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning border border-warning/30">Sin asignar</span>
+                      ) : (
+                        ((v.clientes && v.clientes.length > 0) ? v.clientes : [v.cliente!]).map((c) => (
+                          <span key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/30 capitalize">{c}</span>
+                        ))
+                      )}
+                    </div>
                     {(asignacionesPorVehiculo[v.id] ?? 0) === 0 && (
                       <button
                         type="button"
