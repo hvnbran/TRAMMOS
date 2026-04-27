@@ -76,9 +76,16 @@ function Vehiculos() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+  const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
+  const [nuevoConductor, setNuevoConductor] = useState(false);
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
-  useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
+  useEffect(() => { if (role) { load(); loadConductores(); } /* eslint-disable-next-line */ }, [role]);
+
+  async function loadConductores() {
+    const { data } = await supabase.from("conductores").select("id, nombre, cedula").order("nombre");
+    if (data) setConductoresOpts(data as ConductorOpt[]);
+  }
 
   async function load() {
     setLoading(true);
