@@ -456,39 +456,8 @@ function PasajeroCard({ p, onEdit, onDelete }: { p: PasajeroPCD; onEdit: () => v
   );
 }
 
-/**
- * Genera un brief en lenguaje natural para que el conductor escuche o lea
- * antes de iniciar el servicio. Diseñado para ser corto, respetuoso y útil.
- */
-export function generarBrief(p: PasajeroPCD): string {
-  const partes: string[] = [];
-  partes.push(`Pasajero: ${p.nombre}.`);
-  const tipo = TIPOS_DISC.find((t) => t.value === p.tipo_discapacidad)?.label;
-  if (p.tipo_discapacidad !== "ninguna" && tipo) {
-    partes.push(`Discapacidad ${tipo.toLowerCase()}.`);
-  }
-  if (p.ayudas_tecnicas.length > 0) {
-    const labels = p.ayudas_tecnicas
-      .map((a) => AYUDAS.find((x) => x.value === a)?.label?.toLowerCase())
-      .filter(Boolean);
-    partes.push(`Usa: ${labels.join(", ")}.`);
-  }
-  if (p.silla_ruedas_medidas) {
-    partes.push(`Silla ${p.silla_ruedas_medidas}.`);
-  }
-  const com = COMUNICACIONES.find((c) => c.value === p.comunicacion_preferida)?.label?.toLowerCase();
-  if (com) partes.push(`Prefiere comunicarse: ${com}.`);
-  const niv = NIVELES_ASIST.find((n) => n.value === p.nivel_asistencia);
-  if (niv && p.nivel_asistencia > 0) partes.push(`Nivel de asistencia: ${niv.label.toLowerCase()}.`);
-  if (p.requiere_vehiculo_adaptado) partes.push("Requiere vehículo adaptado.");
-  if (p.alergias) partes.push(`Alergias: ${p.alergias}.`);
-  if (p.notas_conductor) partes.push(p.notas_conductor);
-  if (p.contacto_emergencia_telefono) {
-    partes.push(`Emergencia: ${p.contacto_emergencia_nombre ?? "contacto"} ${p.contacto_emergencia_telefono}.`);
-  }
-  partes.push("Por favor, confirma con el pasajero antes de iniciar el viaje.");
-  return partes.join(" ");
-}
+// generarBrief vive en @/lib/pcd-helpers para que otras rutas lo importen.
+
 
 function FormularioModal(props: {
   form: typeof EMPTY;
