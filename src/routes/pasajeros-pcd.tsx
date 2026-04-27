@@ -10,6 +10,10 @@ import {
   CheckCircle2, AlertCircle, Accessibility, ShieldCheck,
 } from "lucide-react";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+import {
+  TIPOS_DISC, AYUDAS, COMUNICACIONES, NIVELES_ASIST, generarBrief,
+  type PasajeroPCD, type TipoDisc, type Comunicacion,
+} from "@/lib/pcd-helpers";
 
 export const Route = createFileRoute("/pasajeros-pcd")({
   component: PasajerosPCD,
