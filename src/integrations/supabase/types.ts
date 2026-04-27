@@ -596,6 +596,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           estado: string
+          foto_url: string | null
           id: string
           linea: string | null
           marca: string | null
@@ -613,6 +614,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           estado?: string
+          foto_url?: string | null
           id?: string
           linea?: string | null
           marca?: string | null
@@ -630,6 +632,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           estado?: string
+          foto_url?: string | null
           id?: string
           linea?: string | null
           marca?: string | null

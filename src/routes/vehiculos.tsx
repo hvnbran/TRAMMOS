@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -32,6 +32,7 @@ interface VehiculoRow {
   vence_soat: string | null;
   vence_rtm: string | null;
   conductor: string | null;
+  foto_url: string | null;
 }
 
 const EMPTY_FORM = {
@@ -93,6 +94,25 @@ function Vehiculos() {
     const { data } = await supabase.from("vehiculos").select("*").order("placa");
     if (data) setItems(data as VehiculoRow[]);
     setLoading(false);
+  }
+
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  async function handleFotoUpload(v: VehiculoRow, file: File) {
+    if (!file.type.startsWith("image/")) { alert("Selecciona una imagen"); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("Máximo 5 MB"); return; }
+    setUploadingId(v.id);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${v.cliente}/${v.id}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("vehiculos-fotos")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { alert(upErr.message); setUploadingId(null); return; }
+    const { data: pub } = supabase.storage.from("vehiculos-fotos").getPublicUrl(path);
+    const url = pub.publicUrl;
+    await supabase.from("vehiculos").update({ foto_url: url } as any).eq("id", v.id);
+    setUploadingId(null);
+    load();
   }
 
   function startCreate() {
@@ -240,38 +260,68 @@ function Vehiculos() {
               return (
                 <div
                   key={v.id}
-                  className={`stagger-item rounded-lg border bg-card p-4 ${vencido ? "border-destructive/40" : "border-border"}`}
+                  className={`stagger-item rounded-lg border bg-card overflow-hidden flex flex-col ${vencido ? "border-destructive/40" : "border-border"}`}
                   style={{ ["--i" as string]: i } as React.CSSProperties}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className={vencido ? "opacity-70" : ""}>
-                      <p className={`font-bold text-lg ${vencido ? "line-through" : ""}`}>{v.placa}</p>
-                      <p className="text-xs text-muted-foreground">{v.marca} {v.linea} {v.modelo}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(eff)}`}>{eff}</span>
-                      <button onClick={() => startEdit(v)} className="text-muted-foreground hover:text-primary" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => handleDelete(v.id)} className="text-muted-foreground hover:text-destructive" title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
-                    </div>
-                  </div>
-                  {vencido && (
-                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-destructive">
-                      <AlertTriangle className="h-3 w-3" /> {motivos.join(" y ")} vencido — actualice la fecha para reactivar
-                    </div>
-                  )}
-                  <div className={`mt-3 grid grid-cols-2 gap-2 text-xs ${vencido ? "opacity-70" : ""}`}>
-                    <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
-                    <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
-                    <div className="col-span-2">
-                      <span className="text-muted-foreground">Conductor</span>
-                      {v.conductor ? (
-                        <p>{v.conductor}</p>
+                  {/* Foto del vehículo - aspect ratio fijo para homogeneidad */}
+                  <div className="relative aspect-[16/9] bg-secondary/40 group">
+                    {v.foto_url ? (
+                      <img
+                        src={v.foto_url}
+                        alt={`Vehículo ${v.placa}`}
+                        className={`w-full h-full object-cover ${vencido ? "opacity-60 grayscale" : ""}`}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+                        <Car className="h-12 w-12" />
+                      </div>
+                    )}
+                    <label
+                      htmlFor={`foto-${v.id}`}
+                      className="absolute bottom-2 right-2 bg-background/90 hover:bg-background border border-border rounded-md px-2 py-1 text-[11px] font-medium flex items-center gap-1 cursor-pointer shadow-sm transition-opacity opacity-0 group-hover:opacity-100"
+                      title={v.foto_url ? "Cambiar foto" : "Subir foto"}
+                    >
+                      {uploadingId === v.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
-                        <p className="text-warning font-medium">Sin asignar</p>
+                        <Camera className="h-3 w-3" />
                       )}
-                    </div>
-                    {role === "admin" && <div className="col-span-2"><span className="text-muted-foreground">Cliente</span><p className="capitalize">{v.cliente}</p></div>}
+                      {v.foto_url ? "Cambiar" : "Subir foto"}
+                    </label>
+                    <input
+                      id={`foto-${v.id}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFotoUpload(v, file);
+                        e.target.value = "";
+                      }}
+                    />
                   </div>
+
+                  <div className="p-4 flex-1 flex flex-col">
+                    <div className="flex items-start justify-between">
+                      <div className={vencido ? "opacity-70" : ""}>
+                        <p className={`font-bold text-lg ${vencido ? "line-through" : ""}`}>{v.placa}</p>
+                        <p className="text-xs text-muted-foreground">{v.marca} {v.linea} {v.modelo}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(eff)}`}>{eff}</span>
+                        <button onClick={() => startEdit(v)} className="text-muted-foreground hover:text-primary" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleDelete(v.id)} className="text-muted-foreground hover:text-destructive" title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                    {vencido && (
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-destructive">
+                        <AlertTriangle className="h-3 w-3" /> {motivos.join(" y ")} vencido — actualice la fecha para reactivar
+                      </div>
+                    )}
+                    <div className={`mt-3 grid grid-cols-2 gap-2 text-xs ${vencido ? "opacity-70" : ""}`}>
+                      <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
+                      <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
+                    </div>
                   <button
                     onClick={() => setExpanded(expanded === v.id ? null : v.id)}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
@@ -296,6 +346,7 @@ function Vehiculos() {
                       </div>
                     </div>
                   )}
+                  </div>
                 </div>
               );
             })}
