@@ -2,3 +2,6 @@ project_id = "dyxmhwcoudtwwsokfcfw"
 
 [functions.extract-doc-date]
 verify_jwt = false
+
+[functions.trami-router]
+verify_jwt = false
