@@ -109,37 +109,52 @@ export type Database = {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           conductor_id: string
           created_at: string
+          fecha_emision: string | null
+          fecha_vencimiento: string | null
           file_name: string
           id: string
           mime_type: string | null
+          numero_documento: string | null
+          observaciones: string | null
           size_bytes: number | null
           storage_path: string
           tipo: string
           uploaded_by: string | null
+          verificado: boolean
         }
         Insert: {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           conductor_id: string
           created_at?: string
+          fecha_emision?: string | null
+          fecha_vencimiento?: string | null
           file_name: string
           id?: string
           mime_type?: string | null
+          numero_documento?: string | null
+          observaciones?: string | null
           size_bytes?: number | null
           storage_path: string
           tipo: string
           uploaded_by?: string | null
+          verificado?: boolean
         }
         Update: {
           cliente?: Database["public"]["Enums"]["cliente_tipo"]
           conductor_id?: string
           created_at?: string
+          fecha_emision?: string | null
+          fecha_vencimiento?: string | null
           file_name?: string
           id?: string
           mime_type?: string | null
+          numero_documento?: string | null
+          observaciones?: string | null
           size_bytes?: number | null
           storage_path?: string
           tipo?: string
           uploaded_by?: string | null
+          verificado?: boolean
         }
         Relationships: [
           {
@@ -469,42 +484,99 @@ export type Database = {
         }
         Relationships: []
       }
+      vehiculo_conductores: {
+        Row: {
+          asignado_desde: string
+          asignado_hasta: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_id: string
+          created_at: string
+          created_by: string | null
+          es_principal: boolean
+          id: string
+          notas: string | null
+          updated_at: string
+          vehiculo_id: string
+        }
+        Insert: {
+          asignado_desde?: string
+          asignado_hasta?: string | null
+          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_id: string
+          created_at?: string
+          created_by?: string | null
+          es_principal?: boolean
+          id?: string
+          notas?: string | null
+          updated_at?: string
+          vehiculo_id: string
+        }
+        Update: {
+          asignado_desde?: string
+          asignado_hasta?: string | null
+          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          conductor_id?: string
+          created_at?: string
+          created_by?: string | null
+          es_principal?: boolean
+          id?: string
+          notas?: string | null
+          updated_at?: string
+          vehiculo_id?: string
+        }
+        Relationships: []
+      }
       vehiculo_documentos: {
         Row: {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           created_at: string
+          fecha_emision: string | null
+          fecha_vencimiento: string | null
           file_name: string
           id: string
           mime_type: string | null
+          numero_documento: string | null
+          observaciones: string | null
           size_bytes: number | null
           storage_path: string
           tipo: string
           uploaded_by: string | null
           vehiculo_id: string
+          verificado: boolean
         }
         Insert: {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           created_at?: string
+          fecha_emision?: string | null
+          fecha_vencimiento?: string | null
           file_name: string
           id?: string
           mime_type?: string | null
+          numero_documento?: string | null
+          observaciones?: string | null
           size_bytes?: number | null
           storage_path: string
           tipo: string
           uploaded_by?: string | null
           vehiculo_id: string
+          verificado?: boolean
         }
         Update: {
           cliente?: Database["public"]["Enums"]["cliente_tipo"]
           created_at?: string
+          fecha_emision?: string | null
+          fecha_vencimiento?: string | null
           file_name?: string
           id?: string
           mime_type?: string | null
+          numero_documento?: string | null
+          observaciones?: string | null
           size_bytes?: number | null
           storage_path?: string
           tipo?: string
           uploaded_by?: string | null
           vehiculo_id?: string
+          verificado?: boolean
         }
         Relationships: [
           {
