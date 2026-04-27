@@ -36,8 +36,10 @@ interface VehiculoRow {
 const EMPTY_FORM = {
   cliente: "corona" as "corona" | "sodimac",
   placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
-  num_interno: "", estado: "Disponible", vence_soat: "", vence_rtm: "", conductor: "",
+  num_interno: "", estado: "Disponible", conductor: "",
 };
+
+interface ConductorOpt { id: string; nombre: string; cedula: string | null; }
 
 function isVencido(fechaISO: string | null): boolean {
   if (!fechaISO) return false;
