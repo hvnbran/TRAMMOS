@@ -5,6 +5,7 @@ import { AdminOnly } from "../components/layout/AdminOnly";
 import { Plus, MapPin, Building2, DollarSign, Inbox, Trash2, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { SolicitudesEntrantes } from "@/components/operacion/SolicitudesEntrantes";
 
 export const Route = createFileRoute("/operacion")({
   component: () => (
@@ -173,6 +174,9 @@ function Operacion() {
             Nueva Ruta
           </button>
         </div>
+
+        {/* Solicitudes entrantes (realtime) */}
+        <SolicitudesEntrantes />
 
         {/* Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
