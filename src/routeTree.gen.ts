@@ -29,6 +29,7 @@ import { Route as ApiSeedRouteImport } from './routes/api/seed'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicPushProcessRouteImport } from './routes/api/public/push.process'
 
 const VehiculosRoute = VehiculosRouteImport.update({
   id: '/vehiculos',
@@ -131,6 +132,11 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushProcessRoute = ApiPublicPushProcessRouteImport.update({
+  id: '/api/public/push/process',
+  path: '/api/public/push/process',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/queue/process'
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   VehiculosRoute: typeof VehiculosRoute
   ApiSeedRoute: typeof ApiSeedRoute
   ApiTestLoginRoute: typeof ApiTestLoginRoute
+  ApiPublicPushProcessRoute: typeof ApiPublicPushProcessRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -433,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push/process': {
+      id: '/api/public/push/process'
+      path: '/api/public/push/process'
+      fullPath: '/api/public/push/process'
+      preLoaderRoute: typeof ApiPublicPushProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -454,6 +474,7 @@ const rootRouteChildren: RootRouteChildren = {
   VehiculosRoute: VehiculosRoute,
   ApiSeedRoute: ApiSeedRoute,
   ApiTestLoginRoute: ApiTestLoginRoute,
+  ApiPublicPushProcessRoute: ApiPublicPushProcessRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,

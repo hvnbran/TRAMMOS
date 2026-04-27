@@ -182,7 +182,10 @@ function Servicios() {
     if (error) {
       alert("Error al actualizar estado: " + error.message);
       load();
+      return;
     }
+    // Disparar envío de notificación push (el trigger de BD ya encoló)
+    fetch("/api/public/push/process", { method: "POST" }).catch(() => { /* ignore */ });
   }
 
   async function handleFieldChange(id: string, campo: "conductor" | "vehiculo", valor: string) {
@@ -194,6 +197,11 @@ function Servicios() {
     if (error) {
       alert(`Error al actualizar ${campo}: ` + error.message);
       load();
+      return;
+    }
+    // Disparar envío de notificación push si se asignó conductor/vehículo
+    if (campo === "conductor" && nuevoValor) {
+      fetch("/api/public/push/process", { method: "POST" }).catch(() => { /* ignore */ });
     }
   }
 

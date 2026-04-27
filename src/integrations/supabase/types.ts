@@ -595,6 +595,84 @@ export type Database = {
         }
         Relationships: []
       }
+      push_notifications_queue: {
+        Row: {
+          attempts: number
+          body: string
+          created_at: string
+          data: Json | null
+          id: string
+          last_error: string | null
+          sent_at: string | null
+          status: string
+          tag: string | null
+          title: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          last_error?: string | null
+          sent_at?: string | null
+          status?: string
+          tag?: string | null
+          title: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          last_error?: string | null
+          sent_at?: string | null
+          status?: string
+          tag?: string | null
+          title?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       servicios: {
         Row: {
           centro_costo: string | null

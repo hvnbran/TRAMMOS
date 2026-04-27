@@ -129,6 +129,9 @@ export function SolicitudesEntrantes() {
         .eq("id", s.id);
       if (e2) throw e2;
 
+      // Disparar envío de notificación push (no bloqueante)
+      fetch("/api/public/push/process", { method: "POST" }).catch(() => { /* ignore */ });
+
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo aceptar la solicitud");
