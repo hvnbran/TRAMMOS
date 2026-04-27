@@ -275,7 +275,8 @@ function PasajeroPage() {
           />
         )}
 
-        <div className="mt-6">
+        <div className="mt-6 space-y-3">
+          {user && <PushNotificationsToggle userId={user.id} />}
           <InstallAppBanner />
         </div>
       </main>
