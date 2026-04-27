@@ -165,7 +165,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
         </p>
         {!adding && (
           <button
-            onClick={() => setAdding(true)}
+            onClick={abrirFormulario}
             className="text-[11px] flex items-center gap-1 text-primary hover:underline"
           >
             <Plus className="h-3 w-3" /> Asignar conductor
