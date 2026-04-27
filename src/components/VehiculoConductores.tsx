@@ -162,9 +162,15 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
           <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
         </div>
       ) : asignaciones.length === 0 ? (
-        <p className="text-[11px] text-muted-foreground text-center py-2">
-          Sin conductores asignados
-        </p>
+        <div className="flex items-center gap-2 text-[11px] px-3 py-2.5 rounded-md border border-dashed border-warning/40 bg-warning/5">
+          <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0" />
+          <div className="flex-1">
+            <p className="font-semibold text-warning">Asignación pendiente</p>
+            <p className="text-muted-foreground">
+              Este vehículo aún no tiene conductores asignados. Usa "Asignar conductor" para vincular uno o varios.
+            </p>
+          </div>
+        </div>
       ) : (
         <ul className="space-y-1">
           {asignaciones.map((a) => {
