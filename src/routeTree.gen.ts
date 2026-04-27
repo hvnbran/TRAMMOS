@@ -13,6 +13,7 @@ import { Route as VehiculosRouteImport } from './routes/vehiculos'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as ReportesRouteImport } from './routes/reportes'
 import { Route as PasajerosPcdRouteImport } from './routes/pasajeros-pcd'
+import { Route as PasajeroRouteImport } from './routes/pasajero'
 import { Route as OperacionRouteImport } from './routes/operacion'
 import { Route as MonitoreoRouteImport } from './routes/monitoreo'
 import { Route as LoginRouteImport } from './routes/login'
@@ -43,6 +44,11 @@ const ReportesRoute = ReportesRouteImport.update({
 const PasajerosPcdRoute = PasajerosPcdRouteImport.update({
   id: '/pasajeros-pcd',
   path: '/pasajeros-pcd',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PasajeroRoute = PasajeroRouteImport.update({
+  id: '/pasajero',
+  path: '/pasajero',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OperacionRoute = OperacionRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
+  '/pasajero': typeof PasajeroRoute
   '/pasajeros-pcd': typeof PasajerosPcdRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
+  '/pasajero': typeof PasajeroRoute
   '/pasajeros-pcd': typeof PasajerosPcdRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/monitoreo': typeof MonitoreoRoute
   '/operacion': typeof OperacionRoute
+  '/pasajero': typeof PasajeroRoute
   '/pasajeros-pcd': typeof PasajerosPcdRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/monitoreo'
     | '/operacion'
+    | '/pasajero'
     | '/pasajeros-pcd'
     | '/reportes'
     | '/servicios'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/monitoreo'
     | '/operacion'
+    | '/pasajero'
     | '/pasajeros-pcd'
     | '/reportes'
     | '/servicios'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/monitoreo'
     | '/operacion'
+    | '/pasajero'
     | '/pasajeros-pcd'
     | '/reportes'
     | '/servicios'
@@ -218,6 +230,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MonitoreoRoute: typeof MonitoreoRoute
   OperacionRoute: typeof OperacionRoute
+  PasajeroRoute: typeof PasajeroRoute
   PasajerosPcdRoute: typeof PasajerosPcdRoute
   ReportesRoute: typeof ReportesRoute
   ServiciosRoute: typeof ServiciosRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/pasajeros-pcd'
       fullPath: '/pasajeros-pcd'
       preLoaderRoute: typeof PasajerosPcdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pasajero': {
+      id: '/pasajero'
+      path: '/pasajero'
+      fullPath: '/pasajero'
+      preLoaderRoute: typeof PasajeroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/operacion': {
@@ -346,6 +366,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MonitoreoRoute: MonitoreoRoute,
   OperacionRoute: OperacionRoute,
+  PasajeroRoute: PasajeroRoute,
   PasajerosPcdRoute: PasajerosPcdRoute,
   ReportesRoute: ReportesRoute,
   ServiciosRoute: ServiciosRoute,
