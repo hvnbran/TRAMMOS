@@ -9,6 +9,7 @@ interface Props {
   origen: string;
   destino: string;
   conductor?: string | null;
+  conductorTelefono?: string | null;
   vehiculo?: string | null;
   vehiculoFoto?: string | null;
   vehiculoMarca?: string | null;
