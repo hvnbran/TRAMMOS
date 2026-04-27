@@ -158,10 +158,12 @@ function LoginPage() {
       setPLoading(false);
       return;
     }
-    // 2) Send OTP
+    // 2) Send OTP (6-digit code, NO magic link)
+    // IMPORTANT: do NOT pass emailRedirectTo — that would convert the email
+    // into a magic link. Without it, Supabase sends a 6-digit OTP code.
     const { error: otpErr } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true, emailRedirectTo: window.location.origin + "/pasajero" },
+      options: { shouldCreateUser: true },
     });
     if (otpErr) {
       setPError("No pudimos enviar el código. Intenta de nuevo en unos segundos.");
