@@ -181,9 +181,40 @@ function Vehiculos() {
               <div><label className="text-xs text-muted-foreground">Modelo (año)</label><input type="number" value={form.modelo} onChange={(e) => setForm({ ...form, modelo: Number(e.target.value) })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Color</label><input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">N° interno</label><input value={form.num_interno} onChange={(e) => setForm({ ...form, num_interno: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Vence SOAT</label><input type="date" value={form.vence_soat} onChange={(e) => setForm({ ...form, vence_soat: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Vence RTM</label><input type="date" value={form.vence_rtm} onChange={(e) => setForm({ ...form, vence_rtm: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Conductor asignado</label><input value={form.conductor} onChange={(e) => setForm({ ...form, conductor: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">Conductor asignado (opcional)</label>
+                  <button
+                    type="button"
+                    onClick={() => { setNuevoConductor(!nuevoConductor); setForm({ ...form, conductor: "" }); }}
+                    className="text-[11px] text-primary hover:underline"
+                  >
+                    {nuevoConductor ? "← Elegir existente" : "+ Escribir nuevo"}
+                  </button>
+                </div>
+                {nuevoConductor ? (
+                  <input
+                    value={form.conductor}
+                    onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                    placeholder="Nombre del conductor"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                ) : (
+                  <select
+                    value={form.conductor}
+                    onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">— Sin asignar —</option>
+                    {conductoresOpts.map((c) => (
+                      <option key={c.id} value={c.nombre}>
+                        {c.nombre}{c.cedula ? ` (${c.cedula})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-1">Para asignar varios conductores, usa el panel de "Documentos" del vehículo después de guardarlo.</p>
+              </div>
               <div><label className="text-xs text-muted-foreground">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                   {["Disponible", "En servicio", "En mantenimiento", "Inactivo"].map((x) => <option key={x}>{x}</option>)}
