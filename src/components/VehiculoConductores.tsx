@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle, Filter, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle, Filter, CheckCircle2, RefreshCw } from "lucide-react";
 
 interface Conductor {
   id: string;
@@ -50,6 +50,8 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
   const [saving, setSaving] = useState(false);
   const [filtro, setFiltro] = useState<FiltroEstado>("aptos");
 
+  const [refreshingConductores, setRefreshingConductores] = useState(false);
+
   async function load() {
     setLoading(true);
     const [a, c] = await Promise.all([
@@ -65,6 +67,21 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
     setAsignaciones((a.data ?? []) as Asignacion[]);
     setConductores((c.data ?? []) as Conductor[]);
     setLoading(false);
+  }
+
+  async function refrescarConductores() {
+    setRefreshingConductores(true);
+    const { data } = await supabase
+      .from("conductores")
+      .select("id, nombre, cedula, estado, vence_licencia")
+      .order("nombre");
+    if (data) setConductores(data as Conductor[]);
+    setRefreshingConductores(false);
+  }
+
+  function abrirFormulario() {
+    setAdding(true);
+    refrescarConductores();
   }
 
   useEffect(() => {
@@ -148,7 +165,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
         </p>
         {!adding && (
           <button
-            onClick={() => setAdding(true)}
+            onClick={abrirFormulario}
             className="text-[11px] flex items-center gap-1 text-primary hover:underline"
           >
             <Plus className="h-3 w-3" /> Asignar conductor
@@ -160,8 +177,20 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
         <div className="rounded-md border border-primary/30 p-2 space-y-2 bg-primary/5">
           {/* Filtros por estado */}
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Filter className="h-3 w-3" /> Filtrar por estado:
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Filter className="h-3 w-3" /> Filtrar por estado:
+              </div>
+              <button
+                type="button"
+                onClick={refrescarConductores}
+                disabled={refreshingConductores}
+                className="text-[10px] flex items-center gap-1 text-primary hover:underline disabled:opacity-50"
+                title="Recargar lista y recalcular vencimientos"
+              >
+                <RefreshCw className={`h-3 w-3 ${refreshingConductores ? "animate-spin" : ""}`} />
+                {refreshingConductores ? "Actualizando..." : "Refrescar"}
+              </button>
             </div>
             <div className="flex flex-wrap gap-1">
               {([
