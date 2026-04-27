@@ -253,6 +253,10 @@ function PasajeroPage() {
             destino={solicitud.destino}
             conductor={solicitud.conductor_nombre}
             vehiculo={solicitud.vehiculo_placa}
+            vehiculoFoto={vehiculoInfo?.foto_url ?? null}
+            vehiculoMarca={vehiculoInfo?.marca ?? null}
+            vehiculoLinea={vehiculoInfo?.linea ?? null}
+            vehiculoColor={vehiculoInfo?.color ?? null}
             etaMinutos={etaMinutos}
             cancelando={cancelando}
             onCancel={handleCancel}
