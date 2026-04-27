@@ -367,7 +367,7 @@ function Vehiculos() {
                   {expanded === v.id && (
                     <div className="mt-3 pt-3 border-t border-border space-y-4">
                       <ChecklistANS vehiculoId={v.id} />
-                      <div className="pt-3 border-t border-border">
+                      <div id={`conductores-${v.id}`} className="pt-3 border-t border-border scroll-mt-20">
                         <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
                       </div>
                       <div className="pt-3 border-t border-border">
