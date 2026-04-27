@@ -236,8 +236,6 @@ function Vehiculos() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {items.map((v, i) => {
               const { estado: eff, vencido, motivos } = estadoEfectivo(v);
-              const soatVenc = isVencido(v.vence_soat);
-              const rtmVenc = isVencido(v.vence_rtm);
               return (
                 <div
                   key={v.id}
