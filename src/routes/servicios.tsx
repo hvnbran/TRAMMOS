@@ -217,6 +217,9 @@ function Servicios() {
           </button>
         </div>
 
+        {/* Solicitudes entrantes en vivo (pasajeros) — aceptar / asignar conductor desde aquí */}
+        <SolicitudesEntrantes />
+
         {showForm && (
           <form onSubmit={handleCreate} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
