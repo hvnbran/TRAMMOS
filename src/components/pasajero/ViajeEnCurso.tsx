@@ -41,6 +41,7 @@ export function ViajeEnCurso({
   origen,
   destino,
   conductor,
+  conductorTelefono,
   vehiculo,
   vehiculoFoto,
   vehiculoMarca,
