@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pictograma, type PictogramaName } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
+import { AccesoPasajeroPanel } from "@/components/pasajero/AccesoPasajeroPanel";
 import {
   Plus, Search, Trash2, Pencil, Heart, Phone, Save, X,
   CheckCircle2, AlertCircle, Accessibility, ShieldCheck,
