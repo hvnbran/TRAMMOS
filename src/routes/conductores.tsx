@@ -19,7 +19,8 @@ export const Route = createFileRoute("/conductores")({
 
 interface ConductorRow {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | null;
+  clientes: ("corona" | "sodimac")[];
   nombre: string;
   cedula: string | null;
   telefono: string | null;
@@ -32,7 +33,7 @@ interface ConductorRow {
 }
 
 const EMPTY_FORM = {
-  cliente: "corona" as "corona" | "sodimac",
+  clientes: [] as ("corona" | "sodimac")[],
   nombre: "", cedula: "", telefono: "", licencia: "", categoria_lic: "C1",
   estado: "Activo", vence_licencia: "",
 };
@@ -67,7 +68,9 @@ function Conductores() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+  const initialClientes: ("corona" | "sodimac")[] = cliente ? [cliente as "corona" | "sodimac"] : [];
+  const [form, setForm] = useState({ ...EMPTY_FORM, clientes: initialClientes });
+  const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "sin_asignar">("todos");
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
@@ -81,14 +84,14 @@ function Conductores() {
 
   function startCreate() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+    setForm({ ...EMPTY_FORM, clientes: initialClientes });
     setShowForm(true);
   }
 
   function startEdit(c: ConductorRow) {
     setEditingId(c.id);
     setForm({
-      cliente: c.cliente,
+      clientes: (c.clientes && c.clientes.length > 0) ? c.clientes : (c.cliente ? [c.cliente] : []),
       nombre: c.nombre,
       cedula: c.cedula ?? "",
       telefono: c.telefono ?? "",
@@ -100,6 +103,13 @@ function Conductores() {
     setShowForm(true);
   }
 
+  function toggleCliente(cl: "corona" | "sodimac") {
+    setForm((f) => ({
+      ...f,
+      clientes: f.clientes.includes(cl) ? f.clientes.filter((x) => x !== cl) : [...f.clientes, cl],
+    }));
+  }
+
   function cancelForm() {
     setShowForm(false);
     setEditingId(null);
@@ -109,15 +119,19 @@ function Conductores() {
     e.preventDefault();
     setSaving(true);
     const payload = {
-      ...form,
-      cliente: cliente ?? form.cliente,
+      nombre: form.nombre,
+      cedula: form.cedula,
+      telefono: form.telefono,
+      licencia: form.licencia,
+      categoria_lic: form.categoria_lic,
       vence_licencia: form.vence_licencia || null,
-      // Si la licencia ya está vencida, fuerza estado Vencido al guardar
       estado: isVencido(form.vence_licencia || null) ? "Vencido" : form.estado,
+      clientes: form.clientes,
+      cliente: form.clientes[0] ?? null,
     };
     const { error } = editingId
-      ? await supabase.from("conductores").update(payload).eq("id", editingId)
-      : await supabase.from("conductores").insert(payload);
+      ? await supabase.from("conductores").update(payload as any).eq("id", editingId)
+      : await supabase.from("conductores").insert(payload as any);
     setSaving(false);
     if (error) { alert(error.message); return; }
     cancelForm();
