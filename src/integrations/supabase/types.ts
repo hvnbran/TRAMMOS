@@ -17,6 +17,7 @@ export type Database = {
       calificaciones: {
         Row: {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor: string | null
           created_at: string
           created_by: string | null
           estrellas: number
@@ -24,12 +25,17 @@ export type Database = {
           id: string
           mejoras: string | null
           nombre: string
+          pasajero_id: string | null
+          resena: string | null
           servicio: string | null
+          solicitud_id: string | null
           tipo: string
           updated_at: string
+          vehiculo: string | null
         }
         Insert: {
           cliente: Database["public"]["Enums"]["cliente_tipo"]
+          conductor?: string | null
           created_at?: string
           created_by?: string | null
           estrellas: number
@@ -37,12 +43,17 @@ export type Database = {
           id?: string
           mejoras?: string | null
           nombre: string
+          pasajero_id?: string | null
+          resena?: string | null
           servicio?: string | null
+          solicitud_id?: string | null
           tipo: string
           updated_at?: string
+          vehiculo?: string | null
         }
         Update: {
           cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          conductor?: string | null
           created_at?: string
           created_by?: string | null
           estrellas?: number
@@ -50,9 +61,13 @@ export type Database = {
           id?: string
           mejoras?: string | null
           nombre?: string
+          pasajero_id?: string | null
+          resena?: string | null
           servicio?: string | null
+          solicitud_id?: string | null
           tipo?: string
           updated_at?: string
+          vehiculo?: string | null
         }
         Relationships: []
       }
@@ -422,9 +437,12 @@ export type Database = {
           estado: string
           fecha: string
           id: string
+          pasajero_id: string | null
           plan_mejoramiento: string | null
           por_que: string | null
           que_paso: string | null
+          reportado_por: string
+          solicitud_id: string | null
           solucion: string | null
           soporte: string | null
           tipo_incidente: string
@@ -440,9 +458,12 @@ export type Database = {
           estado?: string
           fecha?: string
           id?: string
+          pasajero_id?: string | null
           plan_mejoramiento?: string | null
           por_que?: string | null
           que_paso?: string | null
+          reportado_por?: string
+          solicitud_id?: string | null
           solucion?: string | null
           soporte?: string | null
           tipo_incidente: string
@@ -458,9 +479,12 @@ export type Database = {
           estado?: string
           fecha?: string
           id?: string
+          pasajero_id?: string | null
           plan_mejoramiento?: string | null
           por_que?: string | null
           que_paso?: string | null
+          reportado_por?: string
+          solicitud_id?: string | null
           solucion?: string | null
           soporte?: string | null
           tipo_incidente?: string
