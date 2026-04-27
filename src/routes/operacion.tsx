@@ -5,7 +5,7 @@ import { AdminOnly } from "../components/layout/AdminOnly";
 import { Plus, MapPin, Building2, DollarSign, Inbox, Trash2, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { SolicitudesEntrantes } from "@/components/operacion/SolicitudesEntrantes";
+
 
 export const Route = createFileRoute("/operacion")({
   component: () => (
