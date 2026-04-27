@@ -185,7 +185,8 @@ export type Database = {
         Row: {
           categoria_lic: string | null
           cedula: string | null
-          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          cliente: Database["public"]["Enums"]["cliente_tipo"] | null
+          clientes: Database["public"]["Enums"]["cliente_tipo"][]
           created_at: string
           created_by: string | null
           cumplimiento: number | null
@@ -201,7 +202,8 @@ export type Database = {
         Insert: {
           categoria_lic?: string | null
           cedula?: string | null
-          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
+          clientes?: Database["public"]["Enums"]["cliente_tipo"][]
           created_at?: string
           created_by?: string | null
           cumplimiento?: number | null
@@ -217,7 +219,8 @@ export type Database = {
         Update: {
           categoria_lic?: string | null
           cedula?: string | null
-          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
+          clientes?: Database["public"]["Enums"]["cliente_tipo"][]
           created_at?: string
           created_by?: string | null
           cumplimiento?: number | null
@@ -699,6 +702,8 @@ export type Database = {
       }
       servicios: {
         Row: {
+          asignado_at: string | null
+          asignado_by: string | null
           centro_costo: string | null
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           conductor: string | null
@@ -717,6 +722,8 @@ export type Database = {
           vehiculo: string | null
         }
         Insert: {
+          asignado_at?: string | null
+          asignado_by?: string | null
           centro_costo?: string | null
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           conductor?: string | null
@@ -735,6 +742,8 @@ export type Database = {
           vehiculo?: string | null
         }
         Update: {
+          asignado_at?: string | null
+          asignado_by?: string | null
           centro_costo?: string | null
           cliente?: Database["public"]["Enums"]["cliente_tipo"]
           conductor?: string | null
@@ -764,6 +773,9 @@ export type Database = {
       }
       solicitudes_pasajero: {
         Row: {
+          aceptada_at: string | null
+          asignado_at: string | null
+          asignado_by: string | null
           cancelado_motivo: string | null
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           conductor_nombre: string | null
@@ -782,6 +794,9 @@ export type Database = {
           vehiculo_placa: string | null
         }
         Insert: {
+          aceptada_at?: string | null
+          asignado_at?: string | null
+          asignado_by?: string | null
           cancelado_motivo?: string | null
           cliente: Database["public"]["Enums"]["cliente_tipo"]
           conductor_nombre?: string | null
@@ -800,6 +815,9 @@ export type Database = {
           vehiculo_placa?: string | null
         }
         Update: {
+          aceptada_at?: string | null
+          asignado_at?: string | null
+          asignado_by?: string | null
           cancelado_motivo?: string | null
           cliente?: Database["public"]["Enums"]["cliente_tipo"]
           conductor_nombre?: string | null
@@ -970,7 +988,8 @@ export type Database = {
       }
       vehiculos: {
         Row: {
-          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          cliente: Database["public"]["Enums"]["cliente_tipo"] | null
+          clientes: Database["public"]["Enums"]["cliente_tipo"][]
           color: string | null
           conductor: string | null
           created_at: string
@@ -988,7 +1007,8 @@ export type Database = {
           vence_soat: string | null
         }
         Insert: {
-          cliente: Database["public"]["Enums"]["cliente_tipo"]
+          cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
+          clientes?: Database["public"]["Enums"]["cliente_tipo"][]
           color?: string | null
           conductor?: string | null
           created_at?: string
@@ -1006,7 +1026,8 @@ export type Database = {
           vence_soat?: string | null
         }
         Update: {
-          cliente?: Database["public"]["Enums"]["cliente_tipo"]
+          cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
+          clientes?: Database["public"]["Enums"]["cliente_tipo"][]
           color?: string | null
           conductor?: string | null
           created_at?: string
@@ -1032,6 +1053,10 @@ export type Database = {
     Functions: {
       can_access_cliente: {
         Args: { _cliente: Database["public"]["Enums"]["cliente_tipo"] }
+        Returns: boolean
+      }
+      can_access_clientes: {
+        Args: { _clientes: Database["public"]["Enums"]["cliente_tipo"][] }
         Returns: boolean
       }
       delete_email: {
