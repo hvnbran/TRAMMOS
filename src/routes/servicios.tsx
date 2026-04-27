@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth-context";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { SpeakButton } from "@/components/SpeakButton";
 import { Pictograma } from "@/components/Pictograma";
+import { SimplifyText } from "@/components/SimplifyText";
+import { AccessibleMap } from "@/components/AccessibleMap";
 import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 
 function isVencido(fecha: string | null | undefined): boolean {
