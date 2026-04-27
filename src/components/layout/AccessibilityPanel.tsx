@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Accessibility, X, RotateCcw, Type, Contrast, Eye, Zap, Underline, Maximize2, Layers, MousePointer2 } from "lucide-react";
+import { Accessibility, X, RotateCcw, Type, Contrast, Eye, Zap, Underline, Maximize2, Layers, MousePointer2, Sparkles, Image as ImageIcon } from "lucide-react";
 import { useA11y } from "@/lib/a11y-context";
 
 type A11yColorBlind = "off" | "protanopia" | "deuteranopia" | "tritanopia";
@@ -136,6 +136,20 @@ export function AccessibilityPanel() {
                 label="Cursor grande"
                 checked={prefs.bigCursor}
                 onChange={(v) => setPref("bigCursor", v)}
+              />
+              <ToggleRow
+                icon={<Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />}
+                label="Lectura Fácil (IA)"
+                description="TRAMI simplifica los textos largos al instante"
+                checked={prefs.easyRead}
+                onChange={(v) => setPref("easyRead", v)}
+              />
+              <ToggleRow
+                icon={<ImageIcon className="h-4 w-4 text-primary" aria-hidden="true" />}
+                label="Pictogramas ARASAAC"
+                description="Iconografía universal para discapacidad cognitiva"
+                checked={prefs.pictoMode}
+                onChange={(v) => setPref("pictoMode", v)}
               />
 
               <button

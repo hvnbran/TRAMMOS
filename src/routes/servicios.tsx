@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth-context";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { SpeakButton } from "@/components/SpeakButton";
 import { Pictograma } from "@/components/Pictograma";
+import { SimplifyText } from "@/components/SimplifyText";
+import { AccessibleMap } from "@/components/AccessibleMap";
 import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 
 function isVencido(fecha: string | null | undefined): boolean {
@@ -294,9 +296,8 @@ function Servicios() {
                           <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                           Brief automático para el conductor
                         </div>
-                        <SpeakButton text={brief} label="Escuchar brief del pasajero" />
                       </div>
-                      <p className="text-foreground leading-relaxed">{brief}</p>
+                      <SimplifyText text={brief} className="text-foreground" />
                     </div>
                   );
                 })()}
@@ -501,22 +502,32 @@ function Servicios() {
                   if (!pcd) return null;
                   const tipo = TIPOS_DISC.find((t) => t.value === pcd.tipo_discapacidad)!;
                   const brief = generarBrief(pcd);
+                  // ETA simulado basado en el id (en producción vendría de tracking GPS real - Fase D)
+                  const etaSim = ((s.id?.charCodeAt(0) ?? 65) % 15) + 2;
                   return (
-                    <div className="mt-3 rounded-lg bg-primary/5 border border-primary/20 p-3">
-                      <div className="flex items-start gap-3">
-                        <Pictograma name={tipo.picto} size="md" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                            <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-                              <Accessibility className="h-3.5 w-3.5" aria-hidden="true" />
-                              Pasajero con perfil PCD · {tipo.label}
-                              {pcd.requiere_vehiculo_adaptado && (
-                                <span className="text-warning">· Vehículo adaptado</span>
-                              )}
+                    <div className="mt-3 space-y-3">
+                      <AccessibleMap
+                        origen={s.origen || "Origen"}
+                        destino={s.destino || "Destino"}
+                        etaMinutos={etaSim}
+                        conductor={s.conductor ?? undefined}
+                        vehiculo={s.vehiculo ?? undefined}
+                      />
+                      <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                        <div className="flex items-start gap-3">
+                          <Pictograma name={tipo.picto} size="md" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                              <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                                <Accessibility className="h-3.5 w-3.5" aria-hidden="true" />
+                                Pasajero con perfil PCD · {tipo.label}
+                                {pcd.requiere_vehiculo_adaptado && (
+                                  <span className="text-warning">· Vehículo adaptado</span>
+                                )}
+                              </div>
                             </div>
-                            <SpeakButton text={brief} label="Escuchar brief para el conductor" />
+                            <SimplifyText text={brief} className="text-xs text-foreground" />
                           </div>
-                          <p className="text-xs text-foreground leading-relaxed">{brief}</p>
                         </div>
                       </div>
                     </div>

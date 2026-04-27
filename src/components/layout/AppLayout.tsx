@@ -4,6 +4,7 @@ import { NotificationsBell } from "@/components/NotificationsBell";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { useLocation } from "@tanstack/react-router";
 import { AccessibilityPanel } from "./AccessibilityPanel";
+import { TramiAssistant } from "@/components/TramiAssistant";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
@@ -59,6 +60,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <AccessibilityPanel />
+      <TramiAssistant />
     </div>
   );
 }
