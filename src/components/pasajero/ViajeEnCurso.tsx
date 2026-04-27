@@ -50,7 +50,7 @@ export function ViajeEnCurso({
           ) : estado === "finalizada" ? (
             <CheckCircle2 className="h-7 w-7 text-success" />
           ) : (
-            <Pictograma name="vehiculo" size="md" />
+            <Pictograma name="carro" size="md" />
           )}
           <div>
             <div className="text-xs uppercase tracking-wide text-muted-foreground">Estado</div>

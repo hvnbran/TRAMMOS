@@ -1,6 +1,5 @@
-import { LogOut, Accessibility } from "lucide-react";
+import { LogOut } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
-import { useA11y } from "@/lib/a11y-context";
 
 interface Props {
   nombre: string;
@@ -8,7 +7,6 @@ interface Props {
 }
 
 export function PasajeroHeader({ nombre, onSignOut }: Props) {
-  const { setOpen } = useA11y();
   const inicial = (nombre || "P").trim().charAt(0).toUpperCase();
 
   return (
@@ -24,15 +22,6 @@ export function PasajeroHeader({ nombre, onSignOut }: Props) {
             Hola, {nombre || "viajero"}
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Abrir opciones de accesibilidad"
-          className="h-10 w-10 rounded-full bg-primary/15 hover:bg-primary/25 transition-all flex items-center justify-center"
-        >
-          <Accessibility className="h-5 w-5 text-primary" />
-        </button>
 
         <div
           className="h-9 w-9 rounded-full bg-muted text-foreground text-sm font-bold flex items-center justify-center border border-border"
