@@ -162,15 +162,20 @@ function Conductores() {
           <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
             <p className="text-sm font-semibold">{editingId ? "Editar conductor" : "Nuevo conductor"}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {role === "admin" && (
-                <div>
-                  <label className="text-xs text-muted-foreground">Cliente</label>
-                  <select value={form.cliente} onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
-                  </select>
+              <div className="md:col-span-3">
+                <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
+                <div className="flex flex-wrap gap-3 mt-1">
+                  {(["corona", "sodimac"] as const).map((cl) => (
+                    <label key={cl} className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer hover:bg-secondary/30">
+                      <input type="checkbox" checked={form.clientes.includes(cl)} onChange={() => toggleCliente(cl)} />
+                      <span className="capitalize">{cl}</span>
+                    </label>
+                  ))}
+                  {form.clientes.length === 0 && (
+                    <span className="text-[11px] text-warning self-center">Sin asignar — visible para todos los administradores hasta que sea reclamado</span>
+                  )}
                 </div>
-              )}
+              </div>
               <div><label className="text-xs text-muted-foreground">Nombre completo</label><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Cédula</label><input value={form.cedula} onChange={(e) => setForm({ ...form, cedula: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Teléfono</label><input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
@@ -196,11 +201,11 @@ function Conductores() {
 
         {loading ? (
           <CardGridSkeleton count={6} />
-        ) : items.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay conductores registrados.</div>
+        ) : itemsFiltrados.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay conductores que coincidan con el filtro.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((c, i) => {
+            {itemsFiltrados.map((c, i) => {
               const eff = estadoEfectivo(c);
               const vencido = eff === "Vencido";
               return (
@@ -229,7 +234,15 @@ function Conductores() {
                     <div><span className="text-muted-foreground">Teléfono</span><p>{c.telefono || "—"}</p></div>
                     <div><span className="text-muted-foreground">Licencia</span><p>{c.licencia || "—"} · {c.categoria_lic}</p></div>
                     <div><span className="text-muted-foreground">Vence</span><p className={isVencido(c.vence_licencia) ? "text-destructive font-medium" : ""}>{c.vence_licencia || "—"}</p></div>
-                    {role === "admin" && <div><span className="text-muted-foreground">Cliente</span><p className="capitalize">{c.cliente}</p></div>}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {((c.clientes && c.clientes.length > 0) ? c.clientes : (c.cliente ? [c.cliente] : [])).length === 0 ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning border border-warning/30">Sin asignar</span>
+                    ) : (
+                      ((c.clientes && c.clientes.length > 0) ? c.clientes : [c.cliente!]).map((cl) => (
+                        <span key={cl} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/30 capitalize">{cl}</span>
+                      ))
+                    )}
                   </div>
                   <button
                     onClick={() => setExpanded(expanded === c.id ? null : c.id)}
@@ -244,7 +257,7 @@ function Conductores() {
                       <DocumentManager
                         kind="conductor"
                         entityId={c.id}
-                        cliente={c.cliente}
+                        cliente={(c.clientes?.[0] ?? c.cliente ?? "corona") as "corona" | "sodimac"}
                         tipos={TIPOS_CONDUCTOR}
                       />
                     </div>
