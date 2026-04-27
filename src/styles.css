@@ -363,3 +363,26 @@ textarea.form-input {
   padding: 0.5rem 0.75rem;
   line-height: 1.4;
 }
+
+/* Lectura Fácil — texto simplificado por TRAMI */
+html.a11y-easy-read .a11y-easy-text,
+.a11y-easy-text {
+  font-family: "Atkinson Hyperlegible", "Inter", system-ui, sans-serif;
+  font-size: 1.05em;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+  word-spacing: 0.05em;
+}
+html.a11y-easy-read p,
+html.a11y-easy-read li {
+  line-height: 1.75;
+  max-width: 65ch;
+}
+
+/* Picto mode — refuerza pictogramas y reduce densidad textual */
+html.a11y-picto-mode .picto-hide-on-pictomode {
+  display: none !important;
+}
+html.a11y-picto-mode [role="img"] {
+  outline: 2px solid transparent;
+}
