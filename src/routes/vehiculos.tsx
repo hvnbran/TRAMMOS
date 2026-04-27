@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { DocumentManager, TIPOS_VEHICULO } from "@/components/DocumentManager";
 import { VehiculoConductores } from "@/components/VehiculoConductores";
+import { ChecklistANS } from "@/components/ChecklistANS";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 
 export const Route = createFileRoute("/vehiculos")({
