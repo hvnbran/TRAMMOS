@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2 } from "lucide-react";
+import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -80,6 +80,7 @@ function Vehiculos() {
   const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
   const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
   const [nuevoConductor, setNuevoConductor] = useState(false);
+  const [asignacionesPorVehiculo, setAsignacionesPorVehiculo] = useState<Record<string, number>>({});
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) { load(); loadConductores(); } /* eslint-disable-next-line */ }, [role]);
@@ -93,6 +94,14 @@ function Vehiculos() {
     setLoading(true);
     const { data } = await supabase.from("vehiculos").select("*").order("placa");
     if (data) setItems(data as VehiculoRow[]);
+    // Conteo de conductores asignados por vehículo
+    const { data: asign } = await (supabase.from("vehiculo_conductores") as any)
+      .select("vehiculo_id");
+    const counts: Record<string, number> = {};
+    (asign ?? []).forEach((a: { vehiculo_id: string }) => {
+      counts[a.vehiculo_id] = (counts[a.vehiculo_id] ?? 0) + 1;
+    });
+    setAsignacionesPorVehiculo(counts);
     setLoading(false);
   }
 
@@ -322,6 +331,31 @@ function Vehiculos() {
                       <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
                       <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
                     </div>
+                    {(asignacionesPorVehiculo[v.id] ?? 0) === 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExpanded(v.id);
+                          // Scroll suave al panel después de expandir
+                          setTimeout(() => {
+                            document.getElementById(`conductores-${v.id}`)?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "center",
+                            });
+                          }, 100);
+                        }}
+                        className="mt-3 w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-warning/40 bg-warning/10 hover:bg-warning/15 text-left transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-semibold text-warning">Sin conductores asignados</p>
+                            <p className="text-[10px] text-muted-foreground truncate">Asignar uno o más conductores</p>
+                          </div>
+                        </div>
+                        <UserPlus className="h-3.5 w-3.5 text-warning shrink-0" />
+                      </button>
+                    )}
                   <button
                     onClick={() => setExpanded(expanded === v.id ? null : v.id)}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
@@ -333,7 +367,7 @@ function Vehiculos() {
                   {expanded === v.id && (
                     <div className="mt-3 pt-3 border-t border-border space-y-4">
                       <ChecklistANS vehiculoId={v.id} />
-                      <div className="pt-3 border-t border-border">
+                      <div id={`conductores-${v.id}`} className="pt-3 border-t border-border scroll-mt-20">
                         <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
                       </div>
                       <div className="pt-3 border-t border-border">
