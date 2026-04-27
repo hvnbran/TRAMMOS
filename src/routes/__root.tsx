@@ -71,20 +71,28 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function AuthGate() {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isLoginRoute = location.pathname === "/login";
+  const isPasajeroRoute = location.pathname.startsWith("/pasajero");
 
   useEffect(() => {
     if (loading) return;
     if (!user && !isLoginRoute) {
       navigate({ to: "/login", replace: true });
+      return;
     }
-  }, [user, loading, isLoginRoute, navigate]);
+    if (user && role === "pasajero" && !isPasajeroRoute && !isLoginRoute) {
+      navigate({ to: "/pasajero", replace: true });
+      return;
+    }
+    if (user && role && role !== "pasajero" && isPasajeroRoute) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [user, loading, role, isLoginRoute, isPasajeroRoute, navigate]);
 
-  // While checking session, show spinner (prevents flashing protected content)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -93,7 +101,6 @@ function AuthGate() {
     );
   }
 
-  // Not authenticated and not on login → render nothing while redirect happens
   if (!user && !isLoginRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
