@@ -46,6 +46,7 @@ function PasajeroPage() {
   const [submitting, setSubmitting] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const [ultima, setUltima] = useState<{ origen: string; destino: string } | null>(null);
+  const [vehiculoInfo, setVehiculoInfo] = useState<VehiculoInfo | null>(null);
 
   // Guard: solo pasajeros
   useEffect(() => {
