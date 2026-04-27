@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VehiculosRouteImport } from './routes/vehiculos'
+import { Route as TiemposRespuestaRouteImport } from './routes/tiempos-respuesta'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as ReportesRouteImport } from './routes/reportes'
 import { Route as PasajerosPcdRouteImport } from './routes/pasajeros-pcd'
@@ -34,6 +35,11 @@ import { Route as ApiPublicPushProcessRouteImport } from './routes/api/public/pu
 const VehiculosRoute = VehiculosRouteImport.update({
   id: '/vehiculos',
   path: '/vehiculos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TiemposRespuestaRoute = TiemposRespuestaRouteImport.update({
+  id: '/tiempos-respuesta',
+  path: '/tiempos-respuesta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServiciosRoute = ServiciosRouteImport.update({
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/pasajeros-pcd': typeof PasajerosPcdRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
+  '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/pasajeros-pcd': typeof PasajerosPcdRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
+  '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/pasajeros-pcd': typeof PasajerosPcdRoute
   '/reportes': typeof ReportesRoute
   '/servicios': typeof ServiciosRoute
+  '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/pasajeros-pcd'
     | '/reportes'
     | '/servicios'
+    | '/tiempos-respuesta'
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/pasajeros-pcd'
     | '/reportes'
     | '/servicios'
+    | '/tiempos-respuesta'
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/pasajeros-pcd'
     | '/reportes'
     | '/servicios'
+    | '/tiempos-respuesta'
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
@@ -295,6 +307,7 @@ export interface RootRouteChildren {
   PasajerosPcdRoute: typeof PasajerosPcdRoute
   ReportesRoute: typeof ReportesRoute
   ServiciosRoute: typeof ServiciosRoute
+  TiemposRespuestaRoute: typeof TiemposRespuestaRoute
   VehiculosRoute: typeof VehiculosRoute
   ApiSeedRoute: typeof ApiSeedRoute
   ApiTestLoginRoute: typeof ApiTestLoginRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/vehiculos'
       fullPath: '/vehiculos'
       preLoaderRoute: typeof VehiculosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tiempos-respuesta': {
+      id: '/tiempos-respuesta'
+      path: '/tiempos-respuesta'
+      fullPath: '/tiempos-respuesta'
+      preLoaderRoute: typeof TiemposRespuestaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/servicios': {
@@ -471,6 +491,7 @@ const rootRouteChildren: RootRouteChildren = {
   PasajerosPcdRoute: PasajerosPcdRoute,
   ReportesRoute: ReportesRoute,
   ServiciosRoute: ServiciosRoute,
+  TiemposRespuestaRoute: TiemposRespuestaRoute,
   VehiculosRoute: VehiculosRoute,
   ApiSeedRoute: ApiSeedRoute,
   ApiTestLoginRoute: ApiTestLoginRoute,
