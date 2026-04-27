@@ -1,1 +1,4 @@
 project_id = "dyxmhwcoudtwwsokfcfw"
+
+[functions.extract-doc-date]
+verify_jwt = false
