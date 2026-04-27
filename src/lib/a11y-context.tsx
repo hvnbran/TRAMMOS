@@ -12,6 +12,8 @@ export interface A11yPrefs {
   wideSpacing: boolean;
   simpleMode: boolean;
   bigCursor: boolean;
+  easyRead: boolean;
+  pictoMode: boolean;
 }
 
 const DEFAULTS: A11yPrefs = {
@@ -23,6 +25,8 @@ const DEFAULTS: A11yPrefs = {
   wideSpacing: false,
   simpleMode: false,
   bigCursor: false,
+  easyRead: false,
+  pictoMode: false,
 };
 
 interface A11yContextValue {
@@ -49,6 +53,8 @@ function applyToHtml(prefs: A11yPrefs) {
   html.classList.toggle("a11y-wide-spacing", prefs.wideSpacing);
   html.classList.toggle("a11y-simple-mode", prefs.simpleMode);
   html.classList.toggle("a11y-big-cursor", prefs.bigCursor);
+  html.classList.toggle("a11y-easy-read", prefs.easyRead);
+  html.classList.toggle("a11y-picto-mode", prefs.pictoMode);
   // Color blind
   html.classList.remove("a11y-cb-protanopia", "a11y-cb-deuteranopia", "a11y-cb-tritanopia");
   if (prefs.colorBlind !== "off") html.classList.add(`a11y-cb-${prefs.colorBlind}`);
