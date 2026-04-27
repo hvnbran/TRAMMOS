@@ -32,6 +32,7 @@ interface VehiculoRow {
   vence_soat: string | null;
   vence_rtm: string | null;
   conductor: string | null;
+  foto_url: string | null;
 }
 
 const EMPTY_FORM = {
