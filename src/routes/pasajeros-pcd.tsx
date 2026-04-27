@@ -349,7 +349,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   );
 }
 
-function PasajeroCard({ p, onEdit, onDelete }: { p: PasajeroPCD; onEdit: () => void; onDelete: () => void }) {
+function PasajeroCard({ p, onEdit, onDelete, isAdmin, onChange }: { p: PasajeroPCD; onEdit: () => void; onDelete: () => void; isAdmin?: boolean; onChange?: () => void }) {
   const tipoInfo = TIPOS_DISC.find((t) => t.value === p.tipo_discapacidad)!;
   const comInfo = COMUNICACIONES.find((c) => c.value === p.comunicacion_preferida)!;
   const nivelInfo = NIVELES_ASIST.find((n) => n.value === p.nivel_asistencia)!;
