@@ -1,12 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle, Filter, CheckCircle2 } from "lucide-react";
 
 interface Conductor {
   id: string;
   nombre: string;
   cedula: string | null;
   estado: string;
+  vence_licencia: string | null;
+}
+
+type FiltroEstado = "todos" | "aptos" | "Activo" | "Suspendido" | "Vencido";
+
+function isVencido(fechaISO: string | null): boolean {
+  if (!fechaISO) return false;
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const f = new Date(fechaISO); f.setHours(0, 0, 0, 0);
+  return f.getTime() < hoy.getTime();
+}
+
+function estadoEfectivoCond(c: Conductor): "Activo" | "Suspendido" | "Vencido" {
+  if (isVencido(c.vence_licencia)) return "Vencido";
+  if (c.estado === "Suspendido") return "Suspendido";
+  return "Activo";
 }
 
 interface Asignacion {
