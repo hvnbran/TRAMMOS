@@ -177,8 +177,20 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
         <div className="rounded-md border border-primary/30 p-2 space-y-2 bg-primary/5">
           {/* Filtros por estado */}
           <div className="space-y-1.5">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Filter className="h-3 w-3" /> Filtrar por estado:
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Filter className="h-3 w-3" /> Filtrar por estado:
+              </div>
+              <button
+                type="button"
+                onClick={refrescarConductores}
+                disabled={refreshingConductores}
+                className="text-[10px] flex items-center gap-1 text-primary hover:underline disabled:opacity-50"
+                title="Recargar lista y recalcular vencimientos"
+              >
+                <RefreshCw className={`h-3 w-3 ${refreshingConductores ? "animate-spin" : ""}`} />
+                {refreshingConductores ? "Actualizando..." : "Refrescar"}
+              </button>
             </div>
             <div className="flex flex-wrap gap-1">
               {([
