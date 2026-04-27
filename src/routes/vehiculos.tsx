@@ -216,6 +216,26 @@ function Vehiculos() {
           </button>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Filtrar:</span>
+          {([
+            { v: "todos", l: "Todos" },
+            { v: "corona", l: "Corona" },
+            { v: "sodimac", l: "Sodimac" },
+            { v: "sin_asignar", l: "Sin asignar" },
+          ] as const).map((opt) => (
+            <button
+              key={opt.v}
+              type="button"
+              onClick={() => setFiltroCliente(opt.v)}
+              className={`px-2.5 py-1 rounded-full border ${filtroCliente === opt.v ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-secondary/40"}`}
+            >
+              {opt.l}
+            </button>
+          ))}
+          <span className="text-muted-foreground ml-auto">{itemsFiltrados.length} de {items.length}</span>
+        </div>
+
         {showForm && (
           <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
             <p className="text-sm font-semibold">{editingId ? "Editar vehículo" : "Nuevo vehículo"}</p>
