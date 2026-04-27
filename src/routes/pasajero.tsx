@@ -202,16 +202,18 @@ function PasajeroPage() {
     }
     let mounted = true;
     (async () => {
-      const { data } = await supabase
-        .from("vehiculos")
-        .select("foto_url,marca,linea,color")
-        .eq("cliente", perfil.cliente)
-        .ilike("placa", placa)
-        .maybeSingle();
+      // Usamos un RPC con SECURITY DEFINER porque el rol "pasajero"
+      // no tiene acceso directo a la tabla vehiculos vía RLS.
+      const { data, error } = await supabase
+        .rpc("get_vehiculo_publico_por_placa", { _placa: placa });
+      if (error) {
+        console.warn("[pasajero] No se pudo cargar info del vehículo:", error.message);
+      }
+      const row = Array.isArray(data) ? data[0] : data;
       if (mounted) {
         setVehiculoInfo(
-          data
-            ? { foto_url: data.foto_url, marca: data.marca, linea: data.linea, color: data.color }
+          row
+            ? { foto_url: row.foto_url, marca: row.marca, linea: row.linea, color: row.color }
             : { foto_url: null, marca: null, linea: null, color: null },
         );
       }
