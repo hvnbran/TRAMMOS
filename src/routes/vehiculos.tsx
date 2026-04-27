@@ -220,15 +220,24 @@ function Vehiculos() {
           <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
             <p className="text-sm font-semibold">{editingId ? "Editar vehículo" : "Nuevo vehículo"}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {role === "admin" && (
-                <div>
-                  <label className="text-xs text-muted-foreground">Cliente</label>
-                  <select value={form.cliente} onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
-                  </select>
+              <div className="md:col-span-3">
+                <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
+                <div className="flex flex-wrap gap-3 mt-1">
+                  {(["corona", "sodimac"] as const).map((c) => (
+                    <label key={c} className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer hover:bg-secondary/30">
+                      <input
+                        type="checkbox"
+                        checked={form.clientes.includes(c)}
+                        onChange={() => toggleCliente(c)}
+                      />
+                      <span className="capitalize">{c}</span>
+                    </label>
+                  ))}
+                  {form.clientes.length === 0 && (
+                    <span className="text-[11px] text-warning self-center">Sin asignar — visible para todos los administradores hasta que sea reclamado</span>
+                  )}
                 </div>
-              )}
+              </div>
               <div><label className="text-xs text-muted-foreground">Placa</label><input required value={form.placa} onChange={(e) => setForm({ ...form, placa: e.target.value.toUpperCase() })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Marca</label><input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Línea</label><input value={form.linea} onChange={(e) => setForm({ ...form, linea: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
@@ -392,13 +401,13 @@ function Vehiculos() {
                     <div className="mt-3 pt-3 border-t border-border space-y-4">
                       <ChecklistANS vehiculoId={v.id} />
                       <div id={`conductores-${v.id}`} className="pt-3 border-t border-border scroll-mt-20">
-                        <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
+                        <VehiculoConductores vehiculoId={v.id} cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"} />
                       </div>
                       <div className="pt-3 border-t border-border">
                         <DocumentManager
                           kind="vehiculo"
                           entityId={v.id}
-                          cliente={v.cliente}
+                          cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
                           tipos={TIPOS_VEHICULO}
                         />
                       </div>
