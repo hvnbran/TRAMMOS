@@ -261,9 +261,14 @@ function Vehiculos() {
                   <div className={`mt-3 grid grid-cols-2 gap-2 text-xs ${vencido ? "opacity-70" : ""}`}>
                     <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
                     <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
-                    <div><span className="text-muted-foreground">SOAT</span><p className={soatVenc ? "text-destructive font-medium" : ""}>{v.vence_soat || "—"}</p></div>
-                    <div><span className="text-muted-foreground">RTM</span><p className={rtmVenc ? "text-destructive font-medium" : ""}>{v.vence_rtm || "—"}</p></div>
-                    <div className="col-span-2"><span className="text-muted-foreground">Conductor</span><p>{v.conductor || "Sin asignar"}</p></div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Conductor</span>
+                      {v.conductor ? (
+                        <p>{v.conductor}</p>
+                      ) : (
+                        <p className="text-warning font-medium">Sin asignar</p>
+                      )}
+                    </div>
                     {role === "admin" && <div className="col-span-2"><span className="text-muted-foreground">Cliente</span><p className="capitalize">{v.cliente}</p></div>}
                   </div>
                   <button
