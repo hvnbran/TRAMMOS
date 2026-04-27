@@ -1042,6 +1042,15 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_vehiculo_publico_por_placa: {
+        Args: { _placa: string }
+        Returns: {
+          color: string
+          foto_url: string
+          linea: string
+          marca: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
