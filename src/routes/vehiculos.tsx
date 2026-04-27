@@ -36,8 +36,10 @@ interface VehiculoRow {
 const EMPTY_FORM = {
   cliente: "corona" as "corona" | "sodimac",
   placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
-  num_interno: "", estado: "Disponible", vence_soat: "", vence_rtm: "", conductor: "",
+  num_interno: "", estado: "Disponible", conductor: "",
 };
+
+interface ConductorOpt { id: string; nombre: string; cedula: string | null; }
 
 function isVencido(fechaISO: string | null): boolean {
   if (!fechaISO) return false;
@@ -74,9 +76,16 @@ function Vehiculos() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+  const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
+  const [nuevoConductor, setNuevoConductor] = useState(false);
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
-  useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
+  useEffect(() => { if (role) { load(); loadConductores(); } /* eslint-disable-next-line */ }, [role]);
+
+  async function loadConductores() {
+    const { data } = await supabase.from("conductores").select("id, nombre, cedula").order("nombre");
+    if (data) setConductoresOpts(data as ConductorOpt[]);
+  }
 
   async function load() {
     setLoading(true);
@@ -87,12 +96,14 @@ function Vehiculos() {
 
   function startCreate() {
     setEditingId(null);
+    setNuevoConductor(false);
     setForm({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
     setShowForm(true);
   }
 
   function startEdit(v: VehiculoRow) {
     setEditingId(v.id);
+    setNuevoConductor(false);
     setForm({
       cliente: v.cliente,
       placa: v.placa,
@@ -102,8 +113,6 @@ function Vehiculos() {
       color: v.color ?? "",
       num_interno: v.num_interno ?? "",
       estado: v.estado,
-      vence_soat: v.vence_soat ?? "",
-      vence_rtm: v.vence_rtm ?? "",
       conductor: v.conductor ?? "",
     });
     setShowForm(true);
@@ -112,19 +121,17 @@ function Vehiculos() {
   function cancelForm() {
     setShowForm(false);
     setEditingId(null);
+    setNuevoConductor(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const algunoVencido = isVencido(form.vence_soat || null) || isVencido(form.vence_rtm || null);
     const payload = {
       ...form,
       cliente: cliente ?? form.cliente,
       modelo: Number(form.modelo) || null,
-      vence_soat: form.vence_soat || null,
-      vence_rtm: form.vence_rtm || null,
-      estado: algunoVencido ? "Inactivo" : form.estado,
+      conductor: form.conductor.trim() || null,
     };
     const { error } = editingId
       ? await supabase.from("vehiculos").update(payload).eq("id", editingId)
@@ -174,9 +181,40 @@ function Vehiculos() {
               <div><label className="text-xs text-muted-foreground">Modelo (año)</label><input type="number" value={form.modelo} onChange={(e) => setForm({ ...form, modelo: Number(e.target.value) })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Color</label><input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">N° interno</label><input value={form.num_interno} onChange={(e) => setForm({ ...form, num_interno: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Vence SOAT</label><input type="date" value={form.vence_soat} onChange={(e) => setForm({ ...form, vence_soat: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Vence RTM</label><input type="date" value={form.vence_rtm} onChange={(e) => setForm({ ...form, vence_rtm: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Conductor asignado</label><input value={form.conductor} onChange={(e) => setForm({ ...form, conductor: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div className="md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">Conductor asignado (opcional)</label>
+                  <button
+                    type="button"
+                    onClick={() => { setNuevoConductor(!nuevoConductor); setForm({ ...form, conductor: "" }); }}
+                    className="text-[11px] text-primary hover:underline"
+                  >
+                    {nuevoConductor ? "← Elegir existente" : "+ Escribir nuevo"}
+                  </button>
+                </div>
+                {nuevoConductor ? (
+                  <input
+                    value={form.conductor}
+                    onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                    placeholder="Nombre del conductor"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                ) : (
+                  <select
+                    value={form.conductor}
+                    onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">— Sin asignar —</option>
+                    {conductoresOpts.map((c) => (
+                      <option key={c.id} value={c.nombre}>
+                        {c.nombre}{c.cedula ? ` (${c.cedula})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-[10px] text-muted-foreground mt-1">Para asignar varios conductores, usa el panel de "Documentos" del vehículo después de guardarlo.</p>
+              </div>
               <div><label className="text-xs text-muted-foreground">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                   {["Disponible", "En servicio", "En mantenimiento", "Inactivo"].map((x) => <option key={x}>{x}</option>)}
@@ -198,8 +236,6 @@ function Vehiculos() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {items.map((v, i) => {
               const { estado: eff, vencido, motivos } = estadoEfectivo(v);
-              const soatVenc = isVencido(v.vence_soat);
-              const rtmVenc = isVencido(v.vence_rtm);
               return (
                 <div
                   key={v.id}
@@ -225,9 +261,14 @@ function Vehiculos() {
                   <div className={`mt-3 grid grid-cols-2 gap-2 text-xs ${vencido ? "opacity-70" : ""}`}>
                     <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
                     <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
-                    <div><span className="text-muted-foreground">SOAT</span><p className={soatVenc ? "text-destructive font-medium" : ""}>{v.vence_soat || "—"}</p></div>
-                    <div><span className="text-muted-foreground">RTM</span><p className={rtmVenc ? "text-destructive font-medium" : ""}>{v.vence_rtm || "—"}</p></div>
-                    <div className="col-span-2"><span className="text-muted-foreground">Conductor</span><p>{v.conductor || "Sin asignar"}</p></div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Conductor</span>
+                      {v.conductor ? (
+                        <p>{v.conductor}</p>
+                      ) : (
+                        <p className="text-warning font-medium">Sin asignar</p>
+                      )}
+                    </div>
                     {role === "admin" && <div className="col-span-2"><span className="text-muted-foreground">Cliente</span><p className="capitalize">{v.cliente}</p></div>}
                   </div>
                   <button
