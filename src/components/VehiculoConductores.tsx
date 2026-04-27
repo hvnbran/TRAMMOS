@@ -118,6 +118,28 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
     (c) => !asignaciones.some((a) => a.conductor_id === c.id),
   );
 
+  const conductoresFiltrados = useMemo(() => {
+    return conductoresDisponibles.filter((c) => {
+      const eff = estadoEfectivoCond(c);
+      if (filtro === "todos") return true;
+      if (filtro === "aptos") return eff === "Activo";
+      return eff === filtro;
+    });
+  }, [conductoresDisponibles, filtro]);
+
+  const conductorSeleccionado = conductores.find((c) => c.id === selectedConductor);
+  const estadoSel = conductorSeleccionado ? estadoEfectivoCond(conductorSeleccionado) : null;
+  const esApto = estadoSel === "Activo";
+
+  // Conteo por estado para mostrar en chips
+  const conteoEstados = useMemo(() => {
+    const counts = { Activo: 0, Suspendido: 0, Vencido: 0 };
+    conductoresDisponibles.forEach((c) => {
+      counts[estadoEfectivoCond(c)]++;
+    });
+    return counts;
+  }, [conductoresDisponibles]);
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
