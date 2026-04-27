@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Pictograma, type PictogramaName } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
+import { AccesoPasajeroPanel } from "@/components/pasajero/AccesoPasajeroPanel";
 import {
   Plus, Search, Trash2, Pencil, Heart, Phone, Save, X,
   CheckCircle2, AlertCircle, Accessibility, ShieldCheck,
@@ -280,7 +281,14 @@ function PasajerosPCD() {
         ) : (
           <ul className="grid gap-3" role="list">
             {filtrados.map((p) => (
-              <PasajeroCard key={p.id} p={p} onEdit={() => openEdit(p)} onDelete={() => remove(p.id)} />
+              <PasajeroCard
+                key={p.id}
+                p={p}
+                onEdit={() => openEdit(p)}
+                onDelete={() => remove(p.id)}
+                isAdmin={role === "admin"}
+                onChange={load}
+              />
             ))}
           </ul>
         )}
@@ -341,7 +349,7 @@ function FilterChip({ active, onClick, children }: { active: boolean; onClick: (
   );
 }
 
-function PasajeroCard({ p, onEdit, onDelete }: { p: PasajeroPCD; onEdit: () => void; onDelete: () => void }) {
+function PasajeroCard({ p, onEdit, onDelete, isAdmin, onChange }: { p: PasajeroPCD; onEdit: () => void; onDelete: () => void; isAdmin?: boolean; onChange?: () => void }) {
   const tipoInfo = TIPOS_DISC.find((t) => t.value === p.tipo_discapacidad)!;
   const comInfo = COMUNICACIONES.find((c) => c.value === p.comunicacion_preferida)!;
   const nivelInfo = NIVELES_ASIST.find((n) => n.value === p.nivel_asistencia)!;
@@ -422,6 +430,18 @@ function PasajeroCard({ p, onEdit, onDelete }: { p: PasajeroPCD; onEdit: () => v
             </div>
             <p className="text-sm text-foreground leading-relaxed">{briefVoz}</p>
           </div>
+
+          {/* Panel admin: acceso del pasajero */}
+          {isAdmin && (
+            <AccesoPasajeroPanel
+              pasajeroId={p.id}
+              email={p.email}
+              autorizado={p.autorizado ?? true}
+              passwordBackup={p.password_backup ?? null}
+              primerLoginAt={p.primer_login_at ?? null}
+              onChange={() => onChange?.()}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-2 shrink-0">
