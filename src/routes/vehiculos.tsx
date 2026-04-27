@@ -21,7 +21,8 @@ export const Route = createFileRoute("/vehiculos")({
 
 interface VehiculoRow {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | null;
+  clientes: ("corona" | "sodimac")[];
   placa: string;
   marca: string | null;
   linea: string | null;
@@ -36,7 +37,7 @@ interface VehiculoRow {
 }
 
 const EMPTY_FORM = {
-  cliente: "corona" as "corona" | "sodimac",
+  clientes: [] as ("corona" | "sodimac")[],
   placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
   num_interno: "", estado: "Disponible", conductor: "",
 };
@@ -77,7 +78,9 @@ function Vehiculos() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+  const initialClientes: ("corona" | "sodimac")[] = cliente ? [cliente as "corona" | "sodimac"] : [];
+  const [form, setForm] = useState({ ...EMPTY_FORM, clientes: initialClientes });
+  const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "sin_asignar">("todos");
   const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
   const [nuevoConductor, setNuevoConductor] = useState(false);
   const [asignacionesPorVehiculo, setAsignacionesPorVehiculo] = useState<Record<string, number>>({});
@@ -112,7 +115,7 @@ function Vehiculos() {
     if (file.size > 5 * 1024 * 1024) { alert("Máximo 5 MB"); return; }
     setUploadingId(v.id);
     const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${v.cliente}/${v.id}-${Date.now()}.${ext}`;
+    const path = `${(v.clientes?.[0] ?? v.cliente ?? "general")}/${v.id}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("vehiculos-fotos")
       .upload(path, file, { upsert: true, contentType: file.type });
@@ -127,7 +130,7 @@ function Vehiculos() {
   function startCreate() {
     setEditingId(null);
     setNuevoConductor(false);
-    setForm({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
+    setForm({ ...EMPTY_FORM, clientes: initialClientes });
     setShowForm(true);
   }
 
@@ -135,7 +138,7 @@ function Vehiculos() {
     setEditingId(v.id);
     setNuevoConductor(false);
     setForm({
-      cliente: v.cliente,
+      clientes: (v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : []),
       placa: v.placa,
       marca: v.marca ?? "",
       linea: v.linea ?? "",
@@ -148,6 +151,13 @@ function Vehiculos() {
     setShowForm(true);
   }
 
+  function toggleCliente(c: "corona" | "sodimac") {
+    setForm((f) => ({
+      ...f,
+      clientes: f.clientes.includes(c) ? f.clientes.filter((x) => x !== c) : [...f.clientes, c],
+    }));
+  }
+
   function cancelForm() {
     setShowForm(false);
     setEditingId(null);
@@ -158,14 +168,21 @@ function Vehiculos() {
     e.preventDefault();
     setSaving(true);
     const payload = {
-      ...form,
-      cliente: cliente ?? form.cliente,
+      placa: form.placa,
+      marca: form.marca,
+      linea: form.linea,
       modelo: Number(form.modelo) || null,
+      color: form.color,
+      num_interno: form.num_interno,
+      estado: form.estado,
       conductor: form.conductor.trim() || null,
+      // Multi-cliente: array + columna legacy en NULL si está vacío o el primero del array
+      clientes: form.clientes,
+      cliente: form.clientes[0] ?? null,
     };
     const { error } = editingId
-      ? await supabase.from("vehiculos").update(payload).eq("id", editingId)
-      : await supabase.from("vehiculos").insert(payload);
+      ? await supabase.from("vehiculos").update(payload as any).eq("id", editingId)
+      : await supabase.from("vehiculos").insert(payload as any);
     setSaving(false);
     if (error) { alert(error.message); return; }
     cancelForm();
@@ -178,6 +195,13 @@ function Vehiculos() {
     if (error) { alert(error.message); return; }
     load();
   }
+
+  const itemsFiltrados = items.filter((v) => {
+    const cs = (v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : []);
+    if (filtroCliente === "todos") return true;
+    if (filtroCliente === "sin_asignar") return cs.length === 0;
+    return cs.includes(filtroCliente);
+  });
 
   return (
     <AppLayout>
@@ -192,19 +216,48 @@ function Vehiculos() {
           </button>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted-foreground">Filtrar:</span>
+          {([
+            { v: "todos", l: "Todos" },
+            { v: "corona", l: "Corona" },
+            { v: "sodimac", l: "Sodimac" },
+            { v: "sin_asignar", l: "Sin asignar" },
+          ] as const).map((opt) => (
+            <button
+              key={opt.v}
+              type="button"
+              onClick={() => setFiltroCliente(opt.v)}
+              className={`px-2.5 py-1 rounded-full border ${filtroCliente === opt.v ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border hover:bg-secondary/40"}`}
+            >
+              {opt.l}
+            </button>
+          ))}
+          <span className="text-muted-foreground ml-auto">{itemsFiltrados.length} de {items.length}</span>
+        </div>
+
         {showForm && (
           <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
             <p className="text-sm font-semibold">{editingId ? "Editar vehículo" : "Nuevo vehículo"}</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {role === "admin" && (
-                <div>
-                  <label className="text-xs text-muted-foreground">Cliente</label>
-                  <select value={form.cliente} onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
-                  </select>
+              <div className="md:col-span-3">
+                <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
+                <div className="flex flex-wrap gap-3 mt-1">
+                  {(["corona", "sodimac"] as const).map((c) => (
+                    <label key={c} className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer hover:bg-secondary/30">
+                      <input
+                        type="checkbox"
+                        checked={form.clientes.includes(c)}
+                        onChange={() => toggleCliente(c)}
+                      />
+                      <span className="capitalize">{c}</span>
+                    </label>
+                  ))}
+                  {form.clientes.length === 0 && (
+                    <span className="text-[11px] text-warning self-center">Sin asignar — visible para todos los administradores hasta que sea reclamado</span>
+                  )}
                 </div>
-              )}
+              </div>
               <div><label className="text-xs text-muted-foreground">Placa</label><input required value={form.placa} onChange={(e) => setForm({ ...form, placa: e.target.value.toUpperCase() })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Marca</label><input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Línea</label><input value={form.linea} onChange={(e) => setForm({ ...form, linea: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
@@ -260,11 +313,11 @@ function Vehiculos() {
 
         {loading ? (
           <CardGridSkeleton count={6} />
-        ) : items.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay vehículos registrados.</div>
+        ) : itemsFiltrados.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay vehículos que coincidan con el filtro.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((v, i) => {
+            {itemsFiltrados.map((v, i) => {
               const { estado: eff, vencido, motivos } = estadoEfectivo(v);
               return (
                 <div
@@ -331,6 +384,15 @@ function Vehiculos() {
                       <div><span className="text-muted-foreground">Color</span><p>{v.color || "—"}</p></div>
                       <div><span className="text-muted-foreground">N° interno</span><p>{v.num_interno || "—"}</p></div>
                     </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {((v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : [])).length === 0 ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning border border-warning/30">Sin asignar</span>
+                      ) : (
+                        ((v.clientes && v.clientes.length > 0) ? v.clientes : [v.cliente!]).map((c) => (
+                          <span key={c} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/30 capitalize">{c}</span>
+                        ))
+                      )}
+                    </div>
                     {(asignacionesPorVehiculo[v.id] ?? 0) === 0 && (
                       <button
                         type="button"
@@ -368,13 +430,13 @@ function Vehiculos() {
                     <div className="mt-3 pt-3 border-t border-border space-y-4">
                       <ChecklistANS vehiculoId={v.id} />
                       <div id={`conductores-${v.id}`} className="pt-3 border-t border-border scroll-mt-20">
-                        <VehiculoConductores vehiculoId={v.id} cliente={v.cliente} />
+                        <VehiculoConductores vehiculoId={v.id} cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"} />
                       </div>
                       <div className="pt-3 border-t border-border">
                         <DocumentManager
                           kind="vehiculo"
                           entityId={v.id}
-                          cliente={v.cliente}
+                          cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
                           tipos={TIPOS_VEHICULO}
                         />
                       </div>
