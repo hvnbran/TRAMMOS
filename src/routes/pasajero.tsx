@@ -8,6 +8,7 @@ import { ViajeEnCurso, type EstadoSolicitud } from "@/components/pasajero/ViajeE
 import { AccessibilityPanel } from "@/components/layout/AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { InstallAppBanner } from "@/components/pasajero/InstallAppBanner";
+import { PushNotificationsToggle } from "@/components/pasajero/PushNotificationsToggle";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/pasajero")({
@@ -126,6 +127,8 @@ function PasajeroPage() {
               setUltima({ origen: row.origen, destino: row.destino });
             }
           }
+          // Disparar el procesamiento de la cola de push (fire-and-forget)
+          fetch("/api/public/push/process", { method: "POST" }).catch(() => { /* ignore */ });
         },
       )
       .subscribe();
