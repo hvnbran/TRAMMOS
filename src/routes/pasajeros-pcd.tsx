@@ -430,6 +430,18 @@ function PasajeroCard({ p, onEdit, onDelete, isAdmin, onChange }: { p: PasajeroP
             </div>
             <p className="text-sm text-foreground leading-relaxed">{briefVoz}</p>
           </div>
+
+          {/* Panel admin: acceso del pasajero */}
+          {isAdmin && (
+            <AccesoPasajeroPanel
+              pasajeroId={p.id}
+              email={p.email}
+              autorizado={p.autorizado ?? true}
+              passwordBackup={p.password_backup ?? null}
+              primerLoginAt={p.primer_login_at ?? null}
+              onChange={() => onChange?.()}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-2 shrink-0">
