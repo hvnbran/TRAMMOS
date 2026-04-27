@@ -15,6 +15,7 @@ import {
   ChevronRight,
   FolderOpen,
   LogOut,
+  Accessibility,
 } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo-trammos.png";
