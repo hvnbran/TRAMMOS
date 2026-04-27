@@ -80,6 +80,7 @@ function Vehiculos() {
   const [form, setForm] = useState({ ...EMPTY_FORM, cliente: (cliente ?? "corona") as "corona" | "sodimac" });
   const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
   const [nuevoConductor, setNuevoConductor] = useState(false);
+  const [asignacionesPorVehiculo, setAsignacionesPorVehiculo] = useState<Record<string, number>>({});
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) { load(); loadConductores(); } /* eslint-disable-next-line */ }, [role]);
@@ -93,6 +94,14 @@ function Vehiculos() {
     setLoading(true);
     const { data } = await supabase.from("vehiculos").select("*").order("placa");
     if (data) setItems(data as VehiculoRow[]);
+    // Conteo de conductores asignados por vehículo
+    const { data: asign } = await (supabase.from("vehiculo_conductores") as any)
+      .select("vehiculo_id");
+    const counts: Record<string, number> = {};
+    (asign ?? []).forEach((a: { vehiculo_id: string }) => {
+      counts[a.vehiculo_id] = (counts[a.vehiculo_id] ?? 0) + 1;
+    });
+    setAsignacionesPorVehiculo(counts);
     setLoading(false);
   }
 
