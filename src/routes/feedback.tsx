@@ -28,11 +28,14 @@ const TIPOS_INCIDENTE = [
 interface CalifRow {
   id: string; cliente: string; tipo: string; nombre: string; servicio: string | null;
   fecha: string; estrellas: number; mejoras: string | null;
+  resena: string | null; conductor: string | null; vehiculo: string | null;
+  solicitud_id: string | null;
 }
 interface IncRow {
   id: string; cliente: string; fecha: string; conductor: string | null; vehiculo: string | null;
   tipo_incidente: string; que_paso: string | null; cuando: string | null; por_que: string | null;
   soporte: string | null; solucion: string | null; plan_mejoramiento: string | null; estado: string;
+  reportado_por: string | null; solicitud_id: string | null;
 }
 
 function StarRating({ value, onChange, readonly = false }: { value: number; onChange?: (v: number) => void; readonly?: boolean }) {
@@ -239,17 +242,23 @@ function Feedback() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {califs.map((c) => (
                 <div key={c.id} className="rounded-lg border border-border bg-card p-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="font-semibold">{c.nombre}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{c.tipo} · {c.servicio || "Sin servicio"} · {c.fecha}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {c.tipo} · {c.fecha}
+                        {c.conductor && <> · Conductor: {c.conductor}</>}
+                        {c.vehiculo && <> · Placa: {c.vehiculo}</>}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <StarRating value={c.estrellas} readonly />
                       <button onClick={() => remove("calificaciones", c.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </div>
-                  {c.mejoras && <p className="mt-2 text-sm text-muted-foreground italic">"{c.mejoras}"</p>}
+                  {(c.resena || c.mejoras) && (
+                    <p className="mt-2 text-sm text-muted-foreground italic">"{c.resena || c.mejoras}"</p>
+                  )}
                   {role === "admin" && <p className="mt-2 text-xs text-muted-foreground capitalize">Cliente: {c.cliente}</p>}
                 </div>
               ))}
@@ -263,10 +272,15 @@ function Feedback() {
               {incs.map((i) => (
                 <div key={i.id} className="rounded-lg border border-border bg-card p-4">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <AlertTriangle className="h-4 w-4 text-warning" />
                       <span className="font-semibold text-sm">{i.tipo_incidente}</span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-secondary">{i.estado}</span>
+                      {i.reportado_por === "pasajero" && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/20 text-warning-foreground border border-warning/40 font-semibold uppercase tracking-wide">
+                          Versión del pasajero
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       {i.fecha}
