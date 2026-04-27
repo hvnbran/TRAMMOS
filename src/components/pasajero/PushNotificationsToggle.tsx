@@ -69,9 +69,12 @@ export function PushNotificationsToggle({ userId }: { userId: string }) {
 
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
+        const keyBytes = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+        // Copia a un ArrayBuffer "puro" para satisfacer el tipo de PushManager
+        const appServerKey = new Uint8Array(keyBytes).buffer;
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          applicationServerKey: appServerKey,
         });
       }
 
