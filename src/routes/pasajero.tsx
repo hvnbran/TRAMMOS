@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PasajeroHeader } from "@/components/pasajero/PasajeroHeader";
 import { PedirServicioForm, type PasajeroPerfil } from "@/components/pasajero/PedirServicioForm";
 import { ViajeEnCurso, type EstadoSolicitud } from "@/components/pasajero/ViajeEnCurso";
+import { CalificarServicio } from "@/components/pasajero/CalificarServicio";
+import { ReportarIncidenteModal } from "@/components/pasajero/ReportarIncidenteModal";
 import { AccessibilityPanel } from "@/components/layout/AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { InstallAppBanner } from "@/components/pasajero/InstallAppBanner";
@@ -32,6 +34,14 @@ interface SolicitudActiva {
   vehiculo_placa: string | null;
 }
 
+interface SolicitudPendienteCalif {
+  id: string;
+  origen: string;
+  destino: string;
+  conductor_nombre: string | null;
+  vehiculo_placa: string | null;
+}
+
 interface VehiculoInfo {
   foto_url: string | null;
   marca: string | null;
@@ -49,6 +59,10 @@ function PasajeroPage() {
   const [cancelando, setCancelando] = useState(false);
   const [ultima, setUltima] = useState<{ origen: string; destino: string } | null>(null);
   const [vehiculoInfo, setVehiculoInfo] = useState<VehiculoInfo | null>(null);
+  const [pendienteCalif, setPendienteCalif] = useState<SolicitudPendienteCalif | null>(null);
+  const [savingCalif, setSavingCalif] = useState(false);
+  const [showIncidente, setShowIncidente] = useState(false);
+  const [savingIncidente, setSavingIncidente] = useState(false);
 
   // Guard: solo pasajeros
   useEffect(() => {
@@ -62,7 +76,42 @@ function PasajeroPage() {
     }
   }, [user, role, loading, navigate]);
 
-  // Cargar perfil + última solicitud + activa
+  // Verifica si hay una solicitud finalizada sin calificar
+  const checkPendienteCalif = useCallback(async (uid: string) => {
+    const { data: finalizadas } = await supabase
+      .from("solicitudes_pasajero")
+      .select("id,origen,destino,conductor_nombre,vehiculo_placa")
+      .eq("created_by_pasajero", uid)
+      .eq("estado", "finalizada")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    const last = finalizadas?.[0];
+    if (!last) {
+      setPendienteCalif(null);
+      return;
+    }
+
+    const { data: calif } = await supabase
+      .from("calificaciones")
+      .select("id")
+      .eq("solicitud_id", last.id)
+      .maybeSingle();
+
+    if (!calif) {
+      setPendienteCalif({
+        id: last.id,
+        origen: last.origen,
+        destino: last.destino,
+        conductor_nombre: last.conductor_nombre,
+        vehiculo_placa: last.vehiculo_placa,
+      });
+    } else {
+      setPendienteCalif(null);
+    }
+  }, []);
+
+  // Cargar perfil + última solicitud + activa + pendiente de calificar
   useEffect(() => {
     if (!user || role !== "pasajero") return;
     let mounted = true;
@@ -103,10 +152,12 @@ function PasajeroPage() {
         .limit(1);
       if (mounted && hist && hist[0]) setUltima({ origen: hist[0].origen, destino: hist[0].destino });
 
+      await checkPendienteCalif(user.id);
+
       setPerfilLoading(false);
     })();
     return () => { mounted = false; };
-  }, [user, role]);
+  }, [user, role, checkPendienteCalif]);
 
   // Realtime sobre la solicitud activa
   useEffect(() => {
@@ -125,6 +176,13 @@ function PasajeroPage() {
             setSolicitud(null);
             if (row.estado === "finalizada") {
               setUltima({ origen: row.origen, destino: row.destino });
+              setPendienteCalif({
+                id: row.id,
+                origen: row.origen,
+                destino: row.destino,
+                conductor_nombre: row.conductor_nombre,
+                vehiculo_placa: row.vehiculo_placa,
+              });
             }
           }
           // Disparar el procesamiento de la cola de push (fire-and-forget)
@@ -176,6 +234,10 @@ function PasajeroPage() {
     origen: string; destino: string; hora_recogida: Date; programado: boolean; notas: string;
   }) => {
     if (!user || !perfil) return;
+    if (pendienteCalif) {
+      alert("Antes de pedir un nuevo viaje, califica el último servicio.");
+      return;
+    }
     setSubmitting(true);
     const { data, error } = await supabase
       .from("solicitudes_pasajero")
@@ -216,6 +278,59 @@ function PasajeroPage() {
       window.speechSynthesis.speak(u);
     }
     alert("🆘 Alerta enviada al equipo TRAMMOS. Te contactaremos de inmediato.");
+  };
+
+  const handleEnviarCalificacion = async (estrellas: number, resena: string) => {
+    if (!user || !perfil || !pendienteCalif) return;
+    setSavingCalif(true);
+    const { error } = await supabase.from("calificaciones").insert({
+      cliente: perfil.cliente,
+      tipo: "conductor",
+      nombre: pendienteCalif.conductor_nombre || "Conductor",
+      conductor: pendienteCalif.conductor_nombre,
+      vehiculo: pendienteCalif.vehiculo_placa,
+      servicio: pendienteCalif.id,
+      solicitud_id: pendienteCalif.id,
+      pasajero_id: perfil.id,
+      estrellas,
+      resena: resena || null,
+      mejoras: resena || null,
+      created_by: user.id,
+    });
+    setSavingCalif(false);
+    if (error) {
+      alert("No se pudo guardar la calificación: " + error.message);
+      return;
+    }
+    setPendienteCalif(null);
+    fetch("/api/public/push/process", { method: "POST" }).catch(() => { /* ignore */ });
+  };
+
+  const handleEnviarIncidente = async ({ tipo, queSucedio, cuando }: { tipo: string; queSucedio: string; cuando: string }) => {
+    if (!user || !perfil || !solicitud) return;
+    setSavingIncidente(true);
+    const { error } = await supabase.from("incidentes").insert({
+      cliente: perfil.cliente,
+      fecha: new Date().toISOString().slice(0, 10),
+      tipo_incidente: tipo,
+      conductor: solicitud.conductor_nombre,
+      vehiculo: solicitud.vehiculo_placa,
+      que_paso: queSucedio,
+      cuando: cuando || null,
+      estado: "Abierto",
+      reportado_por: "pasajero",
+      solicitud_id: solicitud.id,
+      pasajero_id: perfil.id,
+      created_by: user.id,
+    });
+    setSavingIncidente(false);
+    if (error) {
+      alert("No se pudo enviar el reporte: " + error.message);
+      return;
+    }
+    setShowIncidente(false);
+    fetch("/api/public/push/process", { method: "POST" }).catch(() => { /* ignore */ });
+    alert("✅ Reporte enviado. El equipo TRAMMOS lo revisará de inmediato.");
   };
 
   if (loading || perfilLoading) {
@@ -265,6 +380,16 @@ function PasajeroPage() {
             cancelando={cancelando}
             onCancel={handleCancel}
             onPanic={handlePanic}
+            onReportarIncidente={() => setShowIncidente(true)}
+          />
+        ) : pendienteCalif ? (
+          <CalificarServicio
+            conductor={pendienteCalif.conductor_nombre}
+            vehiculoPlaca={pendienteCalif.vehiculo_placa}
+            origen={pendienteCalif.origen}
+            destino={pendienteCalif.destino}
+            saving={savingCalif}
+            onSubmit={handleEnviarCalificacion}
           />
         ) : (
           <PedirServicioForm
@@ -282,6 +407,13 @@ function PasajeroPage() {
       </main>
       <AccessibilityPanel />
       <TramiAssistant />
+
+      <ReportarIncidenteModal
+        open={showIncidente}
+        saving={savingIncidente}
+        onClose={() => setShowIncidente(false)}
+        onSubmit={handleEnviarIncidente}
+      />
     </div>
   );
 }
