@@ -313,11 +313,11 @@ function Vehiculos() {
 
         {loading ? (
           <CardGridSkeleton count={6} />
-        ) : items.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay vehículos registrados.</div>
+        ) : itemsFiltrados.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No hay vehículos que coincidan con el filtro.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((v, i) => {
+            {itemsFiltrados.map((v, i) => {
               const { estado: eff, vencido, motivos } = estadoEfectivo(v);
               return (
                 <div
