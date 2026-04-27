@@ -88,7 +88,9 @@ function AuthGate() {
   const navigate = useNavigate();
 
   const isLoginRoute = location.pathname === "/login";
-  const isPasajeroRoute = location.pathname.startsWith("/pasajero");
+  // Solo /pasajero o /pasajero/* (NO /pasajeros-pcd, que es del staff/admin)
+  const isPasajeroRoute =
+    location.pathname === "/pasajero" || location.pathname.startsWith("/pasajero/");
 
   useEffect(() => {
     if (loading) return;
