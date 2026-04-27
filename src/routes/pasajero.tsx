@@ -7,6 +7,7 @@ import { PedirServicioForm, type PasajeroPerfil } from "@/components/pasajero/Pe
 import { ViajeEnCurso, type EstadoSolicitud } from "@/components/pasajero/ViajeEnCurso";
 import { AccessibilityPanel } from "@/components/layout/AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
+import { InstallAppBanner } from "@/components/pasajero/InstallAppBanner";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/pasajero")({
@@ -270,6 +271,10 @@ function PasajeroPage() {
             onSubmit={handleSubmit}
           />
         )}
+
+        <div className="mt-6">
+          <InstallAppBanner />
+        </div>
       </main>
       <AccessibilityPanel />
       <TramiAssistant />
