@@ -30,6 +30,13 @@ interface SolicitudActiva {
   vehiculo_placa: string | null;
 }
 
+interface VehiculoInfo {
+  foto_url: string | null;
+  marca: string | null;
+  linea: string | null;
+  color: string | null;
+}
+
 function PasajeroPage() {
   const { user, role, loading, signOut, displayName } = useAuth();
   const navigate = useNavigate();
