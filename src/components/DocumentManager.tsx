@@ -425,7 +425,7 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
               <input
                 type="file"
                 className="hidden"
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) handleUpload(t.value, f);
