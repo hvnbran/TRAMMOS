@@ -166,6 +166,57 @@ function TiemposRespuesta() {
     [solicitudes],
   );
 
+  // ===== Tiempo de servicio (DURACIÓN del viaje, no asignación) =====
+  // Regla: si finalizado_at existe -> usarlo (PARAR conteo).
+  //        si en curso (iniciado_at sin finalizar) -> calcular contra 'ahora'.
+  //        si cancelado -> ignorar.
+  function calcDuracionServicio(iniciado: string | null, finalizado: string | null, estado: string): number | null {
+    if (!iniciado) return null;
+    const estadoLower = estado.toLowerCase();
+    if (estadoLower.includes("cancel")) return null;
+    const finRef = finalizado ?? new Date(nowTick).toISOString();
+    return diffMin(iniciado, finRef);
+  }
+
+  // Duraciones de servicios finalizados (conteo parado)
+  const duracionesFinalizadas = useMemo(() => {
+    const sol = solicitudes
+      .filter((s) => s.estado === "finalizada" && s.iniciado_at && s.finalizado_at)
+      .map((s) => diffMin(s.iniciado_at!, s.finalizado_at!))
+      .filter((n): n is number => n !== null && n >= 0);
+    const srv = servicios
+      .filter((s) => s.estado === "Finalizado" && s.iniciado_at && s.finalizado_at)
+      .map((s) => diffMin(s.iniciado_at!, s.finalizado_at!))
+      .filter((n): n is number => n !== null && n >= 0);
+    return [...sol, ...srv];
+  }, [solicitudes, servicios]);
+
+  // Servicios en curso (cronómetro vivo, refresca cada 30s)
+  const enCurso = useMemo(() => {
+    const sol = solicitudes
+      .filter((s) => s.iniciado_at && !s.finalizado_at && (s.estado === "en_camino" || s.estado === "a_bordo"))
+      .map((s) => ({
+        id: s.id,
+        ref: `${s.origen} → ${s.destino}`,
+        conductor: s.conductor_nombre,
+        iniciado_at: s.iniciado_at!,
+        minutos: calcDuracionServicio(s.iniciado_at, null, s.estado) ?? 0,
+        tipo: "Solicitud" as const,
+      }));
+    const srv = servicios
+      .filter((s) => s.iniciado_at && !s.finalizado_at && s.estado === "En curso")
+      .map((s) => ({
+        id: s.id,
+        ref: s.pasajero || "Servicio",
+        conductor: s.conductor,
+        iniciado_at: s.iniciado_at!,
+        minutos: calcDuracionServicio(s.iniciado_at, null, s.estado) ?? 0,
+        tipo: "Servicio" as const,
+      }));
+    return [...sol, ...srv].sort((a, b) => b.minutos - a.minutos);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solicitudes, servicios, nowTick]);
+
   // ===== Métricas por administrador =====
   interface AdminStats {
     userId: string;
