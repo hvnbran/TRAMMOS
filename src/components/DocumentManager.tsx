@@ -1,9 +1,53 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Upload, Download, Trash2, FileText, Loader2, Eye, X, Sparkles,
   AlertTriangle, CheckCircle2, Clock, Calendar,
 } from "lucide-react";
+
+// Tipos MIME permitidos por el bucket "documentos"
+const ALLOWED_MIMES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
+const ALLOWED_EXTS = ["pdf", "jpg", "jpeg", "png", "webp", "heic", "heif"];
+const MAX_BYTES = 20 * 1024 * 1024;
+
+// Traduce errores de Supabase Storage / Postgres a español claro
+function traducirErrorSubida(err: { message?: string; statusCode?: string | number; error?: string } | null | undefined): string {
+  if (!err) return "Error desconocido al subir el archivo.";
+  const raw = (err.message || err.error || "").toLowerCase();
+  const code = String(err.statusCode ?? "");
+
+  if (raw.includes("payload too large") || raw.includes("exceeded") || code === "413") {
+    return "El archivo es demasiado grande. El máximo permitido es 20 MB.";
+  }
+  if (raw.includes("mime") || raw.includes("invalid_mime_type") || raw.includes("not allowed")) {
+    return "Tipo de archivo no permitido. Solo se aceptan PDF, JPG, PNG o WEBP.";
+  }
+  if (raw.includes("duplicate") || raw.includes("already exists") || code === "409") {
+    return "Ya existe un archivo con ese nombre. Intenta de nuevo (se generará un nombre único).";
+  }
+  if (raw.includes("row-level security") || raw.includes("rls") || raw.includes("policy") || raw.includes("permission") || code === "403") {
+    return "No tienes permisos para subir documentos a este cliente. Verifica que tu usuario tenga el rol correcto (corona/sodimac/admin).";
+  }
+  if (raw.includes("bucket") && raw.includes("not found")) {
+    return "El almacenamiento de documentos no está disponible. Contacta al administrador.";
+  }
+  if (raw.includes("network") || raw.includes("failed to fetch")) {
+    return "Falla de conexión. Revisa tu internet e intenta nuevamente.";
+  }
+  if (raw.includes("jwt") || raw.includes("unauthorized") || code === "401") {
+    return "Tu sesión expiró. Cierra sesión e inicia de nuevo.";
+  }
+  return err.message || "No se pudo subir el archivo.";
+}
 
 export type DocKind = "conductor" | "vehiculo";
 
