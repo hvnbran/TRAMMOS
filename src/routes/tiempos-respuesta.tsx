@@ -68,6 +68,12 @@ function TiemposRespuesta() {
   const [servicios, setServicios] = useState<ServicioRow[]>([]);
   const [profiles, setProfiles] = useState<Map<string, ProfileRow>>(new Map());
   const [rangeDays, setRangeDays] = useState<number>(30);
+  // tick para refrescar cronómetros de servicios en curso (cada 30s)
+  const [nowTick, setNowTick] = useState<number>(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   async function load() {
     setLoading(true);
