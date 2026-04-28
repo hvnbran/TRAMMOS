@@ -290,7 +290,13 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const { data, error } = await supabase.storage
       .from("documentos")
       .createSignedUrl(d.storage_path, 60 * 10);
-    if (error || !data) return alert("No se pudo abrir el archivo");
+    if (error || !data) {
+      console.error("[Viewer] error:", error);
+      toast.error("No se pudo abrir el archivo", {
+        description: traducirErrorSubida(error as any),
+      });
+      return;
+    }
     setViewer({ url: data.signedUrl, mime: d.mime_type ?? "application/octet-stream", name: d.file_name });
   }
 
@@ -298,7 +304,13 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const { data, error } = await supabase.storage
       .from("documentos")
       .download(d.storage_path);
-    if (error || !data) return alert("No se pudo descargar");
+    if (error || !data) {
+      console.error("[Download] error:", error);
+      toast.error("No se pudo descargar", {
+        description: traducirErrorSubida(error as any),
+      });
+      return;
+    }
     const url = URL.createObjectURL(data);
     const a = document.createElement("a");
     a.href = url;
@@ -309,8 +321,14 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
 
   async function handleDelete(d: DocItem) {
     if (!confirm(`¿Eliminar "${d.file_name}"?`)) return;
-    await supabase.storage.from("documentos").remove([d.storage_path]);
-    await (supabase.from(TABLE[kind]) as any).delete().eq("id", d.id);
+    const { error: stErr } = await supabase.storage.from("documentos").remove([d.storage_path]);
+    if (stErr) console.warn("[Delete storage] aviso:", stErr.message);
+    const { error: dbErr } = await (supabase.from(TABLE[kind]) as any).delete().eq("id", d.id);
+    if (dbErr) {
+      toast.error("No se pudo eliminar", { description: traducirErrorSubida(dbErr as any) });
+      return;
+    }
+    toast.success("Documento eliminado");
     load();
   }
 
