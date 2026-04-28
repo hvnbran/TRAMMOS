@@ -76,12 +76,12 @@ function TiemposRespuesta() {
     const [solRes, srvRes] = await Promise.all([
       supabase
         .from("solicitudes_pasajero")
-        .select("id, origen, destino, estado, created_at, aceptada_at, asignado_at, asignado_by, conductor_nombre, vehiculo_placa")
+        .select("id, origen, destino, estado, created_at, aceptada_at, asignado_at, asignado_by, iniciado_at, finalizado_at, conductor_nombre, vehiculo_placa")
         .gte("created_at", since)
         .order("created_at", { ascending: false }),
       supabase
         .from("servicios")
-        .select("id, fecha, pasajero, conductor, vehiculo, estado, created_at, created_by, asignado_at, asignado_by")
+        .select("id, fecha, pasajero, conductor, vehiculo, estado, created_at, created_by, asignado_at, asignado_by, iniciado_at, finalizado_at")
         .gte("created_at", since)
         .order("created_at", { ascending: false }),
     ]);
