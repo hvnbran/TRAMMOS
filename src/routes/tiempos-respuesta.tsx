@@ -350,7 +350,75 @@ function TiemposRespuesta() {
               />
             </div>
 
-            {/* SLA Buckets */}
+            {/* KPIs de DURACIÓN del servicio (no asignación) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KpiCard
+                icon={<Timer className="h-4 w-4" />}
+                label="Duración prom. servicio"
+                value={formatMin(avg(duracionesFinalizadas))}
+                hint={`${duracionesFinalizadas.length} finalizados`}
+              />
+              <KpiCard
+                icon={<Timer className="h-4 w-4" />}
+                label="Duración mediana servicio"
+                value={formatMin(median(duracionesFinalizadas))}
+                hint="Mitad de los viajes"
+              />
+              <KpiCard
+                icon={<Timer className="h-4 w-4" />}
+                label="En curso ahora"
+                value={String(enCurso.length)}
+                hint={
+                  enCurso.length > 0
+                    ? `Más largo: ${formatMin(enCurso[0].minutos)}`
+                    : "Sin viajes activos"
+                }
+                tone={enCurso.length > 0 ? "warning" : "default"}
+              />
+              <KpiCard
+                icon={<Clock className="h-4 w-4" />}
+                label="Servicio más largo"
+                value={
+                  duracionesFinalizadas.length > 0
+                    ? formatMin(Math.max(...duracionesFinalizadas))
+                    : "—"
+                }
+                hint="En el rango"
+              />
+            </div>
+
+            {/* Servicios en curso (cronómetro vivo) */}
+            {enCurso.length > 0 && (
+              <section className="rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
+                <header className="px-4 py-3 border-b border-primary/30 flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-primary animate-pulse" />
+                  <h2 className="text-sm font-semibold">
+                    Servicios en curso ahora ({enCurso.length}) · cronómetro en vivo
+                  </h2>
+                </header>
+                <ul className="divide-y divide-border">
+                  {enCurso.slice(0, 10).map((s) => (
+                    <li key={`${s.tipo}-${s.id}`} className="px-4 py-2 flex items-center justify-between text-sm">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{s.ref}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {s.tipo}{s.conductor ? ` · ${s.conductor}` : ""} · inició{" "}
+                          {new Date(s.iniciado_at).toLocaleTimeString("es-CO", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-primary tabular-nums">
+                        {formatMin(s.minutos)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+
             <section className="rounded-xl border border-border bg-card p-4">
               <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-primary" /> Cumplimiento SLA de asignación
