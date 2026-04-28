@@ -29,6 +29,8 @@ interface SolicitudRow {
   aceptada_at: string | null;
   asignado_at: string | null;
   asignado_by: string | null;
+  iniciado_at: string | null;
+  finalizado_at: string | null;
   conductor_nombre: string | null;
   vehiculo_placa: string | null;
 }
@@ -44,6 +46,8 @@ interface ServicioRow {
   created_by: string | null;
   asignado_at: string | null;
   asignado_by: string | null;
+  iniciado_at: string | null;
+  finalizado_at: string | null;
 }
 
 interface ProfileRow {
@@ -64,6 +68,12 @@ function TiemposRespuesta() {
   const [servicios, setServicios] = useState<ServicioRow[]>([]);
   const [profiles, setProfiles] = useState<Map<string, ProfileRow>>(new Map());
   const [rangeDays, setRangeDays] = useState<number>(30);
+  // tick para refrescar cronómetros de servicios en curso (cada 30s)
+  const [nowTick, setNowTick] = useState<number>(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -72,12 +82,12 @@ function TiemposRespuesta() {
     const [solRes, srvRes] = await Promise.all([
       supabase
         .from("solicitudes_pasajero")
-        .select("id, origen, destino, estado, created_at, aceptada_at, asignado_at, asignado_by, conductor_nombre, vehiculo_placa")
+        .select("id, origen, destino, estado, created_at, aceptada_at, asignado_at, asignado_by, iniciado_at, finalizado_at, conductor_nombre, vehiculo_placa")
         .gte("created_at", since)
         .order("created_at", { ascending: false }),
       supabase
         .from("servicios")
-        .select("id, fecha, pasajero, conductor, vehiculo, estado, created_at, created_by, asignado_at, asignado_by")
+        .select("id, fecha, pasajero, conductor, vehiculo, estado, created_at, created_by, asignado_at, asignado_by, iniciado_at, finalizado_at")
         .gte("created_at", since)
         .order("created_at", { ascending: false }),
     ]);
@@ -155,6 +165,57 @@ function TiemposRespuesta() {
         .slice(0, 20),
     [solicitudes],
   );
+
+  // ===== Tiempo de servicio (DURACIÓN del viaje, no asignación) =====
+  // Regla: si finalizado_at existe -> usarlo (PARAR conteo).
+  //        si en curso (iniciado_at sin finalizar) -> calcular contra 'ahora'.
+  //        si cancelado -> ignorar.
+  function calcDuracionServicio(iniciado: string | null, finalizado: string | null, estado: string): number | null {
+    if (!iniciado) return null;
+    const estadoLower = estado.toLowerCase();
+    if (estadoLower.includes("cancel")) return null;
+    const finRef = finalizado ?? new Date(nowTick).toISOString();
+    return diffMin(iniciado, finRef);
+  }
+
+  // Duraciones de servicios finalizados (conteo parado)
+  const duracionesFinalizadas = useMemo(() => {
+    const sol = solicitudes
+      .filter((s) => s.estado === "finalizada" && s.iniciado_at && s.finalizado_at)
+      .map((s) => diffMin(s.iniciado_at!, s.finalizado_at!))
+      .filter((n): n is number => n !== null && n >= 0);
+    const srv = servicios
+      .filter((s) => s.estado === "Finalizado" && s.iniciado_at && s.finalizado_at)
+      .map((s) => diffMin(s.iniciado_at!, s.finalizado_at!))
+      .filter((n): n is number => n !== null && n >= 0);
+    return [...sol, ...srv];
+  }, [solicitudes, servicios]);
+
+  // Servicios en curso (cronómetro vivo, refresca cada 30s)
+  const enCurso = useMemo(() => {
+    const sol = solicitudes
+      .filter((s) => s.iniciado_at && !s.finalizado_at && (s.estado === "en_camino" || s.estado === "a_bordo"))
+      .map((s) => ({
+        id: s.id,
+        ref: `${s.origen} → ${s.destino}`,
+        conductor: s.conductor_nombre,
+        iniciado_at: s.iniciado_at!,
+        minutos: calcDuracionServicio(s.iniciado_at, null, s.estado) ?? 0,
+        tipo: "Solicitud" as const,
+      }));
+    const srv = servicios
+      .filter((s) => s.iniciado_at && !s.finalizado_at && s.estado === "En curso")
+      .map((s) => ({
+        id: s.id,
+        ref: s.pasajero || "Servicio",
+        conductor: s.conductor,
+        iniciado_at: s.iniciado_at!,
+        minutos: calcDuracionServicio(s.iniciado_at, null, s.estado) ?? 0,
+        tipo: "Servicio" as const,
+      }));
+    return [...sol, ...srv].sort((a, b) => b.minutos - a.minutos);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solicitudes, servicios, nowTick]);
 
   // ===== Métricas por administrador =====
   interface AdminStats {
@@ -289,7 +350,75 @@ function TiemposRespuesta() {
               />
             </div>
 
-            {/* SLA Buckets */}
+            {/* KPIs de DURACIÓN del servicio (no asignación) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KpiCard
+                icon={<Timer className="h-4 w-4" />}
+                label="Duración prom. servicio"
+                value={formatMin(avg(duracionesFinalizadas))}
+                hint={`${duracionesFinalizadas.length} finalizados`}
+              />
+              <KpiCard
+                icon={<Timer className="h-4 w-4" />}
+                label="Duración mediana servicio"
+                value={formatMin(median(duracionesFinalizadas))}
+                hint="Mitad de los viajes"
+              />
+              <KpiCard
+                icon={<Timer className="h-4 w-4" />}
+                label="En curso ahora"
+                value={String(enCurso.length)}
+                hint={
+                  enCurso.length > 0
+                    ? `Más largo: ${formatMin(enCurso[0].minutos)}`
+                    : "Sin viajes activos"
+                }
+                tone={enCurso.length > 0 ? "warning" : "default"}
+              />
+              <KpiCard
+                icon={<Clock className="h-4 w-4" />}
+                label="Servicio más largo"
+                value={
+                  duracionesFinalizadas.length > 0
+                    ? formatMin(Math.max(...duracionesFinalizadas))
+                    : "—"
+                }
+                hint="En el rango"
+              />
+            </div>
+
+            {/* Servicios en curso (cronómetro vivo) */}
+            {enCurso.length > 0 && (
+              <section className="rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
+                <header className="px-4 py-3 border-b border-primary/30 flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-primary animate-pulse" />
+                  <h2 className="text-sm font-semibold">
+                    Servicios en curso ahora ({enCurso.length}) · cronómetro en vivo
+                  </h2>
+                </header>
+                <ul className="divide-y divide-border">
+                  {enCurso.slice(0, 10).map((s) => (
+                    <li key={`${s.tipo}-${s.id}`} className="px-4 py-2 flex items-center justify-between text-sm">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{s.ref}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {s.tipo}{s.conductor ? ` · ${s.conductor}` : ""} · inició{" "}
+                          {new Date(s.iniciado_at).toLocaleTimeString("es-CO", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                      <span className="text-xs font-bold text-primary tabular-nums">
+                        {formatMin(s.minutos)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+
             <section className="rounded-xl border border-border bg-card p-4">
               <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-primary" /> Cumplimiento SLA de asignación
