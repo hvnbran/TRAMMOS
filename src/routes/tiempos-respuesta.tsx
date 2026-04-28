@@ -338,15 +338,11 @@ function TiemposRespuesta() {
                 hint={`${tiemposAceptacion.length} solicitudes`}
               />
               <KpiCard
-                icon={<AlertTriangle className="h-4 w-4" />}
-                label="Pendientes ahora"
-                value={String(pendientes.length)}
-                hint={
-                  pendientes.length > 0
-                    ? `Más antigua: ${formatMin(pendientes[0].esperaMin)}`
-                    : "Sin pendientes"
-                }
-                tone={pendientes.length > 0 ? "warning" : "success"}
+                icon={<Clock className="h-4 w-4" />}
+                label="Asignaciones lentas"
+                value={String(lentas.length)}
+                hint={lentas.length > 0 ? "Más de 30 min" : "Sin lentas"}
+                tone={lentas.length > 0 ? "warning" : "success"}
               />
             </div>
 
