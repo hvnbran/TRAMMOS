@@ -712,8 +712,10 @@ export type Database = {
           destino: string | null
           estado: string
           fecha: string
+          finalizado_at: string | null
           hora: string | null
           id: string
+          iniciado_at: string | null
           numero_orden: string | null
           origen: string | null
           pasajero: string | null
@@ -732,8 +734,10 @@ export type Database = {
           destino?: string | null
           estado?: string
           fecha: string
+          finalizado_at?: string | null
           hora?: string | null
           id?: string
+          iniciado_at?: string | null
           numero_orden?: string | null
           origen?: string | null
           pasajero?: string | null
@@ -752,8 +756,10 @@ export type Database = {
           destino?: string | null
           estado?: string
           fecha?: string
+          finalizado_at?: string | null
           hora?: string | null
           id?: string
+          iniciado_at?: string | null
           numero_orden?: string | null
           origen?: string | null
           pasajero?: string | null
@@ -783,8 +789,10 @@ export type Database = {
           created_by_pasajero: string
           destino: string
           estado: string
+          finalizado_at: string | null
           hora_recogida: string
           id: string
+          iniciado_at: string | null
           notas: string | null
           origen: string
           pasajero_pcd_id: string
@@ -804,8 +812,10 @@ export type Database = {
           created_by_pasajero: string
           destino: string
           estado?: string
+          finalizado_at?: string | null
           hora_recogida?: string
           id?: string
+          iniciado_at?: string | null
           notas?: string | null
           origen: string
           pasajero_pcd_id: string
@@ -825,8 +835,10 @@ export type Database = {
           created_by_pasajero?: string
           destino?: string
           estado?: string
+          finalizado_at?: string | null
           hora_recogida?: string
           id?: string
+          iniciado_at?: string | null
           notas?: string | null
           origen?: string
           pasajero_pcd_id?: string
