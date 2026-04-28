@@ -1,9 +1,53 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Upload, Download, Trash2, FileText, Loader2, Eye, X, Sparkles,
   AlertTriangle, CheckCircle2, Clock, Calendar,
 } from "lucide-react";
+
+// Tipos MIME permitidos por el bucket "documentos"
+const ALLOWED_MIMES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
+const ALLOWED_EXTS = ["pdf", "jpg", "jpeg", "png", "webp", "heic", "heif"];
+const MAX_BYTES = 20 * 1024 * 1024;
+
+// Traduce errores de Supabase Storage / Postgres a español claro
+function traducirErrorSubida(err: { message?: string; statusCode?: string | number; error?: string } | null | undefined): string {
+  if (!err) return "Error desconocido al subir el archivo.";
+  const raw = (err.message || err.error || "").toLowerCase();
+  const code = String(err.statusCode ?? "");
+
+  if (raw.includes("payload too large") || raw.includes("exceeded") || code === "413") {
+    return "El archivo es demasiado grande. El máximo permitido es 20 MB.";
+  }
+  if (raw.includes("mime") || raw.includes("invalid_mime_type") || raw.includes("not allowed")) {
+    return "Tipo de archivo no permitido. Solo se aceptan PDF, JPG, PNG o WEBP.";
+  }
+  if (raw.includes("duplicate") || raw.includes("already exists") || code === "409") {
+    return "Ya existe un archivo con ese nombre. Intenta de nuevo (se generará un nombre único).";
+  }
+  if (raw.includes("row-level security") || raw.includes("rls") || raw.includes("policy") || raw.includes("permission") || code === "403") {
+    return "No tienes permisos para subir documentos a este cliente. Verifica que tu usuario tenga el rol correcto (corona/sodimac/admin).";
+  }
+  if (raw.includes("bucket") && raw.includes("not found")) {
+    return "El almacenamiento de documentos no está disponible. Contacta al administrador.";
+  }
+  if (raw.includes("network") || raw.includes("failed to fetch")) {
+    return "Falla de conexión. Revisa tu internet e intenta nuevamente.";
+  }
+  if (raw.includes("jwt") || raw.includes("unauthorized") || code === "401") {
+    return "Tu sesión expiró. Cierra sesión e inicia de nuevo.";
+  }
+  return err.message || "No se pudo subir el archivo.";
+}
 
 export type DocKind = "conductor" | "vehiculo";
 
@@ -160,22 +204,49 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
   }
 
   async function handleUpload(tipo: string, file: File) {
-    if (file.size > 20 * 1024 * 1024) {
-      alert("El archivo no debe superar 20MB");
+    // Validación tamaño
+    if (file.size > MAX_BYTES) {
+      toast.error("Archivo demasiado grande", {
+        description: `"${file.name}" pesa ${formatSize(file.size)}. El máximo permitido es 20 MB.`,
+      });
       return;
     }
+    if (file.size === 0) {
+      toast.error("Archivo vacío", {
+        description: "El archivo no contiene datos. Verifica e intenta de nuevo.",
+      });
+      return;
+    }
+
+    // Validación tipo MIME / extensión
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const mime = (file.type || "").toLowerCase();
+    const mimeOk = ALLOWED_MIMES.includes(mime);
+    const extOk = ALLOWED_EXTS.includes(ext);
+    if (!mimeOk && !extOk) {
+      toast.error("Tipo de archivo no permitido", {
+        description: `"${file.name}" (${mime || "tipo desconocido"}). Solo se aceptan PDF, JPG, PNG o WEBP.`,
+      });
+      return;
+    }
+
     setUploading(tipo);
-    const ext = file.name.split(".").pop() || "bin";
     const ts = Date.now();
-    const path = `${cliente}/${FOLDER[kind]}/${entityId}/${tipo}-${ts}.${ext}`;
+    const safeExt = extOk ? ext : "pdf";
+    const path = `${cliente}/${FOLDER[kind]}/${entityId}/${tipo}-${ts}.${safeExt}`;
+    // Forzar contentType correcto cuando el navegador lo deja vacío (frecuente en HEIC/PDF móvil)
+    const contentType = mimeOk ? mime : (safeExt === "pdf" ? "application/pdf" : `image/${safeExt}`);
 
     const { error: upErr } = await supabase.storage
       .from("documentos")
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, { contentType, upsert: false });
 
     if (upErr) {
       setUploading(null);
-      alert("Error subiendo: " + upErr.message);
+      console.error("[Upload doc] Storage error:", upErr);
+      toast.error("No se pudo subir el documento", {
+        description: traducirErrorSubida(upErr as any),
+      });
       return;
     }
 
@@ -185,7 +256,7 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
       tipo,
       storage_path: path,
       file_name: file.name,
-      mime_type: file.type,
+      mime_type: contentType,
       size_bytes: file.size,
       uploaded_by: userData.user?.id ?? null,
       [FK[kind]]: entityId,
@@ -199,9 +270,15 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     setUploading(null);
     if (insErr) {
       await supabase.storage.from("documentos").remove([path]);
-      alert("Error registrando: " + insErr.message);
+      console.error("[Upload doc] DB insert error:", insErr);
+      toast.error("No se pudo registrar el documento", {
+        description: traducirErrorSubida(insErr as any),
+      });
       return;
     }
+    toast.success("Documento subido", {
+      description: `"${file.name}" se cargó correctamente.`,
+    });
     await load();
     // OCR automático en background si es imagen o PDF
     if (inserted?.id && (file.type.startsWith("image/") || file.type === "application/pdf")) {
@@ -213,7 +290,13 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const { data, error } = await supabase.storage
       .from("documentos")
       .createSignedUrl(d.storage_path, 60 * 10);
-    if (error || !data) return alert("No se pudo abrir el archivo");
+    if (error || !data) {
+      console.error("[Viewer] error:", error);
+      toast.error("No se pudo abrir el archivo", {
+        description: traducirErrorSubida(error as any),
+      });
+      return;
+    }
     setViewer({ url: data.signedUrl, mime: d.mime_type ?? "application/octet-stream", name: d.file_name });
   }
 
@@ -221,7 +304,13 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const { data, error } = await supabase.storage
       .from("documentos")
       .download(d.storage_path);
-    if (error || !data) return alert("No se pudo descargar");
+    if (error || !data) {
+      console.error("[Download] error:", error);
+      toast.error("No se pudo descargar", {
+        description: traducirErrorSubida(error as any),
+      });
+      return;
+    }
     const url = URL.createObjectURL(data);
     const a = document.createElement("a");
     a.href = url;
@@ -232,8 +321,14 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
 
   async function handleDelete(d: DocItem) {
     if (!confirm(`¿Eliminar "${d.file_name}"?`)) return;
-    await supabase.storage.from("documentos").remove([d.storage_path]);
-    await (supabase.from(TABLE[kind]) as any).delete().eq("id", d.id);
+    const { error: stErr } = await supabase.storage.from("documentos").remove([d.storage_path]);
+    if (stErr) console.warn("[Delete storage] aviso:", stErr.message);
+    const { error: dbErr } = await (supabase.from(TABLE[kind]) as any).delete().eq("id", d.id);
+    if (dbErr) {
+      toast.error("No se pudo eliminar", { description: traducirErrorSubida(dbErr as any) });
+      return;
+    }
+    toast.success("Documento eliminado");
     load();
   }
 
