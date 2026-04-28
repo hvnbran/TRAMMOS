@@ -141,17 +141,7 @@ function TiemposRespuesta() {
   );
   const sla = useMemo(() => computeSlaBuckets(tiemposAsignacion), [tiemposAsignacion]);
 
-  const pendientes = useMemo(
-    () =>
-      solicitudes
-        .filter((s) => !s.asignado_at && s.estado !== "cancelada")
-        .map((s) => ({
-          ...s,
-          esperaMin: diffMin(s.created_at, new Date().toISOString()) ?? 0,
-        }))
-        .sort((a, b) => b.esperaMin - a.esperaMin),
-    [solicitudes],
-  );
+  // (sección "pendientes ahora" eliminada por solicitud del usuario)
 
   const lentas = useMemo(
     () =>
