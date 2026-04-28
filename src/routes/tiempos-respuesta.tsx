@@ -141,17 +141,7 @@ function TiemposRespuesta() {
   );
   const sla = useMemo(() => computeSlaBuckets(tiemposAsignacion), [tiemposAsignacion]);
 
-  const pendientes = useMemo(
-    () =>
-      solicitudes
-        .filter((s) => !s.asignado_at && s.estado !== "cancelada")
-        .map((s) => ({
-          ...s,
-          esperaMin: diffMin(s.created_at, new Date().toISOString()) ?? 0,
-        }))
-        .sort((a, b) => b.esperaMin - a.esperaMin),
-    [solicitudes],
-  );
+  // (sección "pendientes ahora" eliminada por solicitud del usuario)
 
   const lentas = useMemo(
     () =>
@@ -338,15 +328,11 @@ function TiemposRespuesta() {
                 hint={`${tiemposAceptacion.length} solicitudes`}
               />
               <KpiCard
-                icon={<AlertTriangle className="h-4 w-4" />}
-                label="Pendientes ahora"
-                value={String(pendientes.length)}
-                hint={
-                  pendientes.length > 0
-                    ? `Más antigua: ${formatMin(pendientes[0].esperaMin)}`
-                    : "Sin pendientes"
-                }
-                tone={pendientes.length > 0 ? "warning" : "success"}
+                icon={<Clock className="h-4 w-4" />}
+                label="Asignaciones lentas"
+                value={String(lentas.length)}
+                hint={lentas.length > 0 ? "Más de 30 min" : "Sin lentas"}
+                tone={lentas.length > 0 ? "warning" : "success"}
               />
             </div>
 
@@ -499,28 +485,7 @@ function TiemposRespuesta() {
               )}
             </section>
 
-            {/* Pendientes ahora */}
-            {pendientes.length > 0 && (
-              <section className="rounded-xl border border-warning/40 bg-warning/5 overflow-hidden">
-                <header className="px-4 py-3 border-b border-warning/30 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-warning" />
-                  <h2 className="text-sm font-semibold">Solicitudes pendientes ahora ({pendientes.length})</h2>
-                </header>
-                <ul className="divide-y divide-border">
-                  {pendientes.slice(0, 10).map((p) => (
-                    <li key={p.id} className="px-4 py-2 flex items-center justify-between text-sm">
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{p.origen} → {p.destino}</p>
-                        <p className="text-xs text-muted-foreground">Estado: {p.estado}</p>
-                      </div>
-                      <span className="text-xs font-semibold text-warning">
-                        Esperando {formatMin(p.esperaMin)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+
 
             {/* Lentas (>30 min) */}
             {lentas.length > 0 && (
