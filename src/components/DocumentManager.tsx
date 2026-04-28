@@ -225,7 +225,7 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const extOk = ALLOWED_EXTS.includes(ext);
     if (!mimeOk && !extOk) {
       toast.error("Tipo de archivo no permitido", {
-        description: `"${file.name}" (${mime || "tipo desconocido"}). Solo se aceptan PDF, JPG, PNG o WEBP.`,
+        description: `"${file.name}" (${mime || "tipo desconocido"}). Solo se aceptan PDF, JPG, PNG, WEBP, HEIC o HEIF.`,
       });
       return;
     }
@@ -234,8 +234,20 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const ts = Date.now();
     const safeExt = extOk ? ext : "pdf";
     const path = `${cliente}/${FOLDER[kind]}/${entityId}/${tipo}-${ts}.${safeExt}`;
-    // Forzar contentType correcto cuando el navegador lo deja vacío (frecuente en HEIC/PDF móvil)
-    const contentType = mimeOk ? mime : (safeExt === "pdf" ? "application/pdf" : `image/${safeExt}`);
+    // Forzar contentType correcto cuando el navegador lo deja vacío (frecuente en HEIC/PDF en iOS)
+    function inferContentType(e: string): string {
+      switch (e) {
+        case "pdf": return "application/pdf";
+        case "jpg":
+        case "jpeg": return "image/jpeg";
+        case "png": return "image/png";
+        case "webp": return "image/webp";
+        case "heic": return "image/heic";
+        case "heif": return "image/heif";
+        default: return "application/octet-stream";
+      }
+    }
+    const contentType = mimeOk ? mime : inferContentType(safeExt);
 
     const { error: upErr } = await supabase.storage
       .from("documentos")
