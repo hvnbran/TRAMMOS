@@ -204,22 +204,49 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
   }
 
   async function handleUpload(tipo: string, file: File) {
-    if (file.size > 20 * 1024 * 1024) {
-      alert("El archivo no debe superar 20MB");
+    // Validación tamaño
+    if (file.size > MAX_BYTES) {
+      toast.error("Archivo demasiado grande", {
+        description: `"${file.name}" pesa ${formatSize(file.size)}. El máximo permitido es 20 MB.`,
+      });
       return;
     }
+    if (file.size === 0) {
+      toast.error("Archivo vacío", {
+        description: "El archivo no contiene datos. Verifica e intenta de nuevo.",
+      });
+      return;
+    }
+
+    // Validación tipo MIME / extensión
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    const mime = (file.type || "").toLowerCase();
+    const mimeOk = ALLOWED_MIMES.includes(mime);
+    const extOk = ALLOWED_EXTS.includes(ext);
+    if (!mimeOk && !extOk) {
+      toast.error("Tipo de archivo no permitido", {
+        description: `"${file.name}" (${mime || "tipo desconocido"}). Solo se aceptan PDF, JPG, PNG o WEBP.`,
+      });
+      return;
+    }
+
     setUploading(tipo);
-    const ext = file.name.split(".").pop() || "bin";
     const ts = Date.now();
-    const path = `${cliente}/${FOLDER[kind]}/${entityId}/${tipo}-${ts}.${ext}`;
+    const safeExt = extOk ? ext : "pdf";
+    const path = `${cliente}/${FOLDER[kind]}/${entityId}/${tipo}-${ts}.${safeExt}`;
+    // Forzar contentType correcto cuando el navegador lo deja vacío (frecuente en HEIC/PDF móvil)
+    const contentType = mimeOk ? mime : (safeExt === "pdf" ? "application/pdf" : `image/${safeExt}`);
 
     const { error: upErr } = await supabase.storage
       .from("documentos")
-      .upload(path, file, { contentType: file.type, upsert: false });
+      .upload(path, file, { contentType, upsert: false });
 
     if (upErr) {
       setUploading(null);
-      alert("Error subiendo: " + upErr.message);
+      console.error("[Upload doc] Storage error:", upErr);
+      toast.error("No se pudo subir el documento", {
+        description: traducirErrorSubida(upErr as any),
+      });
       return;
     }
 
@@ -229,7 +256,7 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
       tipo,
       storage_path: path,
       file_name: file.name,
-      mime_type: file.type,
+      mime_type: contentType,
       size_bytes: file.size,
       uploaded_by: userData.user?.id ?? null,
       [FK[kind]]: entityId,
@@ -243,9 +270,15 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     setUploading(null);
     if (insErr) {
       await supabase.storage.from("documentos").remove([path]);
-      alert("Error registrando: " + insErr.message);
+      console.error("[Upload doc] DB insert error:", insErr);
+      toast.error("No se pudo registrar el documento", {
+        description: traducirErrorSubida(insErr as any),
+      });
       return;
     }
+    toast.success("Documento subido", {
+      description: `"${file.name}" se cargó correctamente.`,
+    });
     await load();
     // OCR automático en background si es imagen o PDF
     if (inserted?.id && (file.type.startsWith("image/") || file.type === "application/pdf")) {
