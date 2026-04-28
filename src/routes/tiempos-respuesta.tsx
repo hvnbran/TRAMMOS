@@ -29,6 +29,8 @@ interface SolicitudRow {
   aceptada_at: string | null;
   asignado_at: string | null;
   asignado_by: string | null;
+  iniciado_at: string | null;
+  finalizado_at: string | null;
   conductor_nombre: string | null;
   vehiculo_placa: string | null;
 }
@@ -44,6 +46,8 @@ interface ServicioRow {
   created_by: string | null;
   asignado_at: string | null;
   asignado_by: string | null;
+  iniciado_at: string | null;
+  finalizado_at: string | null;
 }
 
 interface ProfileRow {
