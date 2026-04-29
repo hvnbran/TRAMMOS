@@ -157,9 +157,27 @@ function PasajerosPCD() {
       if (e) { setError(e.message); setSaving(false); return; }
       setSuccess("Perfil actualizado.");
     } else {
-      const { error: e } = await supabase.from("pasajeros_pcd").insert([payload]);
+      // Insertar como autorizado por defecto para que pueda recibir el OTP.
+      const { data: inserted, error: e } = await supabase
+        .from("pasajeros_pcd")
+        .insert([{ ...payload, autorizado: true }])
+        .select("id, email, autorizado")
+        .single();
       if (e) { setError(e.message); setSaving(false); return; }
       setSuccess("Pasajero registrado.");
+
+      // Enviar correo de bienvenida con código OTP de 6 dígitos.
+      if (inserted?.email && inserted.autorizado) {
+        const { error: otpErr } = await supabase.auth.signInWithOtp({
+          email: inserted.email,
+          options: { shouldCreateUser: true },
+        });
+        if (otpErr) {
+          setError(`Pasajero creado, pero no se pudo enviar el correo de bienvenida: ${otpErr.message}`);
+        } else {
+          setSuccess(`Pasajero registrado. Enviamos un código de acceso a ${inserted.email}.`);
+        }
+      }
     }
     setSaving(false);
     setShowForm(false);
