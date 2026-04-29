@@ -36,8 +36,6 @@ function getRetryAfterSeconds(error: unknown): number {
 }
 
 // Move a message to the dead letter queue and log the reason.
-// Note: typed as `any` because email infrastructure tables (email_send_log)
-// and RPCs (move_to_dlq) are not in the generated Database types.
 async function moveToDlq(
   supabase: any,
   queue: string,
