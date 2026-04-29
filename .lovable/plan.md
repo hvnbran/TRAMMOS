@@ -1,101 +1,55 @@
-## Objetivo
+## Diagnóstico
 
-1. **Monitorizar tiempos de respuesta** en dos escenarios:
-   - Servicios creados directamente por administrativos (cuánto tarda cada persona en crearlos / gestionarlos).
-   - Solicitudes que entran desde la app del pasajero → cuánto tarda un encargado en asignar conductor + vehículo.
-2. **Vehículos y conductores multi-cliente**: que un mismo vehículo o conductor pueda pertenecer a Corona, Sodimac, **ambos**, o quedar **sin asignar**.
+El error **no es del archivo PDF**. Es un `CHECK constraint` desactualizado en la base de datos:
 
----
+- `conductor_documentos.tipo` solo permite: `poliza_arl`, `licencia_conduccion`, `tarjeta_operacion`
+- `vehiculo_documentos.tipo` solo permite: `tarjeta_operacion`, `soat`, `tecnico_mecanica`
 
-## Parte 1 — Vehículos y conductores compartidos entre clientes
+Pero el frontend (`DocumentManager.tsx`) intenta insertar 9 tipos de conductor (`cedula`, `seguridad_social`, `examenes_medicos`, `antecedentes`, `simit`, `curso_defensivo`, `curso_teorico_practico`, `hoja_vida`, `licencia_conduccion`) y 10 tipos de vehículo (`tarjeta_propiedad`, `cedula_propietario`, `seguro_rc`, `revision_preventiva`, `certificado_gps`, `antecedentes_propietario`, `simit_vehiculo`, etc.).
 
-### Cambios de base de datos (migración)
+Por eso el insert falla con `violates check constraint "conductor_documentos_tipo_check"` apenas eliges Cédula, Planilla, SIMIT, Antecedentes, etc. — y el toast actual muestra el mensaje crudo de Postgres en inglés.
 
-Hoy las tablas `vehiculos` y `conductores` usan `cliente cliente_tipo NOT NULL` (un solo valor: corona o sodimac). Para soportar ambos / ninguno haremos:
+## Cambios
 
-- Añadir columna nueva `clientes cliente_tipo[] NOT NULL DEFAULT '{}'` en `vehiculos` y `conductores`.
-  - `{}` = sin asignar
-  - `{corona}` = solo Corona
-  - `{sodimac}` = solo Sodimac
-  - `{corona,sodimac}` = ambos
-- Migrar datos existentes: `clientes := ARRAY[cliente]`.
-- Mantener la columna `cliente` por compatibilidad temporal pero dejar de usarla en lectura/escritura.
-- Reemplazar las RLS policies de `vehiculos` y `conductores` para que admitan el array:
-  - Admin: acceso total.
-  - Corona/Sodimac: ven las filas donde `'corona' = ANY(clientes)` o `array_length(clientes,1) IS NULL` (sin asignar) — opción a decidir; por defecto **ven solo las filas de su cliente** y las "sin asignar" para poder reclamarlas.
-- Actualizar la función `get_vehiculo_publico_por_placa` para no filtrar por cliente sino solo por la solicitud activa del pasajero (ya lo hace).
+### 1. Migración SQL — quitar restricciones obsoletas
 
-### Cambios de UI
+Eliminar los CHECK rígidos en ambas tablas y reemplazarlos por una validación más flexible (longitud razonable, no vacío) que no quede desactualizada cada vez que agregamos un tipo de documento nuevo:
 
-- **`src/routes/vehiculos.tsx`** y **`src/routes/conductores.tsx`**:
-  - Reemplazar el `<select>` único de cliente por un grupo de **2 checkboxes** (Corona / Sodimac). Ninguno marcado = "Sin asignar".
-  - Mostrar en la tarjeta los badges de cliente(s): `Corona`, `Sodimac`, `Ambos`, o `Sin asignar`.
-  - Filtro superior: "Todos / Corona / Sodimac / Sin asignar".
-- **Asignación en servicios**: al crear un servicio Corona, el dropdown de vehículo/conductor mostrará los que tienen Corona en su array (o sin asignar).
+```sql
+ALTER TABLE public.conductor_documentos DROP CONSTRAINT IF EXISTS conductor_documentos_tipo_check;
+ALTER TABLE public.vehiculo_documentos  DROP CONSTRAINT IF EXISTS vehiculo_documentos_tipo_check;
 
----
+ALTER TABLE public.conductor_documentos
+  ADD CONSTRAINT conductor_documentos_tipo_valid
+  CHECK (tipo IS NOT NULL AND length(tipo) BETWEEN 1 AND 64);
 
-## Parte 2 — Monitoreo de tiempos de respuesta
+ALTER TABLE public.vehiculo_documentos
+  ADD CONSTRAINT vehiculo_documentos_tipo_valid
+  CHECK (tipo IS NOT NULL AND length(tipo) BETWEEN 1 AND 64);
+```
 
-### Cambios de base de datos (migración)
+La fuente de verdad de los tipos válidos pasa a ser `TIPOS_CONDUCTOR` y `TIPOS_VEHICULO` en el frontend, que ya muestran exactamente los documentos que la operación necesita.
 
-Añadir timestamps de auditoría:
+### 2. `src/components/DocumentManager.tsx` — traducir errores de BD
 
-**Tabla `servicios`** (creados desde el admin):
-- `asignado_at timestamptz` — primer momento en que se completaron `conductor` y `vehiculo`.
-- `asignado_by uuid` — usuario que hizo la asignación.
-- Trigger `trg_servicios_track_asignacion`: si `OLD.conductor IS NULL OR OLD.vehiculo IS NULL` y `NEW` los tiene ambos, set `asignado_at = now()` y `asignado_by = auth.uid()`.
+Hoy, cuando el insert falla, el catch hace `toast({ description: e.message })` y muestra el inglés de Postgres. Vamos a:
 
-**Tabla `solicitudes_pasajero`** (origen app del pasajero):
-- `asignado_at timestamptz` — cuando se asignó conductor + placa.
-- `asignado_by uuid` — admin que aceptó/asignó.
-- `aceptada_at timestamptz` — cuando pasó a estado `aceptada`.
-- Trigger paralelo que rellena estos campos al cambiar estado o llenar conductor/placa.
+- Detectar errores comunes de Supabase/Postgres y mapearlos a mensajes en español:
+  - `violates check constraint` → "Tipo de documento no permitido por la base de datos."
+  - `violates row-level security` → "No tienes permiso para subir este documento en este cliente."
+  - `duplicate key` → "Ya existe un documento de este tipo."
+  - `Payload too large` / `413` → "El archivo supera el tamaño permitido."
+  - `bucket` / `storage` errors → "No se pudo guardar el archivo en el almacenamiento."
+  - Cualquier otro → "No se pudo subir el documento. Intenta de nuevo o contacta soporte."
+- Aplicar el mismo helper tanto al error de `storage.upload` como al de `insert` en la tabla, para que SIEMPRE veas el motivo en español específico.
 
-Métricas derivadas (calculadas en el frontend a partir de los timestamps):
-- **Tiempo de creación admin**: `created_at` → `asignado_at` por servicio y agregado por `created_by`.
-- **Tiempo de respuesta a solicitudes pasajero**: `solicitudes_pasajero.created_at` → `aceptada_at` (tiempo hasta aceptar) y → `asignado_at` (tiempo hasta tener conductor + vehículo).
+## Resultado esperado
 
-### Nueva sección de UI: "Tiempos de respuesta"
+- Podrás subir Cédula, Licencia, Planilla, SIMIT, Antecedentes, Exámenes, etc. en conductores.
+- Podrás subir todos los documentos de vehículo (incluyendo Tarjeta de propiedad, Seguro RC, Revisión preventiva, GPS, SIMIT vehículo, etc.).
+- Si en el futuro algo falla al subir (permisos, tamaño, tipo, almacenamiento), la notificación te dirá en español exactamente por qué.
 
-Agregar un nuevo tab/panel en **`src/routes/reportes.tsx`** (o nueva ruta `/tiempos-respuesta` accesible solo a admin) con:
+## Archivos a modificar
 
-1. **KPIs superiores** (rango de fechas seleccionable):
-   - Tiempo promedio de asignación (solicitudes pasajero).
-   - Tiempo mediano de asignación.
-   - % de solicitudes asignadas en < 5 min, < 15 min, < 30 min, > 30 min.
-   - Total de solicitudes pendientes ahora mismo y su antigüedad.
-
-2. **Tabla por administrador** (quién asigna):
-   - Columnas: Admin · Servicios creados · Solicitudes asignadas · Tiempo prom. de asignación · Tiempo mediano.
-   - Ordenable por cualquier columna.
-
-3. **Gráfico de líneas**: tiempo promedio de asignación por día (últimos 30 días).
-
-4. **Lista de solicitudes lentas**: tabla con las solicitudes que tardaron > 30 min en asignarse, para análisis de casos.
-
-Los datos se leen vía `supabase.from("solicitudes_pasajero").select(...)` y `from("servicios").select(...)` filtrando por rango de fechas y agrupando en cliente.
-
----
-
-## Detalles técnicos
-
-### Archivos a crear
-- `supabase/migrations/<ts>_clientes_array_y_tiempos.sql` — nuevas columnas, triggers, RLS.
-- `src/routes/tiempos-respuesta.tsx` — nueva ruta admin con los paneles de métricas.
-- `src/lib/metricas/tiempos.ts` — helpers para calcular promedios/medianas/percentiles.
-
-### Archivos a modificar
-- `src/routes/vehiculos.tsx` — checkboxes multi-cliente, filtro, badges.
-- `src/routes/conductores.tsx` — checkboxes multi-cliente, filtro, badges.
-- `src/routes/servicios.tsx` — al crear servicio, registrar `asignado_by` automáticamente vía trigger; el dropdown de vehículos/conductores debe filtrar por `'<cliente>' = ANY(clientes) OR array_length(clientes,1) IS NULL`.
-- `src/components/operacion/SolicitudesEntrantes.tsx` — al aceptar, los timestamps los rellena el trigger; no requiere cambios funcionales.
-- `src/components/layout/Sidebar.tsx` — agregar entrada "Tiempos de respuesta" para admin.
-- `src/integrations/supabase/types.ts` — se regenera automáticamente.
-
-### Consideraciones
-- Las RLS sobre `vehiculos`/`conductores` cambian de `can_access_cliente(cliente)` a una función nueva `can_access_clientes(_clientes cliente_tipo[])` que devuelve true si el usuario es admin, o si su cliente está en el array, o si el array está vacío (sin asignar — todos los admins de cualquier cliente pueden reclamarlo).
-- Los triggers usan `SECURITY DEFINER` con `auth.uid()` para capturar quién hace el cambio.
-- Para no romper código existente, `cliente` en vehículos/conductores se mantiene como columna pero se sincroniza al primer elemento de `clientes` (o se deja `NULL`-able). Eventualmente se podrá eliminar.
-
-¿Apruebas el plan o quieres ajustar algo antes de implementarlo?
+- `supabase/migrations/<nueva>.sql` (nueva migración)
+- `src/components/DocumentManager.tsx` (mapeo de errores en español)
