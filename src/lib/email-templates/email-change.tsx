@@ -7,6 +7,7 @@ import {
   Heading,
   Html,
   Img,
+  Link,
   Preview,
   Section,
   Text,
@@ -21,13 +22,14 @@ interface EmailChangeEmailProps {
 }
 
 export const EmailChangeEmail = ({
+  siteName,
   email,
   newEmail,
   confirmationUrl,
 }: EmailChangeEmailProps) => (
   <Html lang="es" dir="ltr">
     <Head />
-    <Preview>Confirma el cambio de tu correo TRAMMOS</Preview>
+    <Preview>Confirma el cambio de correo en TRAMMOS</Preview>
     <Body style={styles.body}>
       <Section style={styles.outerContainer}>
         <Container style={styles.card}>
@@ -39,20 +41,17 @@ export const EmailChangeEmail = ({
           <Section style={styles.content}>
             <Heading style={styles.h1}>Confirma tu nuevo correo</Heading>
             <Text style={styles.text}>
-              Solicitaste cambiar el correo de tu cuenta TRAMMOS de{' '}
-              <a href={`mailto:${email}`} style={styles.link}>{email}</a> a{' '}
-              <a href={`mailto:${newEmail}`} style={styles.link}>{newEmail}</a>.
+              Solicitaste cambiar el correo de tu cuenta en {siteName} de{' '}
+              <Link href={`mailto:${email}`} style={styles.link}>{email}</Link> a{' '}
+              <Link href={`mailto:${newEmail}`} style={styles.link}>{newEmail}</Link>.
             </Text>
-
-            <div style={{ textAlign: 'center', margin: '24px 0' }}>
+            <div style={{ textAlign: 'center', margin: '28px 0' }}>
               <Button style={styles.button} href={confirmationUrl}>
-                Confirmar el cambio
+                Confirmar cambio
               </Button>
             </div>
-
             <Text style={styles.textMuted}>
-              Si tú no hiciste esta solicitud, asegura tu cuenta cambiando la contraseña
-              y avisa al soporte de TRAMMOS.
+              Si no solicitaste este cambio, asegura tu cuenta de inmediato.
             </Text>
           </Section>
 

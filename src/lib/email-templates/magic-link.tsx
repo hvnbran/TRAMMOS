@@ -1,6 +1,7 @@
 import * as React from 'react'
 import {
   Body,
+  Button,
   Container,
   Head,
   Heading,
@@ -14,74 +15,52 @@ import { TRAMMOS_BRAND, styles } from './_brand'
 
 interface MagicLinkEmailProps {
   siteName: string
-  // Supabase passes the 6-digit OTP token in the `token` field of the hook
-  // payload. We render it prominently. The confirmationUrl is kept as a
-  // fallback link in case the user prefers to click instead of typing.
+  confirmationUrl: string
   token?: string
-  confirmationUrl?: string
 }
 
 export const MagicLinkEmail = ({
-  token,
+  siteName,
   confirmationUrl,
+  token,
 }: MagicLinkEmailProps) => (
   <Html lang="es" dir="ltr">
     <Head />
-    <Preview>Tu código TRAMMOS: {token ?? '——————'}</Preview>
+    <Preview>Tu enlace de acceso a TRAMMOS</Preview>
     <Body style={styles.body}>
       <Section style={styles.outerContainer}>
         <Container style={styles.card}>
-          {/* Header con logo */}
           <Section style={styles.header}>
-            <Img
-              src={TRAMMOS_BRAND.logoUrl}
-              alt="TRAMMOS"
-              width="56"
-              height="56"
-              style={styles.logo}
-            />
+            <Img src={TRAMMOS_BRAND.logoUrl} alt="TRAMMOS" width="56" height="56" style={styles.logo} />
           </Section>
           <hr style={styles.accentBar} />
 
-          {/* Contenido */}
           <Section style={styles.content}>
-            <Heading style={styles.h1}>Tu código de acceso</Heading>
+            <Heading style={styles.h1}>Tu enlace de acceso</Heading>
             <Text style={styles.text}>
-              Usa este código para entrar a tu cuenta TRAMMOS. Es válido por
-              unos minutos y solo puede usarse una vez.
+              Usa el botón para iniciar sesión en {siteName}. Este enlace expira en pocos minutos.
             </Text>
+            <div style={{ textAlign: 'center', margin: '24px 0' }}>
+              <Button style={styles.button} href={confirmationUrl}>
+                Iniciar sesión
+              </Button>
+            </div>
 
-            {/* OTP destacado */}
-            {token && (
+            {token ? (
               <Section style={styles.codeBox}>
-                <Text style={styles.codeLabel}>Código de 6 dígitos</Text>
+                <Text style={styles.codeLabel}>O ingresa este código de 6 dígitos</Text>
                 <Text style={styles.codeText}>{token}</Text>
               </Section>
-            )}
+            ) : null}
 
             <Text style={styles.textMuted}>
-              ¿No solicitaste este código? Puedes ignorar este correo, tu
-              cuenta sigue segura.
+              Si no solicitaste este acceso, puedes ignorar este correo.
             </Text>
-
-            {confirmationUrl && (
-              <>
-                <hr style={styles.divider} />
-                <Text style={styles.textMuted}>
-                  ¿Prefieres entrar con un enlace?{' '}
-                  <a href={confirmationUrl} style={styles.link}>
-                    Acceder a TRAMMOS
-                  </a>
-                </Text>
-              </>
-            )}
           </Section>
 
-          {/* Footer */}
           <Section style={styles.footer}>
             <Text style={styles.footerText}>
-              <strong style={{ color: TRAMMOS_BRAND.text }}>TRAMMOS</strong>{' '}
-              · Transportes Especiales
+              <strong style={{ color: TRAMMOS_BRAND.text }}>TRAMMOS</strong> · Transportes Especiales
             </Text>
             <Text style={styles.footerText}>
               ¿Necesitas ayuda? Escríbenos a{' '}

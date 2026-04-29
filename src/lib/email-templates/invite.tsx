@@ -7,6 +7,7 @@ import {
   Heading,
   Html,
   Img,
+  Link,
   Preview,
   Section,
   Text,
@@ -19,10 +20,10 @@ interface InviteEmailProps {
   confirmationUrl: string
 }
 
-export const InviteEmail = ({ confirmationUrl }: InviteEmailProps) => (
+export const InviteEmail = ({ siteName, siteUrl, confirmationUrl }: InviteEmailProps) => (
   <Html lang="es" dir="ltr">
     <Head />
-    <Preview>Te invitamos a unirte a TRAMMOS</Preview>
+    <Preview>Te invitaron a unirte a TRAMMOS</Preview>
     <Body style={styles.body}>
       <Section style={styles.outerContainer}>
         <Container style={styles.card}>
@@ -32,18 +33,19 @@ export const InviteEmail = ({ confirmationUrl }: InviteEmailProps) => (
           <hr style={styles.accentBar} />
 
           <Section style={styles.content}>
-            <Heading style={styles.h1}>Te damos la bienvenida</Heading>
+            <Heading style={styles.h1}>Te invitaron a TRAMMOS</Heading>
             <Text style={styles.text}>
-              Has sido invitado a usar <strong>TRAMMOS</strong> — la plataforma de transportes
-              especiales accesibles. Acepta la invitación para crear tu cuenta y empezar.
+              Has sido invitado a unirte a{' '}
+              <Link href={siteUrl} style={styles.link}>
+                <strong>{siteName}</strong>
+              </Link>
+              . Acepta la invitación y crea tu cuenta para comenzar.
             </Text>
-
-            <div style={{ textAlign: 'center', margin: '24px 0' }}>
+            <div style={{ textAlign: 'center', margin: '28px 0' }}>
               <Button style={styles.button} href={confirmationUrl}>
                 Aceptar invitación
               </Button>
             </div>
-
             <Text style={styles.textMuted}>
               Si no esperabas esta invitación, puedes ignorar este correo.
             </Text>

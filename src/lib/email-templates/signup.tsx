@@ -7,6 +7,7 @@ import {
   Heading,
   Html,
   Img,
+  Link,
   Preview,
   Section,
   Text,
@@ -18,13 +19,13 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
-  token?: string
 }
 
 export const SignupEmail = ({
+  siteName,
+  siteUrl,
   recipient,
   confirmationUrl,
-  token,
 }: SignupEmailProps) => (
   <Html lang="es" dir="ltr">
     <Head />
@@ -38,27 +39,21 @@ export const SignupEmail = ({
           <hr style={styles.accentBar} />
 
           <Section style={styles.content}>
-            <Heading style={styles.h1}>Confirma tu correo</Heading>
+            <Heading style={styles.h1}>Bienvenido a TRAMMOS</Heading>
             <Text style={styles.text}>
-              Bienvenido a <strong>TRAMMOS</strong>. Para activar tu cuenta{recipient ? ` (${recipient})` : ''},
-              confirma tu correo con el código o el botón de abajo.
+              Gracias por registrarte en{' '}
+              <Link href={siteUrl} style={styles.link}>
+                <strong>{siteName}</strong>
+              </Link>
+              . Para activar tu cuenta ({recipient}) confirma tu correo:
             </Text>
-
-            {token && (
-              <Section style={styles.codeBox}>
-                <Text style={styles.codeLabel}>Código de 6 dígitos</Text>
-                <Text style={styles.codeText}>{token}</Text>
-              </Section>
-            )}
-
-            <div style={{ textAlign: 'center', margin: '24px 0' }}>
+            <div style={{ textAlign: 'center', margin: '28px 0' }}>
               <Button style={styles.button} href={confirmationUrl}>
-                Confirmar mi correo
+                Confirmar correo
               </Button>
             </div>
-
             <Text style={styles.textMuted}>
-              Si no creaste esta cuenta, ignora este correo.
+              Si no creaste esta cuenta, puedes ignorar este correo.
             </Text>
           </Section>
 

@@ -16,13 +16,12 @@ import { TRAMMOS_BRAND, styles } from './_brand'
 interface RecoveryEmailProps {
   siteName: string
   confirmationUrl: string
-  token?: string
 }
 
-export const RecoveryEmail = ({ confirmationUrl, token }: RecoveryEmailProps) => (
+export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps) => (
   <Html lang="es" dir="ltr">
     <Head />
-    <Preview>Restablece tu contraseña TRAMMOS</Preview>
+    <Preview>Restablece tu contraseña en TRAMMOS</Preview>
     <Body style={styles.body}>
       <Section style={styles.outerContainer}>
         <Container style={styles.card}>
@@ -34,26 +33,15 @@ export const RecoveryEmail = ({ confirmationUrl, token }: RecoveryEmailProps) =>
           <Section style={styles.content}>
             <Heading style={styles.h1}>Restablece tu contraseña</Heading>
             <Text style={styles.text}>
-              Recibimos una solicitud para restablecer la contraseña de tu cuenta TRAMMOS.
-              Toca el botón para elegir una nueva.
+              Recibimos una solicitud para restablecer tu contraseña en {siteName}. Haz clic en el botón para crear una nueva.
             </Text>
-
-            {token && (
-              <Section style={styles.codeBox}>
-                <Text style={styles.codeLabel}>Código de verificación</Text>
-                <Text style={styles.codeText}>{token}</Text>
-              </Section>
-            )}
-
-            <div style={{ textAlign: 'center', margin: '24px 0' }}>
+            <div style={{ textAlign: 'center', margin: '28px 0' }}>
               <Button style={styles.button} href={confirmationUrl}>
                 Restablecer contraseña
               </Button>
             </div>
-
             <Text style={styles.textMuted}>
-              Si no solicitaste este cambio, puedes ignorar este correo. Tu contraseña
-              actual seguirá funcionando.
+              Si no solicitaste este cambio, puedes ignorar este correo. Tu contraseña no será modificada.
             </Text>
           </Section>
 

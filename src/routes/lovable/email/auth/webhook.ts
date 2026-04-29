@@ -12,12 +12,12 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirma tu correo en TRAMMOS',
-  invite: 'Te invitamos a TRAMMOS',
-  magiclink: 'Tu código TRAMMOS de 6 dígitos',
-  recovery: 'Restablece tu contraseña TRAMMOS',
-  email_change: 'Confirma tu nuevo correo TRAMMOS',
-  reauthentication: 'Tu código de verificación TRAMMOS',
+  signup: 'Confirm your email',
+  invite: "You've been invited",
+  magiclink: 'Your login link',
+  recovery: 'Reset your password',
+  email_change: 'Confirm your new email',
+  reauthentication: 'Your verification code',
 }
 
 // Template mapping
@@ -32,9 +32,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "trammos"
-const SENDER_DOMAIN = "notify.notificacionestrammos.online"
-const ROOT_DOMAIN = "notificacionestrammos.online"
-const FROM_DOMAIN = "notificacionestrammos.online"
+const SENDER_DOMAIN = "notify.tramos.online"
+const ROOT_DOMAIN = "tramos.online"
+const FROM_DOMAIN = "tramos.online"
 
 function redactEmail(email: string | null | undefined): string {
   if (!email) return '***'
