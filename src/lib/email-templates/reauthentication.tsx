@@ -1,64 +1,58 @@
 import * as React from 'react'
+
 import {
   Body,
   Container,
   Head,
   Heading,
   Html,
-  Img,
   Preview,
-  Section,
   Text,
 } from '@react-email/components'
-import { TRAMMOS_BRAND, styles } from './_brand'
 
 interface ReauthenticationEmailProps {
   token: string
 }
 
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
-  <Html lang="es" dir="ltr">
+  <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Tu código de verificación TRAMMOS: {token}</Preview>
-    <Body style={styles.body}>
-      <Section style={styles.outerContainer}>
-        <Container style={styles.card}>
-          <Section style={styles.header}>
-            <Img src={TRAMMOS_BRAND.logoUrl} alt="TRAMMOS" width="56" height="56" style={styles.logo} />
-          </Section>
-          <hr style={styles.accentBar} />
-
-          <Section style={styles.content}>
-            <Heading style={styles.h1}>Confirma que eres tú</Heading>
-            <Text style={styles.text}>
-              Para continuar con esta acción, ingresa el código de verificación:
-            </Text>
-
-            <Section style={styles.codeBox}>
-              <Text style={styles.codeLabel}>Código de 6 dígitos</Text>
-              <Text style={styles.codeText}>{token}</Text>
-            </Section>
-
-            <Text style={styles.textMuted}>
-              Este código vence en pocos minutos. Si no lo solicitaste, puedes ignorar este correo.
-            </Text>
-          </Section>
-
-          <Section style={styles.footer}>
-            <Text style={styles.footerText}>
-              <strong style={{ color: TRAMMOS_BRAND.text }}>TRAMMOS</strong> · Transportes Especiales
-            </Text>
-            <Text style={styles.footerText}>
-              ¿Necesitas ayuda? Escríbenos a{' '}
-              <a href={`mailto:${TRAMMOS_BRAND.supportEmail}`} style={styles.link}>
-                {TRAMMOS_BRAND.supportEmail}
-              </a>
-            </Text>
-          </Section>
-        </Container>
-      </Section>
+    <Preview>Your verification code</Preview>
+    <Body style={main}>
+      <Container style={container}>
+        <Heading style={h1}>Confirm reauthentication</Heading>
+        <Text style={text}>Use the code below to confirm your identity:</Text>
+        <Text style={codeStyle}>{token}</Text>
+        <Text style={footer}>
+          This code will expire shortly. If you didn't request this, you can
+          safely ignore this email.
+        </Text>
+      </Container>
     </Body>
   </Html>
 )
 
 export default ReauthenticationEmail
+
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const codeStyle = {
+  fontFamily: 'Courier, monospace',
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 30px',
+}
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }

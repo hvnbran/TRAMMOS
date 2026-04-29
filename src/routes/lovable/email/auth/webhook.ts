@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { render } from '@react-email/components'
+import { renderAsync } from '@react-email/components'
 import { parseEmailWebhookPayload } from '@lovable.dev/email-js'
 import { WebhookError, verifyWebhookRequest } from '@lovable.dev/webhooks-js'
 import { createClient } from '@supabase/supabase-js'
@@ -12,12 +12,12 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirma tu correo en TRAMMOS',
-  invite: 'Te invitamos a TRAMMOS',
-  magiclink: 'Tu código TRAMMOS de 6 dígitos',
-  recovery: 'Restablece tu contraseña TRAMMOS',
-  email_change: 'Confirma tu nuevo correo TRAMMOS',
-  reauthentication: 'Tu código de verificación TRAMMOS',
+  signup: 'Confirm your email',
+  invite: "You've been invited",
+  magiclink: 'Your login link',
+  recovery: 'Reset your password',
+  email_change: 'Confirm your new email',
+  reauthentication: 'Your verification code',
 }
 
 // Template mapping
@@ -32,9 +32,9 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "trammos"
-const SENDER_DOMAIN = "notify.notificacionestrammos.online"
-const ROOT_DOMAIN = "notificacionestrammos.online"
-const FROM_DOMAIN = "notificacionestrammos.online"
+const SENDER_DOMAIN = "notify.tramos.online"
+const ROOT_DOMAIN = "tramos.online"
+const FROM_DOMAIN = "tramos.online"
 
 function redactEmail(email: string | null | undefined): string {
   if (!email) return '***'
@@ -144,8 +144,8 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
 
         // Render React Email to HTML and plain text
         const element = React.createElement(EmailTemplate, templateProps)
-        const html = await render(element)
-        const text = await render(element, { plainText: true })
+        const html = await renderAsync(element)
+        const text = await renderAsync(element, { plainText: true })
 
         // Enqueue email for async processing by the dispatcher (process-email-queue).
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
