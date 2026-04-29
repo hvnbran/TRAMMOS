@@ -520,7 +520,13 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
                     </button>
                   </div>
                   <div className="flex items-center flex-wrap gap-2 pl-6">
-                    <VencimientoBadge fecha={d.fecha_vencimiento} />
+                    {tiposSinVenc.has(d.tipo) ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        <Calendar className="h-2.5 w-2.5" /> No vence
+                      </span>
+                    ) : (
+                      <VencimientoBadge fecha={d.fecha_vencimiento} />
+                    )}
                     {d.numero_documento && (
                       <span className="text-[10px] text-muted-foreground">
                         N°: {d.numero_documento}
@@ -531,37 +537,39 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
                         <Sparkles className="h-2.5 w-2.5" /> IA
                       </span>
                     )}
-                    {editingDate === d.id ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="date"
-                          value={dateValue}
-                          onChange={(e) => setDateValue(e.target.value)}
-                          className="text-[10px] px-1 py-0.5 rounded border border-input bg-background"
-                        />
+                    {!tiposSinVenc.has(d.tipo) && (
+                      editingDate === d.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="date"
+                            value={dateValue}
+                            onChange={(e) => setDateValue(e.target.value)}
+                            className="text-[10px] px-1 py-0.5 rounded border border-input bg-background"
+                          />
+                          <button
+                            onClick={() => saveDate(d.id)}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground"
+                          >
+                            OK
+                          </button>
+                          <button
+                            onClick={() => { setEditingDate(null); setDateValue(""); }}
+                            className="text-[10px] px-1.5 py-0.5 rounded text-muted-foreground"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
                         <button
-                          onClick={() => saveDate(d.id)}
-                          className="text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground"
+                          onClick={() => {
+                            setEditingDate(d.id);
+                            setDateValue(d.fecha_vencimiento ?? "");
+                          }}
+                          className="text-[10px] text-primary hover:underline"
                         >
-                          OK
+                          {d.fecha_vencimiento ? "Editar fecha" : "Agregar vencimiento"}
                         </button>
-                        <button
-                          onClick={() => { setEditingDate(null); setDateValue(""); }}
-                          className="text-[10px] px-1.5 py-0.5 rounded text-muted-foreground"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setEditingDate(d.id);
-                          setDateValue(d.fecha_vencimiento ?? "");
-                        }}
-                        className="text-[10px] text-primary hover:underline"
-                      >
-                        {d.fecha_vencimiento ? "Editar fecha" : "Agregar vencimiento"}
-                      </button>
+                      )
                     )}
                   </div>
                 </li>
