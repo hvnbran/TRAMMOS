@@ -46,7 +46,23 @@ function traducirErrorSubida(err: { message?: string; statusCode?: string | numb
   if (raw.includes("jwt") || raw.includes("unauthorized") || code === "401") {
     return "Tu sesión expiró. Cierra sesión e inicia de nuevo.";
   }
-  return err.message || "No se pudo subir el archivo.";
+  if (raw.includes("check constraint") && raw.includes("tipo")) {
+    return "Tipo de documento no permitido por la base de datos. Recarga la página e intenta de nuevo; si el problema persiste, contacta al administrador.";
+  }
+  if (raw.includes("check constraint")) {
+    return "Uno de los datos del documento no cumple las reglas de la base de datos. Verifica los campos e intenta de nuevo.";
+  }
+  if (raw.includes("violates not-null") || raw.includes("null value in column")) {
+    return "Falta información obligatoria del documento. Verifica los campos requeridos.";
+  }
+  if (raw.includes("foreign key")) {
+    return "El conductor o vehículo asociado ya no existe. Recarga la página e intenta de nuevo.";
+  }
+  if (raw.includes("timeout") || raw.includes("timed out")) {
+    return "La operación tardó demasiado. Verifica tu conexión e intenta de nuevo.";
+  }
+  // Fallback: nunca mostrar el mensaje técnico crudo en inglés al usuario final.
+  return "No se pudo subir el documento. Intenta de nuevo o contacta al administrador si el problema persiste.";
 }
 
 export type DocKind = "conductor" | "vehiculo";
