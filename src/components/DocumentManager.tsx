@@ -85,6 +85,7 @@ interface TipoDef {
   value: string;
   label: string;
   obligatorio?: boolean;
+  sinVencimiento?: boolean;
 }
 
 interface Props {
