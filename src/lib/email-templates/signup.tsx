@@ -1,5 +1,4 @@
 import * as React from 'react'
-
 import {
   Body,
   Button,
@@ -7,10 +6,13 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
+  Section,
   Text,
 } from '@react-email/components'
+import { TRAMMOS_BRAND, styles } from './_brand'
 
 interface SignupEmailProps {
   siteName: string
@@ -25,60 +27,51 @@ export const SignupEmail = ({
   recipient,
   confirmationUrl,
 }: SignupEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="es" dir="ltr">
     <Head />
-    <Preview>Confirm your email for {siteName}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
-        <Text style={text}>
-          Thanks for signing up for{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          !
-        </Text>
-        <Text style={text}>
-          Please confirm your email address (
-          <Link href={`mailto:${recipient}`} style={link}>
-            {recipient}
-          </Link>
-          ) by clicking the button below:
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Verify Email
-        </Button>
-        <Text style={footer}>
-          If you didn't create an account, you can safely ignore this email.
-        </Text>
-      </Container>
+    <Preview>Confirma tu correo en TRAMMOS</Preview>
+    <Body style={styles.body}>
+      <Section style={styles.outerContainer}>
+        <Container style={styles.card}>
+          <Section style={styles.header}>
+            <Img src={TRAMMOS_BRAND.logoUrl} alt="TRAMMOS" width="56" height="56" style={styles.logo} />
+          </Section>
+          <hr style={styles.accentBar} />
+
+          <Section style={styles.content}>
+            <Heading style={styles.h1}>Bienvenido a TRAMMOS</Heading>
+            <Text style={styles.text}>
+              Gracias por registrarte en{' '}
+              <Link href={siteUrl} style={styles.link}>
+                <strong>{siteName}</strong>
+              </Link>
+              . Para activar tu cuenta ({recipient}) confirma tu correo:
+            </Text>
+            <div style={{ textAlign: 'center', margin: '28px 0' }}>
+              <Button style={styles.button} href={confirmationUrl}>
+                Confirmar correo
+              </Button>
+            </div>
+            <Text style={styles.textMuted}>
+              Si no creaste esta cuenta, puedes ignorar este correo.
+            </Text>
+          </Section>
+
+          <Section style={styles.footer}>
+            <Text style={styles.footerText}>
+              <strong style={{ color: TRAMMOS_BRAND.text }}>TRAMMOS</strong> · Transportes Especiales
+            </Text>
+            <Text style={styles.footerText}>
+              ¿Necesitas ayuda? Escríbenos a{' '}
+              <a href={`mailto:${TRAMMOS_BRAND.supportEmail}`} style={styles.link}>
+                {TRAMMOS_BRAND.supportEmail}
+              </a>
+            </Text>
+          </Section>
+        </Container>
+      </Section>
     </Body>
   </Html>
 )
 
 export default SignupEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
