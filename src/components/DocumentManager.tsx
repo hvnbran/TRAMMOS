@@ -371,18 +371,23 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
   }
 
   // Resumen de cumplimiento
+  const tiposSinVenc = useMemo(
+    () => new Set(tipos.filter((t) => t.sinVencimiento).map((t) => t.value)),
+    [tipos],
+  );
   const resumen = useMemo(() => {
     const obligatorios = tipos.filter((t) => t.obligatorio);
     const cargados = obligatorios.filter((t) => docs.some((d) => d.tipo === t.value));
-    const vencidos = docs.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "vencido").length;
-    const porVencer = docs.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "por_vencer").length;
+    const docsConVenc = docs.filter((d) => !tiposSinVenc.has(d.tipo));
+    const vencidos = docsConVenc.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "vencido").length;
+    const porVencer = docsConVenc.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "por_vencer").length;
     return {
       obligatoriosTotal: obligatorios.length,
       obligatoriosCargados: cargados.length,
       vencidos,
       porVencer,
     };
-  }, [docs, tipos]);
+  }, [docs, tipos, tiposSinVenc]);
 
   return (
     <div className="space-y-3">
