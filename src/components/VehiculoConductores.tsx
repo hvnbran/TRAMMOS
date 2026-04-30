@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle, Filter, CheckCircle2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle, Filter, CheckCircle2, RefreshCw, Eye } from "lucide-react";
+import { ConductorProfileModal } from "@/components/ConductorProfileModal";
 
 interface Conductor {
   id: string;
@@ -51,6 +52,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
   const [filtro, setFiltro] = useState<FiltroEstado>("aptos");
 
   const [refreshingConductores, setRefreshingConductores] = useState(false);
+  const [perfilConductorId, setPerfilConductorId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
