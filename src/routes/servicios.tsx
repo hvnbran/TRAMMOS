@@ -23,7 +23,8 @@ function isVencido(fecha: string | null | undefined): boolean {
 interface ConductorOpt {
   id: string;
   nombre: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | null;
+  clientes: ("corona" | "sodimac")[] | null;
   estado: string;
   vence_licencia: string | null;
 }
@@ -33,7 +34,8 @@ interface VehiculoOpt {
   placa: string;
   marca: string | null;
   linea: string | null;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | null;
+  clientes: ("corona" | "sodimac")[] | null;
   estado: string;
   vence_soat: string | null;
   vence_rtm: string | null;
@@ -117,8 +119,8 @@ function Servicios() {
     setLoading(true);
     const [serviciosRes, conductoresRes, vehiculosRes, pcdRes] = await Promise.all([
       supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
-      supabase.from("conductores").select("id,nombre,cliente,estado,vence_licencia"),
-      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,estado,vence_soat,vence_rtm"),
+      supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia"),
+      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm"),
       supabase.from("pasajeros_pcd").select("*").order("nombre"),
     ]);
     if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
@@ -128,19 +130,29 @@ function Servicios() {
     setLoading(false);
   }
 
+  // Un conductor/vehículo es elegible si:
+  //  - está asignado al cliente del servicio (en `clientes[]` o legacy `cliente`), O
+  //  - no está asignado a ningún cliente (queda como recurso compartido / pool)
+  // Solo se excluye si está asignado explícitamente a otros clientes que NO incluyen el del servicio.
+  function perteneceA(cs: ("corona" | "sodimac")[] | null | undefined, cliLegacy: "corona" | "sodimac" | null, target: "corona" | "sodimac"): boolean {
+    const arr = (cs && cs.length > 0) ? cs : (cliLegacy ? [cliLegacy] : []);
+    if (arr.length === 0) return true; // sin asignar → disponible para todos
+    return arr.includes(target);
+  }
+
   const conductoresDisponibles = useMemo(() => {
-    const clienteForm = cliente ?? form.cliente;
+    const clienteForm = (cliente ?? form.cliente) as "corona" | "sodimac";
     return conductoresAll.filter((c) =>
-      c.cliente === clienteForm &&
+      perteneceA(c.clientes, c.cliente, clienteForm) &&
       c.estado !== "Inactivo" &&
       !isVencido(c.vence_licencia)
     );
   }, [conductoresAll, cliente, form.cliente]);
 
   const vehiculosDisponibles = useMemo(() => {
-    const clienteForm = cliente ?? form.cliente;
+    const clienteForm = (cliente ?? form.cliente) as "corona" | "sodimac";
     return vehiculosAll.filter((v) =>
-      v.cliente === clienteForm &&
+      perteneceA(v.clientes, v.cliente, clienteForm) &&
       v.estado !== "Inactivo" &&
       !isVencido(v.vence_soat) &&
       !isVencido(v.vence_rtm)
