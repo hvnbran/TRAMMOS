@@ -11,9 +11,9 @@ export const TRAMMOS_BRAND = {
     'https://dyxmhwcoudtwwsokfcfw.supabase.co/storage/v1/object/public/email-assets/banner-trammos.png',
 
   // Brand colors (sRGB equivalents of the OKLCH palette used in the app)
-  cyan: '#00B7E0', // Primary — Pantone 306C
-  cyanDark: '#0092B3',
-  lime: '#C4E11A', // Accent — Pantone 389C
+  cyan: '#00CAFF', // Primary — Pantone 306C
+  cyanDark: '#0099CC',
+  lime: '#C6FF00', // Accent — Pantone 389C
   text: '#1F2937',
   muted: '#6B7280',
   border: '#E5E7EB',

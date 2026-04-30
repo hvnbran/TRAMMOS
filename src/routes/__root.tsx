@@ -46,7 +46,7 @@ export const Route = createRootRoute({
       { property: "og:image", content: "/src/assets/banner-trammos.png" },
       { name: "twitter:image", content: "/src/assets/banner-trammos.png" },
       // PWA meta
-      { name: "theme-color", content: "#00B7E0" },
+      { name: "theme-color", content: "#C6FF00" },
       { name: "application-name", content: "TRAMMOS" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
@@ -56,7 +56,9 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
