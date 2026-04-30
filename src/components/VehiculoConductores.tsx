@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle, Filter, CheckCircle2, RefreshCw } from "lucide-react";
+import { Plus, Trash2, Loader2, Star, UserCheck, AlertTriangle, Filter, CheckCircle2, RefreshCw, Eye } from "lucide-react";
+import { ConductorProfileModal } from "@/components/ConductorProfileModal";
 
 interface Conductor {
   id: string;
@@ -51,6 +52,7 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
   const [filtro, setFiltro] = useState<FiltroEstado>("aptos");
 
   const [refreshingConductores, setRefreshingConductores] = useState(false);
+  const [perfilConductorId, setPerfilConductorId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -307,10 +309,18 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
                 >
                   <Star className={`h-3.5 w-3.5 ${a.es_principal ? "fill-warning" : ""}`} />
                 </button>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{c?.nombre ?? "Conductor eliminado"}</p>
+                <button
+                  type="button"
+                  onClick={() => setPerfilConductorId(a.conductor_id)}
+                  className="flex-1 min-w-0 text-left hover:bg-background/60 rounded px-1 py-0.5 transition-colors group"
+                  title="Ver perfil del conductor"
+                >
+                  <p className="font-medium truncate flex items-center gap-1 group-hover:text-primary">
+                    {c?.nombre ?? "Conductor eliminado"}
+                    <Eye className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </p>
                   {c?.cedula && <p className="text-[10px] text-muted-foreground">{c.cedula}</p>}
-                </div>
+                </button>
                 {a.es_principal && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-medium">
                     Principal
@@ -327,6 +337,13 @@ export function VehiculoConductores({ vehiculoId, cliente }: Props) {
             );
           })}
         </ul>
+      )}
+
+      {perfilConductorId && (
+        <ConductorProfileModal
+          conductorId={perfilConductorId}
+          onClose={() => setPerfilConductorId(null)}
+        />
       )}
     </div>
   );

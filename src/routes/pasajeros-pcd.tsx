@@ -138,11 +138,12 @@ function PasajerosPCD() {
     if (!form.nombre.trim()) { setError("El nombre es obligatorio."); return; }
     if (!form.consentimiento_datos) { setError("Debes confirmar el consentimiento de datos sensibles."); return; }
     setSaving(true);
+    const emailNorm = (form.email || "").trim().toLowerCase();
     const payload = {
       ...form,
       cedula: form.cedula || null,
       telefono: form.telefono || null,
-      email: form.email || null,
+      email: emailNorm || null,
       silla_ruedas_medidas: form.silla_ruedas_medidas || null,
       contacto_emergencia_nombre: form.contacto_emergencia_nombre || null,
       contacto_emergencia_telefono: form.contacto_emergencia_telefono || null,
