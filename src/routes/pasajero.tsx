@@ -10,6 +10,7 @@ import { ReportarIncidenteModal } from "@/components/pasajero/ReportarIncidenteM
 import { AccessibilityPanel } from "@/components/layout/AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { InstallAppBanner } from "@/components/pasajero/InstallAppBanner";
+import { PasajeroHero } from "@/components/pasajero/PasajeroHero";
 import { PushNotificationsToggle } from "@/components/pasajero/PushNotificationsToggle";
 import { Loader2 } from "lucide-react";
 
@@ -416,12 +417,23 @@ function PasajeroPage() {
             onSubmit={handleEnviarCalificacion}
           />
         ) : (
-          <PedirServicioForm
-            perfil={perfil}
-            ultima={ultima}
-            submitting={submitting}
-            onSubmit={handleSubmit}
-          />
+          <>
+            <PasajeroHero
+              nombre={displayName || perfil.nombre}
+              onPedir={() => {
+                const el = document.getElementById("pedir-form");
+                el?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            />
+            <div id="pedir-form">
+              <PedirServicioForm
+                perfil={perfil}
+                ultima={ultima}
+                submitting={submitting}
+                onSubmit={handleSubmit}
+              />
+            </div>
+          </>
         )}
 
         <div className="mt-6 space-y-3">
