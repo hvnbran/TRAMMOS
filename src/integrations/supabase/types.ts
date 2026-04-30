@@ -191,6 +191,7 @@ export type Database = {
           created_by: string | null
           cumplimiento: number | null
           estado: string
+          foto_url: string | null
           id: string
           licencia: string | null
           nombre: string
@@ -208,6 +209,7 @@ export type Database = {
           created_by?: string | null
           cumplimiento?: number | null
           estado?: string
+          foto_url?: string | null
           id?: string
           licencia?: string | null
           nombre: string
@@ -225,6 +227,7 @@ export type Database = {
           created_by?: string | null
           cumplimiento?: number | null
           estado?: string
+          foto_url?: string | null
           id?: string
           licencia?: string | null
           nombre?: string
