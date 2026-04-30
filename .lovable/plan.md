@@ -1,55 +1,94 @@
-## Diagnóstico
+## Objetivo
 
-El error **no es del archivo PDF**. Es un `CHECK constraint` desactualizado en la base de datos:
+Adoptar la identidad visual oficial de TRAMMOS (manual de marca) como guía maestra de diseño en toda la aplicación —tanto admin como pasajeros— y crear una pantalla de inicio del pasajero con la estética del afiche "Todo Colombia es territorio TRAMMOS" más una animación elegante.
 
-- `conductor_documentos.tipo` solo permite: `poliza_arl`, `licencia_conduccion`, `tarjeta_operacion`
-- `vehiculo_documentos.tipo` solo permite: `tarjeta_operacion`, `soat`, `tecnico_mecanica`
+## 1. Sistema de color global (src/styles.css)
 
-Pero el frontend (`DocumentManager.tsx`) intenta insertar 9 tipos de conductor (`cedula`, `seguridad_social`, `examenes_medicos`, `antecedentes`, `simit`, `curso_defensivo`, `curso_teorico_practico`, `hoja_vida`, `licencia_conduccion`) y 10 tipos de vehículo (`tarjeta_propiedad`, `cedula_propietario`, `seguro_rc`, `revision_preventiva`, `certificado_gps`, `antecedentes_propietario`, `simit_vehiculo`, etc.).
+Reescribir las variables CSS para reflejar la **paleta oficial del manual**:
 
-Por eso el insert falla con `violates check constraint "conductor_documentos_tipo_check"` apenas eliges Cédula, Planilla, SIMIT, Antecedentes, etc. — y el toast actual muestra el mensaje crudo de Postgres en inglés.
+- **Verde lima Pantone 389C** `#C6FF00` → color de **acento principal** y fondos hero (es el color insignia del afiche).
+- **Cyan Pantone 306C** `#00CAFF` → color **primario** (botones, links, estados activos, gradientes).
+- **Gradiente verde→azul lineal 0°** (del manual) → para hero, headers destacados, CTAs primarios.
+- **Gris K70** `#666666` y **gris K50** `#929496` → neutros de texto y bordes.
+- Blanco y negro puros para contraste (positivo/negativo del manual).
 
-## Cambios
+Mapeo de tokens:
+- `--primary` = Cyan 306C
+- `--accent` = Lima 389C
+- `--secondary` = lima muy clara (10% opacidad sobre blanco)
+- Sidebar: mantener oscuro (gris K70 profundo) con detalles cyan/lima
+- Charts: 1=cyan, 2=lima, 3=verde-azul medio, 4=gris, 5=cyan oscuro
+- Nuevo token utilitario `--gradient-brand: linear-gradient(0deg, #00CAFF 0%, #C6FF00 100%)`
 
-### 1. Migración SQL — quitar restricciones obsoletas
+## 2. Tipografía
 
-Eliminar los CHECK rígidos en ambas tablas y reemplazarlos por una validación más flexible (longitud razonable, no vacío) que no quede desactualizada cada vez que agregamos un tipo de documento nuevo:
+El manual exige **BW Seido Round** (Light/Bold/Black). Como esa fuente es comercial y no está en Google Fonts, usaremos **Quicksand** como sustituto fiel (sans-serif redondeada, mismo carácter geométrico-amigable). Se carga vía Google Fonts en `__root.tsx` y se aplica como `--font-display` y `--font-body`. Headings en `Quicksand 700/900`, body en `400/500`.
 
-```sql
-ALTER TABLE public.conductor_documentos DROP CONSTRAINT IF EXISTS conductor_documentos_tipo_check;
-ALTER TABLE public.vehiculo_documentos  DROP CONSTRAINT IF EXISTS vehiculo_documentos_tipo_check;
+## 3. Componentes globales afectados
 
-ALTER TABLE public.conductor_documentos
-  ADD CONSTRAINT conductor_documentos_tipo_valid
-  CHECK (tipo IS NOT NULL AND length(tipo) BETWEEN 1 AND 64);
+Auditar y ajustar para que respeten los nuevos tokens (sin tocar lógica):
+- `src/components/layout/Sidebar.tsx` — usar acento lima en item activo + indicador cyan.
+- `src/components/ui/button.tsx` (variantes) — variante `default` cyan, nueva variante `brand` con gradiente verde→azul.
+- Headers de admin (`PasajeroHeader`, dashboards) — degradado de marca sutil.
+- Email templates (`src/lib/email-templates/_brand.ts`) — actualizar hex a oficiales `#00CAFF` / `#C6FF00`.
 
-ALTER TABLE public.vehiculo_documentos
-  ADD CONSTRAINT vehiculo_documentos_tipo_valid
-  CHECK (tipo IS NOT NULL AND length(tipo) BETWEEN 1 AND 64);
+## 4. Nueva pantalla de inicio del pasajero
+
+Rediseñar el bloque superior de `src/routes/pasajero.tsx` (cuando no hay viaje activo) con un **Hero a pantalla completa** inspirado en el afiche subido:
+
+```
++--------------------------------------------------+
+|  [fondo lima #C6FF00 con líneas-mapa decorativas]|
+|                                                  |
+|   Hola, {nombre}                                 |
+|   Todo Colombia                                  |
+|   es territorio                                  |
+|   TRAMMOS                            (cyan bold) |
+|                                                  |
+|         🚗 ← carro animado deslizándose         |
+|                                                  |
+|   [ Pedir mi carro ]   ← botón cyan grande      |
++--------------------------------------------------+
 ```
 
-La fuente de verdad de los tipos válidos pasa a ser `TIPOS_CONDUCTOR` y `TIPOS_VEHICULO` en el frontend, que ya muestran exactamente los documentos que la operación necesita.
+### Mejoras sobre el boceto original
+1. **Mapa SVG animado** en el fondo (líneas curvas estilo trayecto del afiche) que se "dibujan" con `stroke-dashoffset` al cargar — refuerza el concepto "tramo entre A y B" del manual.
+2. **Carro SVG** que entra desde la izquierda (`translateX` + bounce suave) y queda flotando con un `float` sutil de 3px.
+3. **Texto en stagger**: "Hola" → "Todo Colombia" → "es territorio" → "TRAMMOS" aparecen en cascada (50ms de retardo cada uno) usando la utilidad `.stagger-item` ya existente.
+4. **Marcadores pulsantes** (puntos cyan) sobre el mapa en posiciones aleatorias — sugieren ubicaciones activas.
+5. **CTA "Pedir mi carro"** con gradiente cyan→lima invertido y `soft-glow` ya definido en styles.
 
-### 2. `src/components/DocumentManager.tsx` — traducir errores de BD
+### Nuevo componente
+- `src/components/pasajero/PasajeroHero.tsx` — encapsula el hero animado, recibe `nombre` y `onPedirCarro`.
+- `src/assets/hero-mapa.svg` — líneas decorativas del mapa (creadas a mano, ~6 curvas Bézier).
+- `src/assets/hero-carro.svg` — silueta del carro estilizada en blanco con detalle cyan/lima como en el afiche.
 
-Hoy, cuando el insert falla, el catch hace `toast({ description: e.message })` y muestra el inglés de Postgres. Vamos a:
+El formulario `PedirServicioForm` se muestra al pulsar el CTA (modal/sheet) o debajo del hero al hacer scroll, manteniendo toda la lógica actual intacta.
 
-- Detectar errores comunes de Supabase/Postgres y mapearlos a mensajes en español:
-  - `violates check constraint` → "Tipo de documento no permitido por la base de datos."
-  - `violates row-level security` → "No tienes permiso para subir este documento en este cliente."
-  - `duplicate key` → "Ya existe un documento de este tipo."
-  - `Payload too large` / `413` → "El archivo supera el tamaño permitido."
-  - `bucket` / `storage` errors → "No se pudo guardar el archivo en el almacenamiento."
-  - Cualquier otro → "No se pudo subir el documento. Intenta de nuevo o contacta soporte."
-- Aplicar el mismo helper tanto al error de `storage.upload` como al de `insert` en la tabla, para que SIEMPRE veas el motivo en español específico.
+## 5. Memoria de marca
 
-## Resultado esperado
+Actualizar `mem://design/brand-colors` con los hex oficiales del manual (`#C6FF00`, `#00CAFF`, `#666666`) y registrar la regla "lima como acento protagonista en superficies hero del pasajero".
 
-- Podrás subir Cédula, Licencia, Planilla, SIMIT, Antecedentes, Exámenes, etc. en conductores.
-- Podrás subir todos los documentos de vehículo (incluyendo Tarjeta de propiedad, Seguro RC, Revisión preventiva, GPS, SIMIT vehículo, etc.).
-- Si en el futuro algo falla al subir (permisos, tamaño, tipo, almacenamiento), la notificación te dirá en español exactamente por qué.
+## 6. Archivos a crear/modificar
 
-## Archivos a modificar
+**Crear:**
+- `src/components/pasajero/PasajeroHero.tsx`
+- `src/assets/hero-mapa.svg`
+- `src/assets/hero-carro.svg`
 
-- `supabase/migrations/<nueva>.sql` (nueva migración)
-- `src/components/DocumentManager.tsx` (mapeo de errores en español)
+**Modificar:**
+- `src/styles.css` (paleta + gradiente + tipografía)
+- `src/routes/__root.tsx` (cargar Quicksand desde Google Fonts)
+- `src/routes/pasajero.tsx` (montar `PasajeroHero` antes del formulario)
+- `src/lib/email-templates/_brand.ts` (hex oficiales)
+- `src/components/ui/button.tsx` (variante `brand` con gradiente)
+- `mem://design/brand-colors` (refresh)
+
+## 7. Verificación
+
+Tras los cambios revisaré con el navegador:
+1. `/pasajero` — el hero debe verse limpio con animaciones suaves.
+2. `/` (admin) — sidebar y dashboards deben mostrar la nueva paleta sin romper layouts.
+3. Modo oscuro / accesibilidad — confirmar contraste WCAG AA (lima sobre blanco no se usa para texto pequeño; siempre como fondo o icono grande).
+
+¿Apruebas el plan para que lo implemente?
