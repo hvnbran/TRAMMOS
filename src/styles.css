@@ -51,46 +51,53 @@
   --color-success-foreground: var(--success-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --font-display: "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-display: "Quicksand", "Inter", system-ui, sans-serif;
+  --font-body: "Quicksand", "Inter", system-ui, sans-serif;
 }
 
-/* 
-  TRAMMOS Brand Colors:
-  Cyan (Pantone 306C): oklch(0.78 0.15 200)  ~  #00B8DE
-  Lime (Pantone 389C): oklch(0.82 0.19 115)  ~  #C5D600
-  Gray (K:70):         oklch(0.45 0 0)        ~  #636363
+/*
+  TRAMMOS Official Brand Colors (from manual de identidad):
+  Cyan   Pantone 306C → #00CAFF  (primary)
+  Lime   Pantone 389C → #C6FF00  (accent/hero)
+  Gray   K:70         → #666666  (neutral text)
+  Gray   K:50         → #929496  (subtle borders)
+  Brand gradient: linear 0° from cyan (bottom) to lime (top)
 */
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.97 0.005 200);
-  --foreground: oklch(0.2 0.02 220);
+  --radius: 0.625rem;
+  --background: oklch(0.98 0.004 200);
+  --foreground: oklch(0.22 0.02 220);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 220);
+  --card-foreground: oklch(0.22 0.02 220);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 220);
-  /* Primary = Cyan Pantone 306C */
-  --primary: oklch(0.72 0.14 200);
+  --popover-foreground: oklch(0.22 0.02 220);
+  /* Primary = Cyan Pantone 306C #00CAFF */
+  --primary: oklch(0.79 0.16 220);
   --primary-foreground: oklch(1 0 0);
-  /* Secondary = light cyan tint */
-  --secondary: oklch(0.94 0.03 200);
-  --secondary-foreground: oklch(0.25 0.02 220);
-  --muted: oklch(0.94 0.01 220);
-  --muted-foreground: oklch(0.5 0.02 220);
-  /* Accent = Lime Pantone 389C */
-  --accent: oklch(0.8 0.18 115);
-  --accent-foreground: oklch(0.2 0.04 115);
+  /* Secondary = soft lime tint */
+  --secondary: oklch(0.96 0.06 115);
+  --secondary-foreground: oklch(0.25 0.05 115);
+  --muted: oklch(0.95 0.005 220);
+  --muted-foreground: oklch(0.48 0.015 220);
+  /* Accent = Lime Pantone 389C #C6FF00 */
+  --accent: oklch(0.93 0.24 122);
+  --accent-foreground: oklch(0.22 0.04 220);
   --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.9 0.01 220);
-  --input: oklch(0.92 0.01 220);
-  --ring: oklch(0.72 0.14 200);
-  --chart-1: oklch(0.72 0.14 200);
-  --chart-2: oklch(0.8 0.18 115);
-  --chart-3: oklch(0.65 0.1 160);
-  --chart-4: oklch(0.6 0.22 25);
-  --chart-5: oklch(0.55 0.15 280);
+  --border: oklch(0.91 0.008 220);
+  --input: oklch(0.93 0.008 220);
+  --ring: oklch(0.79 0.16 220);
+  --chart-1: oklch(0.79 0.16 220);  /* cyan */
+  --chart-2: oklch(0.93 0.24 122);  /* lime */
+  --chart-3: oklch(0.7 0.13 175);   /* teal mid */
+  --chart-4: oklch(0.55 0 0);        /* gray K70 */
+  --chart-5: oklch(0.6 0.18 240);    /* deep cyan */
+  /* Brand gradient (manual: lineal, ángulo 0°, verde→azul) */
+  --gradient-brand: linear-gradient(0deg, #00CAFF 0%, #C6FF00 100%);
+  --gradient-brand-soft: linear-gradient(135deg, #00CAFF 0%, #C6FF00 100%);
+  --shadow-brand: 0 12px 32px -12px color-mix(in oklab, #00CAFF 45%, transparent);
+  --shadow-lime: 0 12px 32px -12px color-mix(in oklab, #C6FF00 55%, transparent);
   /* Sidebar - dark theme using brand gray */
   --sidebar-bg: oklch(0.22 0.015 220);
   --sidebar-foreground: oklch(0.7 0.02 220);
@@ -165,6 +172,50 @@
 @keyframes stagger-rise {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Hero animations for pasajero landing */
+@keyframes draw-path {
+  from { stroke-dashoffset: 1000; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes car-roll-in {
+  0%   { transform: translateX(-120%) rotate(-2deg); opacity: 0; }
+  60%  { transform: translateX(2%) rotate(1deg); opacity: 1; }
+  80%  { transform: translateX(-1%) rotate(-0.5deg); }
+  100% { transform: translateX(0) rotate(0); opacity: 1; }
+}
+@keyframes car-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+@keyframes ping-soft {
+  0%   { transform: scale(1); opacity: 0.85; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes hero-text-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.hero-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-path 2.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+.hero-car-wrap {
+  animation: car-roll-in 1.2s cubic-bezier(0.34, 1.4, 0.64, 1) 0.4s both;
+}
+.hero-car-wrap > * {
+  animation: car-float 4s ease-in-out 1.7s infinite;
+}
+.hero-pin {
+  animation: ping-soft 2.4s ease-out infinite;
+}
+.hero-text {
+  opacity: 0;
+  animation: hero-text-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 120ms + 200ms);
 }
 
 /* Stagger entry — set --i (0..n) on each item; animation delay scales */
