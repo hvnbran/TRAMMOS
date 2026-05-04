@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "corona" | "sodimac" | "pasajero";
+export type AppRole = "admin" | "corona" | "sodimac" | "pasajero" | "conductor";
 export type ClienteTipo = "corona" | "sodimac";
 
 interface AuthState {
@@ -80,6 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("auth_user_id", userId)
         .maybeSingle();
       setDisplayName(p?.nombre || profile?.display_name || profile?.email || "");
+    } else if (r === "conductor") {
+      const { data: c } = await (supabase.from("conductores") as any)
+        .select("nombre")
+        .eq("auth_user_id", userId)
+        .maybeSingle();
+      setDisplayName(c?.nombre || profile?.display_name || "Conductor");
     } else {
       setDisplayName(profile?.display_name || profile?.email || "");
     }

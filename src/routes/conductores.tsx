@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { DocumentManager, TIPOS_CONDUCTOR } from "@/components/DocumentManager";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+import { GenerarAccesoConductor } from "@/components/conductor/GenerarAccesoConductor";
 
 export const Route = createFileRoute("/conductores")({
   component: Conductores,
@@ -248,6 +249,7 @@ function Conductores() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(eff)}`}>{eff}</span>
+                      <GenerarAccesoConductor conductorId={c.id} nombre={c.nombre} />
                       <button onClick={() => startEdit(c)} className="text-muted-foreground hover:text-primary" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
                       <button onClick={() => handleDelete(c.id)} className="text-muted-foreground hover:text-destructive" title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>

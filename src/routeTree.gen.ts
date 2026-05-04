@@ -25,10 +25,14 @@ import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
+import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
 import { Route as ApiTestLoginRouteImport } from './routes/api/test-login'
 import { Route as ApiSeedRouteImport } from './routes/api/seed'
+import { Route as ConductorServicioIdRouteImport } from './routes/conductor.servicio.$id'
+import { Route as ApiPublicConductorLoginRouteImport } from './routes/api/public/conductor-login'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -114,6 +118,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConductorIndexRoute = ConductorIndexRouteImport.update({
+  id: '/conductor/',
+  path: '/conductor/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LegalTerminosRoute = LegalTerminosRouteImport.update({
   id: '/legal/terminos',
   path: '/legal/terminos',
@@ -124,6 +133,11 @@ const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
   path: '/legal/privacidad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConductorLoginRoute = ConductorLoginRouteImport.update({
+  id: '/conductor/login',
+  path: '/conductor/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTestLoginRoute = ApiTestLoginRouteImport.update({
   id: '/api/test-login',
   path: '/api/test-login',
@@ -132,6 +146,16 @@ const ApiTestLoginRoute = ApiTestLoginRouteImport.update({
 const ApiSeedRoute = ApiSeedRouteImport.update({
   id: '/api/seed',
   path: '/api/seed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConductorServicioIdRoute = ConductorServicioIdRouteImport.update({
+  id: '/conductor/servicio/$id',
+  path: '/conductor/servicio/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicConductorLoginRoute = ApiPublicConductorLoginRouteImport.update({
+  id: '/api/public/conductor-login',
+  path: '/api/public/conductor-login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailQueueProcessRoute =
@@ -175,8 +199,12 @@ export interface FileRoutesByFullPath {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/conductor/': typeof ConductorIndexRoute
+  '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
+  '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -201,8 +229,12 @@ export interface FileRoutesByTo {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/conductor': typeof ConductorIndexRoute
+  '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
+  '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -228,8 +260,12 @@ export interface FileRoutesById {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/conductor/': typeof ConductorIndexRoute
+  '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
+  '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -256,8 +292,12 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/conductor/'
+    | '/api/public/conductor-login'
+    | '/conductor/servicio/$id'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -282,8 +322,12 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/conductor'
+    | '/api/public/conductor-login'
+    | '/conductor/servicio/$id'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -308,8 +352,12 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/conductor/'
+    | '/api/public/conductor-login'
+    | '/conductor/servicio/$id'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -335,8 +383,12 @@ export interface RootRouteChildren {
   VehiculosRoute: typeof VehiculosRoute
   ApiSeedRoute: typeof ApiSeedRoute
   ApiTestLoginRoute: typeof ApiTestLoginRoute
+  ConductorLoginRoute: typeof ConductorLoginRoute
   LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   LegalTerminosRoute: typeof LegalTerminosRoute
+  ConductorIndexRoute: typeof ConductorIndexRoute
+  ApiPublicConductorLoginRoute: typeof ApiPublicConductorLoginRoute
+  ConductorServicioIdRoute: typeof ConductorServicioIdRoute
   ApiPublicPushProcessRoute: typeof ApiPublicPushProcessRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -457,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conductor/': {
+      id: '/conductor/'
+      path: '/conductor'
+      fullPath: '/conductor/'
+      preLoaderRoute: typeof ConductorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/legal/terminos': {
       id: '/legal/terminos'
       path: '/legal/terminos'
@@ -471,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalPrivacidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conductor/login': {
+      id: '/conductor/login'
+      path: '/conductor/login'
+      fullPath: '/conductor/login'
+      preLoaderRoute: typeof ConductorLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/test-login': {
       id: '/api/test-login'
       path: '/api/test-login'
@@ -483,6 +549,20 @@ declare module '@tanstack/react-router' {
       path: '/api/seed'
       fullPath: '/api/seed'
       preLoaderRoute: typeof ApiSeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conductor/servicio/$id': {
+      id: '/conductor/servicio/$id'
+      path: '/conductor/servicio/$id'
+      fullPath: '/conductor/servicio/$id'
+      preLoaderRoute: typeof ConductorServicioIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/conductor-login': {
+      id: '/api/public/conductor-login'
+      path: '/api/public/conductor-login'
+      fullPath: '/api/public/conductor-login'
+      preLoaderRoute: typeof ApiPublicConductorLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
@@ -535,8 +615,12 @@ const rootRouteChildren: RootRouteChildren = {
   VehiculosRoute: VehiculosRoute,
   ApiSeedRoute: ApiSeedRoute,
   ApiTestLoginRoute: ApiTestLoginRoute,
+  ConductorLoginRoute: ConductorLoginRoute,
   LegalPrivacidadRoute: LegalPrivacidadRoute,
   LegalTerminosRoute: LegalTerminosRoute,
+  ConductorIndexRoute: ConductorIndexRoute,
+  ApiPublicConductorLoginRoute: ApiPublicConductorLoginRoute,
+  ConductorServicioIdRoute: ConductorServicioIdRoute,
   ApiPublicPushProcessRoute: ApiPublicPushProcessRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

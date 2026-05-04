@@ -1,160 +1,151 @@
-## Objetivo
+# Plan: Mejora de Servicios + App privada de Conductor
 
-Cumplir con la **Ley 1581 de 2012 (Habeas Data Colombia)** y el **Decreto 1377 de 2013** registrando de forma auditable la autorización de tratamiento de datos personales de pasajeros, operadores y conductores. La política se redacta de forma genérica mencionando *"clientes empresariales"* (sin nombrar Corona ni Sodimac). Razón social, NIT y correo de contacto se dejan como **placeholders editables** (`{{RAZON_SOCIAL}}`, `{{NIT}}`, `{{CORREO_PRIVACIDAD}}`) que se reemplazan luego con un solo cambio.
-
----
-
-## 1. Páginas legales públicas
-
-Dos rutas accesibles **sin login** (excluidas del `AuthGate` en `__root.tsx`):
-
-- `src/routes/legal.terminos.tsx` → Términos y Condiciones de uso de TRAMMOS.
-- `src/routes/legal.privacidad.tsx` → Política de Tratamiento de Datos Personales.
-
-Contenido de la **Política de Privacidad** (estructura mínima exigida por la SIC):
-
-1. Identificación del Responsable: `{{RAZON_SOCIAL}}`, NIT `{{NIT}}`, correo `{{CORREO_PRIVACIDAD}}`, dirección y ciudad.
-2. Finalidades del tratamiento: prestación del servicio de transporte especial, asignación de conductores y vehículos, monitoreo, reportes a **clientes empresariales** que contratan el servicio, facturación, contacto en emergencias, cumplimiento legal.
-3. Datos recolectados: identificación, contacto, ubicación, condición de discapacidad y salud (PCD), documentos de vehículos y conductores.
-4. **Datos sensibles** (salud, discapacidad): tratamiento separado con consentimiento expreso y derecho a no responder.
-5. Derechos del titular (art. 8 Ley 1581): conocer, actualizar, rectificar, suprimir, revocar autorización, presentar quejas ante la SIC.
-6. Canal y procedimiento para ejercer derechos: correo `{{CORREO_PRIVACIDAD}}`, plazo de respuesta 15 días hábiles.
-7. Transferencia/transmisión: los datos pueden compartirse con los **clientes empresariales** que contratan el servicio, en su rol de encargados/destinatarios, bajo acuerdo de confidencialidad.
-8. Tiempo de conservación y medidas de seguridad.
-9. Vigencia y fecha de última actualización (`2026-05-04`).
-
-Términos y Condiciones: aceptación del servicio, cuenta y credenciales, conducta esperada, limitación de responsabilidad, propiedad intelectual de TRAMMOS, ley aplicable (Colombia), modificaciones.
-
-Diseño: layout claro, marca TRAMMOS, sin sidebar, botón "Volver al inicio". Texto versionado en `src/content/legal/*.md` para conservar prueba histórica.
+Tres bloques independientes que se entregan juntos.
 
 ---
 
-## 2. Base de datos: tabla `policy_acceptances`
+## Bloque 1 — Auto-vehículo al elegir conductor (Servicios)
 
-Migración nueva:
+En `src/routes/servicios.tsx`, cuando el admin elige conductor en el formulario de nuevo servicio o en la fila de la tabla:
 
-```text
-policy_acceptances
-  id              uuid PK
-  user_id         uuid (auth.uid, nullable)
-  pasajero_id     uuid (FK lógico a pasajeros_pcd, nullable)
-  email           text (snapshot)
-  policy_type     text  -- 'terminos' | 'privacidad' | 'datos_sensibles_pcd'
-  policy_version  text  -- '2026-05-04'
-  accepted_at     timestamptz default now()
-  ip              text
-  user_agent      text
-  metadata        jsonb -- { contexto: 'login_operador' | 'login_pasajero' | 'registro_pcd' | 'reaceptacion' }
+- Si el conductor tiene **1 vehículo** asignado en `vehiculo_conductores` → se selecciona automáticamente ese vehículo (placa).
+- Si tiene **2+** → el dropdown de vehículos se filtra solo a esos, con el principal marcado primero.
+- Si tiene **0** → mensaje "Este conductor no tiene vehículos asignados" y se deja el dropdown abierto a todos los disponibles (fallback actual).
+- El admin siempre puede sobrescribir manualmente.
+
+Cambios:
+- Cargar `vehiculo_conductores` (id conductor → placas) junto con conductores y vehículos.
+- Crear helper `vehiculosDeConductor(conductorId)` que devuelve placas ordenadas (principal primero).
+- En `handleFieldChange("conductor", ...)`: si la lista resultante tiene 1 placa, hacer un segundo update con `vehiculo`.
+- En el formulario de nuevo servicio: efecto que reacciona a `form.conductor` y autollena `form.vehiculo`.
+
+---
+
+## Bloque 2 — App privada de Conductor
+
+### Acceso
+- Nueva ruta **`/conductor`** (no aparece en la sidebar, no aparece como tab en `/login`).
+- Nueva ruta **`/conductor/login`** pública con formulario **cédula + contraseña** (sin OAuth, sin OTP).
+- Para entrar, el conductor escribe la URL directa o usa un acceso directo PWA "Instalar app". Se le comparte el link por WhatsApp/correo.
+
+### Modelo de autenticación
+Para no romper el sistema actual de roles ni meter los conductores en `auth.users` con email (muchos no tienen):
+
+- Nuevo rol `'conductor'` en el enum `app_role`.
+- A cada `conductores` se le agrega:
+  - `password_hash text` (bcrypt vía pg-extension `pgcrypto`)
+  - `auth_user_id uuid` (vinculado tras primer login)
+  - `acceso_habilitado bool default false`
+- El admin, desde la página Conductores, hace clic en "Generar acceso": se le pide una contraseña inicial (o se autogenera), se hashea con `crypt()` y se guarda. Se muestra una sola vez para compartirla.
+- Login: server function `loginConductor({ cedula, password })` que:
+  1. Busca el conductor por cédula.
+  2. Verifica `crypt(password, password_hash) = password_hash`.
+  3. Si es la primera vez, crea un usuario en `auth.users` con email sintético `conductor-<cedula>@trammos.local` y password aleatoria, asigna rol `conductor`, vincula `auth_user_id`.
+  4. Devuelve credenciales para que el cliente haga `supabase.auth.signInWithPassword`.
+- El conductor puede cambiar su contraseña desde su app.
+
+### Pantallas de la app conductor
+- `/conductor` — Lista de **mis servicios de hoy** + próximos (filtra `servicios` donde `conductor = mi_nombre` o `vehiculo` está asignado a mí).
+- `/conductor/servicio/$id` — Detalle del servicio:
+  - Origen, destino, hora, número de orden, centro de costo.
+  - **Brief del pasajero PCD** si aplica: tipo discapacidad, ayudas técnicas, comunicación preferida, nivel asistencia, contacto emergencia, notas conductor (lectura segura vía función `get_pasajero_brief_for_conductor(servicio_id)` que valida que el conductor logueado es el asignado).
+  - Botones de **navegación**: "Ir al origen" → `https://www.google.com/maps/dir/?api=1&destination=…` y "Ir al destino" igual.
+  - Botones de **estado**: "Iniciar servicio" (→ `En curso`), "Finalizar" (→ `Finalizado`), "Cancelar" (→ `Cancelado`, pide motivo).
+  - Cada cambio actualiza `servicios.estado`. Los triggers existentes (`track_servicio_tiempos`, `sync_servicio_to_solicitud`, `enqueue_push_on_solicitud_change`) ya propagan al admin y notifican al pasajero. **No se duplica lógica.**
+
+### Sidebar y layout
+- Layout dedicado `ConductorLayout` (no usa `AppLayout` ni `Sidebar` admin). Header simple con nombre del conductor, foto, vehículo asignado y botón cerrar sesión.
+- Diseño mobile-first (la mayoría usará el celular).
+- PWA: ya hay `public/sw.js` y `manifest.webmanifest`; añadir banner "Instalar app" como en `/pasajero`.
+
+### Privacidad / RLS
+- Nuevas policies en `servicios`: `conductor_view_own_servicios` (`exists (select 1 from conductores c where c.auth_user_id = auth.uid() and c.nombre = servicios.conductor)`).
+- `conductor_update_own_servicios` solo para columnas `estado` y `cancelado_motivo`.
+- Función `get_pasajero_brief_for_conductor(_servicio_id uuid)` SECURITY DEFINER que valida la asignación antes de devolver datos sensibles.
+
+---
+
+## Bloque 3 — Cambios en BD (migración)
+
+```sql
+-- 1. Rol nuevo
+alter type app_role add value if not exists 'conductor';
+
+-- 2. Conductores: campos de acceso
+alter table conductores
+  add column if not exists password_hash text,
+  add column if not exists auth_user_id uuid,
+  add column if not exists acceso_habilitado bool not null default false,
+  add column if not exists primer_login_at timestamptz;
+
+create index if not exists idx_conductores_cedula_lower
+  on conductores (lower(cedula));
+create unique index if not exists uq_conductores_auth_user
+  on conductores (auth_user_id) where auth_user_id is not null;
+
+-- 3. Función de login
+create or replace function login_conductor(_cedula text, _password text)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare v record;
+begin
+  select * into v from conductores
+   where lower(cedula) = lower(_cedula) and acceso_habilitado = true;
+  if v.id is null then return jsonb_build_object('ok', false, 'error', 'no_encontrado'); end if;
+  if v.password_hash is null
+     or crypt(_password, v.password_hash) <> v.password_hash then
+    return jsonb_build_object('ok', false, 'error', 'credenciales');
+  end if;
+  return jsonb_build_object('ok', true, 'conductor_id', v.id,
+                            'auth_user_id', v.auth_user_id, 'nombre', v.nombre);
+end $$;
+
+-- 4. RLS en servicios para el conductor
+create policy conductor_select_own_servicios on servicios for select
+  using (exists (select 1 from conductores c
+                  where c.auth_user_id = auth.uid() and c.nombre = servicios.conductor));
+
+create policy conductor_update_estado_servicios on servicios for update
+  using (exists (select 1 from conductores c
+                  where c.auth_user_id = auth.uid() and c.nombre = servicios.conductor));
 ```
 
-Índices: `(user_id, policy_type)`, `(pasajero_id)`, `(email)`.
-
-RLS:
-- INSERT: autenticado puede insertar fila propia (`auth.uid() = user_id`) o el server function (service role) puede insertar para terceros con `pasajero_id`.
-- SELECT: el propio usuario, admin (`has_role admin`), y staff con `can_access_cliente` cuando hay `pasajero_id` del cliente correspondiente.
-- UPDATE/DELETE: solo admin (auditoría inmutable en la práctica).
-
-Constante en `src/lib/legal/version.ts`:
-```ts
-export const CURRENT_POLICY_VERSION = "2026-05-04";
-```
-
----
-
-## 3. Captura del consentimiento
-
-### 3.1 Login del operador (`src/routes/login.tsx`, pestaña Operador)
-- Checkbox obligatorio bajo el formulario:
-  *"He leído y acepto los [Términos] y la [Política de Privacidad]."*
-- Botón "Iniciar sesión" deshabilitado hasta marcar.
-- Tras `signIn` exitoso → llamar server function `recordPolicyAcceptance` con `types=['terminos','privacidad']`, `contexto='login_operador'`. Si el usuario ya tiene aceptación con `policy_version` actual, se omite el insert.
-
-### 3.2 Login del pasajero (paso `email`, antes de pedir OTP)
-- Mismo checkbox, mismos enlaces.
-- Tras OTP verificado y `link_pasajero_to_auth` exitoso → registrar aceptación con `contexto='login_pasajero'` y `pasajero_id` del registro vinculado.
-
-### 3.3 Registro de pasajero PCD (`src/routes/pasajeros-pcd.tsx`)
-- El campo existente `consentimiento_datos` se reescribe:
-  *"Como tutor/representante legal o titular, autorizo expresamente el tratamiento de **datos sensibles de salud y discapacidad** del pasajero conforme a la [Política de Privacidad]."*
-- Link visible a `/legal/privacidad`.
-- Al guardar el pasajero (insert o update con consentimiento que pasa de false→true), insertar fila en `policy_acceptances` con `policy_type='datos_sensibles_pcd'`, `pasajero_id`, `email` del pasajero, `metadata.contexto='registro_pcd'`.
-
-### 3.4 Re-aceptación al subir versión
-- Hook `useEnforcePolicyAcceptance()` montado en `__root.tsx` dentro del `AuthGate`. Al hidratar sesión, consulta la última aceptación del usuario para `policy_type='privacidad'`.
-- Si `policy_version < CURRENT_POLICY_VERSION` → renderiza `PolicyReacceptModal` bloqueante que resume cambios y exige nueva aceptación. Sin aceptar no se puede usar la app.
-
----
-
-## 4. Componentes y helpers nuevos
-
-- `src/components/legal/LegalLinks.tsx` — par de `<Link>` reutilizables a `/legal/terminos` y `/legal/privacidad`.
-- `src/components/legal/PolicyAcceptanceCheckbox.tsx` — checkbox controlado con estilo TRAMMOS, usado en ambos flujos de login.
-- `src/components/legal/PolicyReacceptModal.tsx` — modal bloqueante de re-aceptación.
-- `src/components/legal/LegalPageLayout.tsx` — layout simple para las páginas legales (header con logo, contenido en `prose`, footer con fecha de versión).
-- `src/lib/legal/version.ts` — constante `CURRENT_POLICY_VERSION`.
-- `src/lib/legal/record-acceptance.ts` — wrapper cliente que llama al server function.
-- `src/server/legal.functions.ts` — `recordPolicyAcceptance` (createServerFn con `requireSupabaseAuth`, lee IP del header `x-forwarded-for`, valida con zod, hace insert).
-- `src/content/legal/privacidad-2026-05-04.md` y `terminos-2026-05-04.md` — texto versionado.
-
----
-
-## 5. Footer global con accesos legales
-
-Para garantizar que los enlaces a las políticas siempre estén visibles (requisito de la Ley 1581):
-
-- `src/components/layout/AppLayout.tsx` → footer minimal: *"© TRAMMOS · [Términos] · [Privacidad] · {{CORREO_PRIVACIDAD}}"*.
-- `src/routes/pasajero.tsx` → mismo footer al final del scroll.
-- `src/routes/login.tsx` → enlaces visibles bajo el card de login.
-
----
-
-## 6. Panel admin: historial de consentimientos
-
-En `src/routes/pasajeros-pcd.tsx`, dentro de la ficha del pasajero (junto al `AccesoPasajeroPanel`), agregar un bloque colapsable **"Historial de consentimientos"** que liste las filas de `policy_acceptances` para ese `pasajero_id`: fecha, tipo, versión, IP, user-agent. Sirve como prueba ante una visita de la SIC.
-
----
-
-## 7. Detalles técnicos
-
-- **IP confiable**: el server function `recordPolicyAcceptance` lee `request.headers.get("x-forwarded-for")` (primer IP) o `cf-connecting-ip`. El cliente nunca envía la IP.
-- **Validación**: `zod` para `policy_type`, `policy_version`, `contexto`, `pasajero_id` (uuid opcional).
-- **Trigger en `pasajeros_pcd`**: rechazar INSERT si `consentimiento_datos = false` (evita registros sin autorización). En UPDATE permitir cualquier valor para soportar revocación.
-- **Sin tocar esquemas reservados** (`auth`, `storage`, `realtime`).
-- **Re-uso del esquema existente**: no se modifica `pasajeros_pcd.consentimiento_datos` (booleano sigue), solo se complementa con la fila auditable.
-- **Placeholders**: `{{RAZON_SOCIAL}}`, `{{NIT}}`, `{{CORREO_PRIVACIDAD}}` viven en `src/lib/legal/empresa.ts` como constantes; cuando me pases los datos reales, se cambia un solo archivo.
+(Se ajustan permisos de `update` para que el conductor solo pueda mover `estado` / `cancelado_motivo` mediante una RPC dedicada `conductor_set_estado_servicio(_id, _nuevo_estado, _motivo)`.)
 
 ---
 
 ## Archivos a crear
 
-- `supabase/migrations/<timestamp>_policy_acceptances.sql`
-- `src/routes/legal.terminos.tsx`
-- `src/routes/legal.privacidad.tsx`
-- `src/lib/legal/version.ts`
-- `src/lib/legal/empresa.ts`
-- `src/lib/legal/record-acceptance.ts`
-- `src/server/legal.functions.ts`
-- `src/components/legal/LegalLinks.tsx`
-- `src/components/legal/LegalPageLayout.tsx`
-- `src/components/legal/PolicyAcceptanceCheckbox.tsx`
-- `src/components/legal/PolicyReacceptModal.tsx`
-- `src/content/legal/privacidad-2026-05-04.md`
-- `src/content/legal/terminos-2026-05-04.md`
+- `supabase/migrations/<ts>_conductor_app.sql`
+- `src/server/conductor.functions.ts` — `loginConductor`, `setEstadoServicioConductor`, `getMyServicios`, `getServicioDetalle`
+- `src/lib/auth-conductor.ts` — helpers para sesión conductor
+- `src/routes/conductor.login.tsx`
+- `src/routes/conductor.index.tsx` (listado de servicios)
+- `src/routes/conductor.servicio.$id.tsx`
+- `src/components/conductor/ConductorLayout.tsx`
+- `src/components/conductor/ServicioCard.tsx`
+- `src/components/conductor/PasajeroBrief.tsx`
+- `src/components/conductor/EstadoActions.tsx`
 
-## Archivos a modificar
+## Archivos a editar
 
-- `src/routes/__root.tsx` — excluir `/legal/*` del `AuthGate`, montar `PolicyReacceptModal`.
-- `src/routes/login.tsx` — checkbox en operador y pasajero, registrar aceptación tras éxito.
-- `src/routes/pasajeros-pcd.tsx` — texto mejorado del consentimiento, link a política, registrar aceptación al guardar, bloque de historial.
-- `src/components/layout/AppLayout.tsx` — footer con links legales.
-- `src/routes/pasajero.tsx` — footer con links legales.
+- `src/routes/servicios.tsx` — auto-vehículo al elegir conductor
+- `src/routes/conductores.tsx` — botón "Generar acceso" + modal con contraseña inicial
+- `src/routes/__root.tsx` — excluir `/conductor/*` del enforcement de aceptación de políticas si no aplica (o aplicarlo igual, según preferencia)
+- `src/lib/auth-context.tsx` — soportar el nuevo rol `conductor` y redirigir a `/conductor`
+- `src/integrations/supabase/types.ts` — se regenera solo
 
 ---
 
-## Pendiente del usuario (no bloquea implementación)
+## Cómo se siente para el usuario
 
-Cuando los tengas a mano me pasas y los reemplazo en `src/lib/legal/empresa.ts`:
-1. Razón social exacta de TRAMMOS.
-2. NIT.
-3. Correo oficial para ejercer derechos del titular (sugerido `privacidad@trammos.app`).
-4. Dirección y ciudad.
+- **Admin**: en Servicios elige conductor → vehículo aparece solo (o filtrado a 2 opciones). En Conductores hay un botón "Generar acceso a la app" que muestra la contraseña una sola vez para compartirla.
+- **Conductor**: abre `tramos.online/conductor/login` (o el ícono PWA), entra con su cédula y contraseña, ve sus servicios del día con un toque, abre uno, ve a quién recoge y dónde, navega con Maps y marca "Iniciar / Finalizar". El cambio aparece al instante en el panel del admin y le llega notificación al pasajero.
+- **Privacidad**: la URL de la app no está enlazada en ningún lado público; solo accede quien tenga cédula + contraseña + acceso habilitado por el admin.
+
+---
+
+## Riesgos y notas
+
+- Email sintético (`conductor-<cedula>@trammos.local`) es necesario porque Supabase Auth requiere email. No se envían correos a esta dirección — solo es una llave técnica.
+- Si más adelante quieres que el conductor también reciba notificaciones push, ya hay infraestructura (`push_subscriptions`) lista para reutilizar.
+- La cédula como usuario es cómoda pero conviene que las contraseñas sean razonables (mínimo 8 caracteres). Lo validamos en el formulario "Generar acceso".
