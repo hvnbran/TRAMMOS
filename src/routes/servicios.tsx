@@ -41,6 +41,13 @@ interface VehiculoOpt {
   vence_rtm: string | null;
 }
 
+interface VehConductorRel {
+  conductor_id: string;
+  vehiculo_id: string;
+  es_principal: boolean;
+  asignado_hasta: string | null;
+}
+
 export const Route = createFileRoute("/servicios")({
   component: Servicios,
   head: () => ({
