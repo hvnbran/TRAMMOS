@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, KeyRound, IdCard, Truck } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export const Route = createFileRoute("/conductor/login")({
   component: ConductorLoginPage,
@@ -83,7 +84,8 @@ function ConductorLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 flex flex-col">
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-card border border-border mb-3">
@@ -148,6 +150,8 @@ function ConductorLoginPage() {
           </p>
         </form>
       </div>
+      </div>
+      <SiteFooter variant="compact" />
     </div>
   );
 }
