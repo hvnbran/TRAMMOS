@@ -245,7 +245,14 @@ function LoginPage() {
           setPLoading(false);
           return;
         }
-        await supabase.rpc("link_pasajero_to_auth");
+        const linkResp = await supabase.rpc("link_pasajero_to_auth");
+        const pasajeroIdT = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
+        void recordAcceptance({
+          types: ["terminos", "privacidad"],
+          contexto: "login_pasajero",
+          email,
+          pasajeroId: pasajeroIdT,
+        });
         setPLoading(false);
         startSplashSequence("Pasajero Testing", "pasajero", "/pasajero");
         return;
