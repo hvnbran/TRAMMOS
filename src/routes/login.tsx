@@ -38,6 +38,7 @@ type PasajeroStep = "email" | "otp";
 function LoginPage() {
   const { signIn, user, loading, role } = useAuth();
   const navigate = useNavigate();
+  const recordAcceptance = useRecordAcceptance();
   const [tab, setTab] = useState<Tab>("operador");
 
   // Operador
@@ -45,6 +46,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [acceptOp, setAcceptOp] = useState(false);
 
   // Pasajero
   const [pStep, setPStep] = useState<PasajeroStep>("email");
@@ -53,6 +55,7 @@ function LoginPage() {
   const [pInfo, setPInfo] = useState<string | null>(null);
   const [pError, setPError] = useState<string | null>(null);
   const [pLoading, setPLoading] = useState(false);
+  const [acceptPas, setAcceptPas] = useState(false);
 
   // Splash
   const [showSplash, setShowSplash] = useState(false);
