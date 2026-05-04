@@ -599,21 +599,30 @@ function Servicios() {
                   </div>
                   <div>
                     <label className="text-muted-foreground" htmlFor={`veh-${s.id}`}>Vehículo</label>
-                    <select
-                      id={`veh-${s.id}`}
-                      value={s.vehiculo ?? ""}
-                      onChange={(e) => handleFieldChange(s.id, "vehiculo", e.target.value)}
-                      aria-label="Asignar vehículo"
-                      className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:border-primary/50 cursor-pointer"
-                    >
-                      <option value="">— Sin asignar —</option>
-                      {s.vehiculo && !vehiculosDisponibles.some((v) => v.placa === s.vehiculo) && (
-                        <option value={s.vehiculo}>{s.vehiculo} (no disponible)</option>
-                      )}
-                      {vehiculosDisponibles.map((v) => (
-                        <option key={v.id} value={v.placa}>{v.placa}</option>
-                      ))}
-                    </select>
+                    {(() => {
+                      const placasCond = placasDeConductor(s.conductor);
+                      const lista = s.conductor && placasCond.length > 0 ? placasCond : vehiculosDisponibles;
+                      const autoUnico = !!s.conductor && placasCond.length === 1;
+                      return (
+                        <select
+                          id={`veh-${s.id}`}
+                          value={s.vehiculo ?? ""}
+                          onChange={(e) => handleFieldChange(s.id, "vehiculo", e.target.value)}
+                          aria-label="Asignar vehículo"
+                          disabled={autoUnico}
+                          title={autoUnico ? "Auto-asignado: único vehículo del conductor" : undefined}
+                          className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:border-primary/50 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                          <option value="">— Sin asignar —</option>
+                          {s.vehiculo && !lista.some((v) => v.placa === s.vehiculo) && (
+                            <option value={s.vehiculo}>{s.vehiculo} (no disponible)</option>
+                          )}
+                          {lista.map((v) => (
+                            <option key={v.id} value={v.placa}>{v.placa}</option>
+                          ))}
+                        </select>
+                      );
+                    })()}
                   </div>
                 </div>
 
