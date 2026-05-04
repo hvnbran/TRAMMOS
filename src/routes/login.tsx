@@ -357,10 +357,17 @@ function LoginPage() {
                 </div>
               )}
 
+              <PolicyAcceptanceCheckbox
+                id="policy-op"
+                checked={acceptOp}
+                onChange={setAcceptOp}
+                disabled={submitting}
+              />
+
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-80 hover:shadow-md"
+                disabled={submitting || !acceptOp}
+                className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-md"
               >
                 {submitting ? (
                   <>
