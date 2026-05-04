@@ -8,6 +8,7 @@ import { ViajeEnCurso, type EstadoSolicitud } from "@/components/pasajero/ViajeE
 import { CalificarServicio } from "@/components/pasajero/CalificarServicio";
 import { PasajeroHero } from "@/components/pasajero/PasajeroHero";
 import { Loader2 } from "lucide-react";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 // Lazy: componentes no críticos para el LCP de /pasajero
 const ReportarIncidenteModal = lazy(() =>
@@ -449,6 +450,7 @@ function PasajeroPage() {
           </Suspense>
         </div>
       </main>
+      <SiteFooter variant="compact" />
       <Suspense fallback={null}>
         <AccessibilityPanel />
         <TramiAssistant />
