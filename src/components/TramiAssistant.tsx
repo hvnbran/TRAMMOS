@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Mic, MicOff, X, Send, Sparkles, Loader2, Volume2 } from "lucide-react";
+import { Mic, MicOff, X, Send, Loader2, Volume2 } from "lucide-react";
+import { TramiAvatar } from "@/components/trami/TramiAvatar";
 import { classifyIntent, askTrami } from "@/lib/trami-client";
 
 type Msg = { from: "user" | "trami"; text: string; intent?: string };
@@ -145,11 +146,17 @@ export function TramiAssistant() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Abrir asistente TRAMI"
-        className="fixed bottom-5 right-24 z-50 h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40 transition-transform"
-        title="Asistente TRAMI"
+        aria-label="Abrir a TRAMI, tu ayudante"
+        className="group fixed bottom-5 right-24 z-50 h-16 w-16 rounded-full bg-white border-2 border-primary/30 shadow-xl flex items-center justify-center overflow-hidden hover:scale-110 hover:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40 transition-all"
+        title="Hola, soy TRAMI"
       >
-        <Sparkles className="h-7 w-7" aria-hidden="true" />
+        <TramiAvatar
+          state="wave"
+          size="sm"
+          bobbing
+          className="h-14 w-14 group-hover:scale-110 transition-transform"
+          alt=""
+        />
       </button>
 
       {open && (
@@ -163,16 +170,21 @@ export function TramiAssistant() {
           }}
         >
           <div className="w-full sm:w-[420px] sm:mr-5 max-h-[85vh] flex flex-col bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-primary-foreground" aria-hidden="true" />
+            <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 via-transparent to-secondary/10">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-white border-2 border-primary/40 flex items-center justify-center overflow-hidden shrink-0">
+                  <TramiAvatar
+                    state={loading ? "thinking" : "wave"}
+                    size="sm"
+                    className="h-11 w-11"
+                    alt=""
+                  />
                 </div>
                 <div>
                   <h2 id="trami-title" className="text-sm font-semibold text-foreground">
                     TRAMI
                   </h2>
-                  <p className="text-[11px] text-muted-foreground">Asistente accesible · TRAMMOS</p>
+                  <p className="text-[11px] text-muted-foreground">Tu ayudante TRAMMOS · Accesible</p>
                 </div>
               </div>
               <button
