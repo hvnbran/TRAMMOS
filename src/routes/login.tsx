@@ -413,10 +413,16 @@ function LoginPage() {
                       {pError}
                     </div>
                   )}
+                  <PolicyAcceptanceCheckbox
+                    id="policy-pas"
+                    checked={acceptPas}
+                    onChange={setAcceptPas}
+                    disabled={pLoading}
+                  />
                   <button
                     type="submit"
-                    disabled={pLoading}
-                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-80"
+                    disabled={pLoading || !acceptPas}
+                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {pLoading ? (
                       <><Loader2 className="h-4 w-4 animate-spin" /> Enviando código...</>
