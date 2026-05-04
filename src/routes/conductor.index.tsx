@@ -1,8 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ConductorLayout } from "@/components/conductor/ConductorLayout";
 import { Calendar, MapPin, Clock, ChevronRight, Loader2, Inbox } from "lucide-react";
+
+const InstallAppBanner = lazy(() =>
+  import("@/components/conductor/InstallAppBanner").then((m) => ({ default: m.InstallAppBanner })),
+);
+const PushNotificationsToggle = lazy(() =>
+  import("@/components/conductor/PushNotificationsToggle").then((m) => ({ default: m.PushNotificationsToggle })),
+);
 
 export const Route = createFileRoute("/conductor/")({
   component: ConductorHome,
@@ -40,9 +47,12 @@ function badgeEstado(estado: string) {
 function ConductorHome() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
+    const { data: u } = await supabase.auth.getUser();
+    setUserId(u.user?.id ?? null);
     // RLS ya filtra a los servicios del conductor autenticado.
     const { data } = await supabase
       .from("servicios")
@@ -78,6 +88,10 @@ function ConductorHome() {
         </div>
       ) : (
         <div className="space-y-6">
+          <Suspense fallback={null}>
+            {userId && <PushNotificationsToggle userId={userId} />}
+            <InstallAppBanner />
+          </Suspense>
           <Section title={`Hoy (${hoy.length})`} servicios={hoy} empty="No tienes servicios hoy." />
           <Section title={`Próximos (${proximos.length})`} servicios={proximos} empty="Sin servicios programados." />
           {pasados.length > 0 && (
