@@ -41,6 +41,13 @@ interface VehiculoOpt {
   vence_rtm: string | null;
 }
 
+interface VehConductorRel {
+  conductor_id: string;
+  vehiculo_id: string;
+  es_principal: boolean;
+  asignado_hasta: string | null;
+}
+
 export const Route = createFileRoute("/servicios")({
   component: Servicios,
   head: () => ({
@@ -83,6 +90,7 @@ function Servicios() {
   const [items, setItems] = useState<ServicioRow[]>([]);
   const [conductoresAll, setConductoresAll] = useState<ConductorOpt[]>([]);
   const [vehiculosAll, setVehiculosAll] = useState<VehiculoOpt[]>([]);
+  const [vehConductores, setVehConductores] = useState<VehConductorRel[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
@@ -117,16 +125,18 @@ function Servicios() {
 
   async function load() {
     setLoading(true);
-    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes] = await Promise.all([
+    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes] = await Promise.all([
       supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
       supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia"),
       supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm"),
       supabase.from("pasajeros_pcd").select("*").order("nombre"),
+      supabase.from("vehiculo_conductores").select("conductor_id,vehiculo_id,es_principal,asignado_hasta"),
     ]);
     if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
     if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
     if (!vehiculosRes.error && vehiculosRes.data) setVehiculosAll(vehiculosRes.data as VehiculoOpt[]);
     if (!pcdRes.error && pcdRes.data) setPasajerosPCD(pcdRes.data as PasajeroPCD[]);
+    if (!vcRes.error && vcRes.data) setVehConductores(vcRes.data as VehConductorRel[]);
     setLoading(false);
   }
 
@@ -158,6 +168,26 @@ function Servicios() {
       !isVencido(v.vence_rtm)
     );
   }, [vehiculosAll, cliente, form.cliente]);
+
+  // Devuelve las placas asignadas al conductor (por nombre), principal primero,
+  // filtradas por las disponibles (cliente, estado, SOAT/RTM vigentes).
+  function placasDeConductor(nombreConductor: string | null | undefined): VehiculoOpt[] {
+    if (!nombreConductor) return [];
+    const cond = conductoresAll.find(
+      (c) => c.nombre.trim().toLowerCase() === nombreConductor.trim().toLowerCase()
+    );
+    if (!cond) return [];
+    const hoy = new Date().toISOString().slice(0, 10);
+    const rels = vehConductores
+      .filter((r) => r.conductor_id === cond.id && (!r.asignado_hasta || r.asignado_hasta >= hoy))
+      .sort((a, b) => Number(b.es_principal) - Number(a.es_principal));
+    const placas: VehiculoOpt[] = [];
+    for (const r of rels) {
+      const v = vehiculosDisponibles.find((vv) => vv.id === r.vehiculo_id);
+      if (v && !placas.some((p) => p.id === v.id)) placas.push(v);
+    }
+    return placas;
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -202,9 +232,37 @@ function Servicios() {
 
   async function handleFieldChange(id: string, campo: "conductor" | "vehiculo", valor: string) {
     const nuevoValor = valor === "" ? null : valor;
-    setItems((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: nuevoValor } : s)));
+
+    // Si se asigna conductor: auto-llenar vehículo si solo tiene 1 asignado;
+    // si tiene varios, limpiar el vehículo previo (deja al usuario elegir entre los suyos).
+    let placaAuto: string | null | undefined;
+    if (campo === "conductor") {
+      const placas = placasDeConductor(nuevoValor);
+      const servicioActual = items.find((s) => s.id === id);
+      if (placas.length === 1) {
+        placaAuto = placas[0].placa;
+      } else if (placas.length > 1) {
+        // Si la placa actual no pertenece al nuevo conductor, limpiar
+        if (servicioActual?.vehiculo && !placas.some((p) => p.placa === servicioActual.vehiculo)) {
+          placaAuto = null;
+        }
+      } else if (nuevoValor === null) {
+        // Quitar conductor: no tocar vehículo automáticamente
+        placaAuto = undefined;
+      }
+    }
+
+    setItems((prev) => prev.map((s) => {
+      if (s.id !== id) return s;
+      const next = { ...s, [campo]: nuevoValor } as ServicioRow;
+      if (campo === "conductor" && placaAuto !== undefined) next.vehiculo = placaAuto;
+      return next;
+    }));
+
     const payload: { conductor?: string | null; vehiculo?: string | null } =
       campo === "conductor" ? { conductor: nuevoValor } : { vehiculo: nuevoValor };
+    if (campo === "conductor" && placaAuto !== undefined) payload.vehiculo = placaAuto;
+
     const { error } = await supabase.from("servicios").update(payload).eq("id", id);
     if (error) {
       alert(`Error al actualizar ${campo}: ` + error.message);
@@ -342,7 +400,20 @@ function Servicios() {
                 <label className="text-xs text-muted-foreground">Conductor</label>
                 <select
                   value={form.conductor}
-                  onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                  onChange={(e) => {
+                    const nuevoCond = e.target.value;
+                    const placas = placasDeConductor(nuevoCond);
+                    let nuevaPlaca = form.vehiculo;
+                    if (placas.length === 1) {
+                      nuevaPlaca = placas[0].placa;
+                    } else if (placas.length > 1) {
+                      // Si la placa actual no es del nuevo conductor, limpiar
+                      if (!placas.some((p) => p.placa === form.vehiculo)) nuevaPlaca = "";
+                    } else if (nuevoCond === "") {
+                      // Quitar conductor: dejar vehículo como esté
+                    }
+                    setForm({ ...form, conductor: nuevoCond, vehiculo: nuevaPlaca });
+                  }}
                   disabled={conductoresDisponibles.length === 0}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
                 >
@@ -359,24 +430,50 @@ function Servicios() {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Vehículo (placa)</label>
-                <select
-                  value={form.vehiculo}
-                  onChange={(e) => setForm({ ...form, vehiculo: e.target.value })}
-                  disabled={vehiculosDisponibles.length === 0}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
-                >
-                  <option value="">{vehiculosDisponibles.length === 0 ? "Sin vehículos disponibles" : "Selecciona un vehículo"}</option>
-                  {vehiculosDisponibles.map((v) => (
-                    <option key={v.id} value={v.placa}>
-                      {v.placa}{v.marca || v.linea ? ` — ${[v.marca, v.linea].filter(Boolean).join(" ")}` : ""}
-                    </option>
-                  ))}
-                </select>
-                {vehiculosDisponibles.length === 0 && (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
-                    <AlertTriangle className="h-3 w-3" /> Actualiza SOAT/RTM vencidos en Vehículos
-                  </p>
-                )}
+                {(() => {
+                  const placasCond = placasDeConductor(form.conductor);
+                  const tieneConductor = !!form.conductor;
+                  const lista = tieneConductor && placasCond.length > 0 ? placasCond : vehiculosDisponibles;
+                  const sinOpciones = lista.length === 0;
+                  const autoUnico = tieneConductor && placasCond.length === 1;
+                  return (
+                    <>
+                      <select
+                        value={form.vehiculo}
+                        onChange={(e) => setForm({ ...form, vehiculo: e.target.value })}
+                        disabled={sinOpciones || autoUnico}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                      >
+                        <option value="">
+                          {sinOpciones
+                            ? (tieneConductor ? "Conductor sin vehículo asignado" : "Sin vehículos disponibles")
+                            : "Selecciona un vehículo"}
+                        </option>
+                        {lista.map((v) => (
+                          <option key={v.id} value={v.placa}>
+                            {v.placa}{v.marca || v.linea ? ` — ${[v.marca, v.linea].filter(Boolean).join(" ")}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {tieneConductor && placasCond.length === 0 && (
+                        <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                          <AlertTriangle className="h-3 w-3" /> Asigna un vehículo a este conductor en Vehículos
+                        </p>
+                      )}
+                      {autoUnico && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">Auto-asignado: único vehículo del conductor</p>
+                      )}
+                      {tieneConductor && placasCond.length > 1 && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">El conductor maneja {placasCond.length} vehículos · selecciona uno</p>
+                      )}
+                      {!tieneConductor && vehiculosDisponibles.length === 0 && (
+                        <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                          <AlertTriangle className="h-3 w-3" /> Actualiza SOAT/RTM vencidos en Vehículos
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Estado</label>
@@ -502,21 +599,30 @@ function Servicios() {
                   </div>
                   <div>
                     <label className="text-muted-foreground" htmlFor={`veh-${s.id}`}>Vehículo</label>
-                    <select
-                      id={`veh-${s.id}`}
-                      value={s.vehiculo ?? ""}
-                      onChange={(e) => handleFieldChange(s.id, "vehiculo", e.target.value)}
-                      aria-label="Asignar vehículo"
-                      className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:border-primary/50 cursor-pointer"
-                    >
-                      <option value="">— Sin asignar —</option>
-                      {s.vehiculo && !vehiculosDisponibles.some((v) => v.placa === s.vehiculo) && (
-                        <option value={s.vehiculo}>{s.vehiculo} (no disponible)</option>
-                      )}
-                      {vehiculosDisponibles.map((v) => (
-                        <option key={v.id} value={v.placa}>{v.placa}</option>
-                      ))}
-                    </select>
+                    {(() => {
+                      const placasCond = placasDeConductor(s.conductor);
+                      const lista = s.conductor && placasCond.length > 0 ? placasCond : vehiculosDisponibles;
+                      const autoUnico = !!s.conductor && placasCond.length === 1;
+                      return (
+                        <select
+                          id={`veh-${s.id}`}
+                          value={s.vehiculo ?? ""}
+                          onChange={(e) => handleFieldChange(s.id, "vehiculo", e.target.value)}
+                          aria-label="Asignar vehículo"
+                          disabled={autoUnico}
+                          title={autoUnico ? "Auto-asignado: único vehículo del conductor" : undefined}
+                          className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:border-primary/50 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                          <option value="">— Sin asignar —</option>
+                          {s.vehiculo && !lista.some((v) => v.placa === s.vehiculo) && (
+                            <option value={s.vehiculo}>{s.vehiculo} (no disponible)</option>
+                          )}
+                          {lista.map((v) => (
+                            <option key={v.id} value={v.placa}>{v.placa}</option>
+                          ))}
+                        </select>
+                      );
+                    })()}
                   </div>
                 </div>
 
