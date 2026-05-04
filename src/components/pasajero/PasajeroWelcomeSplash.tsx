@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import welcomeImg from "@/assets/welcome-trammos.png";
+import { TramiAvatar } from "@/components/trami/TramiAvatar";
 
 interface Props {
   nombre?: string;
@@ -60,12 +61,16 @@ export function PasajeroWelcomeSplash({ nombre, onDone, durationMs = 1800 }: Pro
         />
 
         {primerNombre && (
-          <p
-            className="welcome-rise text-center text-[#0099CC] font-bold text-lg"
-            style={{ textShadow: "0 1px 0 rgba(255,255,255,0.5)" }}
-          >
-            ¡Bienvenido, {primerNombre}!
-          </p>
+          <div className="welcome-rise flex items-center gap-3">
+            <TramiAvatar state="wave" size="md" bobbing alt="" />
+            <div className="rounded-2xl bg-white px-4 py-2 shadow-md relative">
+              <span className="absolute -left-2 top-1/2 -translate-y-1/2 h-3 w-3 rotate-45 bg-white" />
+              <p className="text-[#0099CC] font-bold text-base">
+                ¡Hola, {primerNombre}!
+              </p>
+              <p className="text-[#00798F] text-xs">Soy TRAMI, te acompaño</p>
+            </div>
+          </div>
         )}
 
         <div className="w-40 h-1.5 rounded-full bg-white/40 overflow-hidden">
