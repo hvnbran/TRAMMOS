@@ -183,6 +183,8 @@ export type Database = {
       }
       conductores: {
         Row: {
+          acceso_habilitado: boolean
+          auth_user_id: string | null
           categoria_lic: string | null
           cedula: string | null
           cliente: Database["public"]["Enums"]["cliente_tipo"] | null
@@ -195,12 +197,16 @@ export type Database = {
           id: string
           licencia: string | null
           nombre: string
+          password_hash: string | null
+          primer_login_at: string | null
           servicios: number | null
           telefono: string | null
           updated_at: string
           vence_licencia: string | null
         }
         Insert: {
+          acceso_habilitado?: boolean
+          auth_user_id?: string | null
           categoria_lic?: string | null
           cedula?: string | null
           cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
@@ -213,12 +219,16 @@ export type Database = {
           id?: string
           licencia?: string | null
           nombre: string
+          password_hash?: string | null
+          primer_login_at?: string | null
           servicios?: number | null
           telefono?: string | null
           updated_at?: string
           vence_licencia?: string | null
         }
         Update: {
+          acceso_habilitado?: boolean
+          auth_user_id?: string | null
           categoria_lic?: string | null
           cedula?: string | null
           cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
@@ -231,6 +241,8 @@ export type Database = {
           id?: string
           licencia?: string | null
           nombre?: string
+          password_hash?: string | null
+          primer_login_at?: string | null
           servicios?: number | null
           telefono?: string | null
           updated_at?: string
@@ -1113,6 +1125,10 @@ export type Database = {
         Args: { _clientes: Database["public"]["Enums"]["cliente_tipo"][] }
         Returns: boolean
       }
+      conductor_set_estado_servicio: {
+        Args: { _motivo?: string; _nuevo_estado: string; _servicio_id: string }
+        Returns: Json
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1127,6 +1143,10 @@ export type Database = {
           nombre: string
           telefono: string
         }[]
+      }
+      get_pasajero_brief_for_conductor: {
+        Args: { _servicio_id: string }
+        Returns: Json
       }
       get_vehiculo_publico_por_placa: {
         Args: { _placa: string }
@@ -1148,6 +1168,7 @@ export type Database = {
         Args: { _email: string }
         Returns: boolean
       }
+      link_conductor_to_auth: { Args: { _cedula: string }; Returns: Json }
       link_pasajero_to_auth: { Args: never; Returns: Json }
       move_to_dlq: {
         Args: {
@@ -1166,13 +1187,21 @@ export type Database = {
           read_ct: number
         }[]
       }
+      set_conductor_password: {
+        Args: { _conductor_id: string; _password: string }
+        Returns: Json
+      }
       user_client: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["cliente_tipo"]
       }
+      verify_conductor_password: {
+        Args: { _cedula: string; _password: string }
+        Returns: Json
+      }
     }
     Enums: {
-      app_role: "admin" | "corona" | "sodimac" | "pasajero"
+      app_role: "admin" | "corona" | "sodimac" | "pasajero" | "conductor"
       cliente_tipo: "corona" | "sodimac"
     }
     CompositeTypes: {
@@ -1301,7 +1330,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "corona", "sodimac", "pasajero"],
+      app_role: ["admin", "corona", "sodimac", "pasajero", "conductor"],
       cliente_tipo: ["corona", "sodimac"],
     },
   },
