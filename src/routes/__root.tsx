@@ -100,29 +100,84 @@ function AuthGate() {
   // Solo /pasajero o /pasajero/* (NO /pasajeros-pcd, que es del staff/admin)
   const isPasajeroRoute =
     location.pathname === "/pasajero" || location.pathname.startsWith("/pasajero/");
+  const isConductorLoginRoute = location.pathname === "/conductor/login";
+  const isConductorRoute =
+    location.pathname === "/conductor" || location.pathname.startsWith("/conductor/");
 
   // Hook de re-aceptación: solo activo cuando hay sesión y NO estamos en
-  // rutas públicas (login/legal) para no bloquear la propia política.
+  // rutas públicas (login/legal/conductor login) para no bloquear la propia política.
   const enforcePolicy = useEnforcePolicyAcceptance(
-    user && !isLoginRoute && !isLegalRoute ? user.id : null,
+    user && !isLoginRoute && !isLegalRoute && !isConductorLoginRoute ? user.id : null,
   );
 
   useEffect(() => {
     if (loading) return;
     // Las rutas /legal/* son públicas: nunca redirigimos desde ellas.
     if (isLegalRoute) return;
+    // /conductor/login es público (entrada para conductores)
+    if (isConductorLoginRoute) {
+      // Si ya hay sesión de conductor, llevarlo a su panel
+      if (user && role === "conductor") {
+        navigate({ to: "/conductor", replace: true });
+      }
+      return;
+    }
     if (!user && !isLoginRoute) {
-      navigate({ to: "/login", replace: true });
+      // Si intenta entrar a /conductor sin sesión, mandarlo a su login
+      if (isConductorRoute) {
+        navigate({ to: "/conductor/login", replace: true });
+      } else {
+        navigate({ to: "/login", replace: true });
+      }
       return;
     }
     if (user && role === "pasajero" && !isPasajeroRoute && !isLoginRoute) {
       navigate({ to: "/pasajero", replace: true });
       return;
     }
+    if (user && role === "conductor" && !isConductorRoute && !isLoginRoute) {
+      navigate({ to: "/conductor", replace: true });
+      return;
+    }
     if (user && role && role !== "pasajero" && isPasajeroRoute) {
       navigate({ to: "/", replace: true });
+      return;
     }
-  }, [user, loading, role, isLoginRoute, isLegalRoute, isPasajeroRoute, navigate]);
+    if (user && role && role !== "conductor" && isConductorRoute && !isConductorLoginRoute) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [user, loading, role, isLoginRoute, isLegalRoute, isPasajeroRoute, isConductorRoute, isConductorLoginRoute, navigate]);
+
+  if (loading && !isLegalRoute && !isConductorLoginRoute) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user && !isLoginRoute && !isLegalRoute && !isConductorLoginRoute) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Outlet />
+      {enforcePolicy.needsReaccept && user && (
+        <Suspense fallback={null}>
+          <PolicyReacceptModal
+            email={user.email ?? null}
+            onAccepted={enforcePolicy.markAccepted}
+          />
+        </Suspense>
+      )}
+    </>
+  );
+}
 
   if (loading && !isLegalRoute) {
     return (
