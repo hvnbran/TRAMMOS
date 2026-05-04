@@ -734,7 +734,7 @@ function FormularioModal(props: {
             />
           </Section>
 
-          {/* Consentimiento */}
+          {/* Consentimiento - registro auditable Ley 1581/2012 */}
           <label className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/30 cursor-pointer">
             <input
               type="checkbox"
@@ -743,9 +743,19 @@ function FormularioModal(props: {
               className="h-4 w-4 mt-0.5"
             />
             <span className="text-sm text-foreground">
-              Confirmo que el pasajero (o su tutor legal) autoriza el tratamiento de estos datos
-              sensibles para mejorar el servicio de transporte, en cumplimiento de la
-              <strong> Ley 1581 de 2012 </strong> y la <strong>Ley 1618 de 2013</strong>.
+              Como tutor/representante legal o titular, autorizo expresamente el tratamiento
+              de los <strong>datos sensibles de salud y discapacidad</strong> del pasajero,
+              conforme a la <strong>Ley 1581 de 2012</strong>, la <strong>Ley 1618 de 2013</strong> y
+              nuestra{" "}
+              <a
+                href="/legal/privacidad"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Política de Privacidad
+              </a>
+              . Esta autorización queda registrada con fecha y hora.
             </span>
           </label>
         </div>

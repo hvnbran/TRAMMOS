@@ -1,10 +1,15 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import appCss from "../styles.css?url";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { A11yProvider } from "../lib/a11y-context";
 import { ColorBlindFilters } from "../components/layout/ColorBlindFilters";
+import { useEnforcePolicyAcceptance } from "../lib/legal/use-enforce-acceptance";
+
+const PolicyReacceptModal = lazy(() =>
+  import("../components/legal/PolicyReacceptModal").then((m) => ({ default: m.PolicyReacceptModal })),
+);
 
 function NotFoundComponent() {
   return (
@@ -91,12 +96,21 @@ function AuthGate() {
   const navigate = useNavigate();
 
   const isLoginRoute = location.pathname === "/login";
+  const isLegalRoute = location.pathname.startsWith("/legal/");
   // Solo /pasajero o /pasajero/* (NO /pasajeros-pcd, que es del staff/admin)
   const isPasajeroRoute =
     location.pathname === "/pasajero" || location.pathname.startsWith("/pasajero/");
 
+  // Hook de re-aceptación: solo activo cuando hay sesión y NO estamos en
+  // rutas públicas (login/legal) para no bloquear la propia política.
+  const enforcePolicy = useEnforcePolicyAcceptance(
+    user && !isLoginRoute && !isLegalRoute ? user.id : null,
+  );
+
   useEffect(() => {
     if (loading) return;
+    // Las rutas /legal/* son públicas: nunca redirigimos desde ellas.
+    if (isLegalRoute) return;
     if (!user && !isLoginRoute) {
       navigate({ to: "/login", replace: true });
       return;
@@ -108,9 +122,9 @@ function AuthGate() {
     if (user && role && role !== "pasajero" && isPasajeroRoute) {
       navigate({ to: "/", replace: true });
     }
-  }, [user, loading, role, isLoginRoute, isPasajeroRoute, navigate]);
+  }, [user, loading, role, isLoginRoute, isLegalRoute, isPasajeroRoute, navigate]);
 
-  if (loading) {
+  if (loading && !isLegalRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -118,7 +132,7 @@ function AuthGate() {
     );
   }
 
-  if (!user && !isLoginRoute) {
+  if (!user && !isLoginRoute && !isLegalRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -126,7 +140,19 @@ function AuthGate() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      {enforcePolicy.needsReaccept && user && (
+        <Suspense fallback={null}>
+          <PolicyReacceptModal
+            email={user.email ?? null}
+            onAccepted={enforcePolicy.markAccepted}
+          />
+        </Suspense>
+      )}
+    </>
+  );
 }
 
 function RootComponent() {

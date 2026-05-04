@@ -6,6 +6,9 @@ import banner from "@/assets/banner-trammos.png";
 import bannerCorona from "@/assets/banner-corona.png";
 import bannerSodimac from "@/assets/banner-sodimac.png";
 import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
+import { PolicyAcceptanceCheckbox } from "@/components/legal/PolicyAcceptanceCheckbox";
+import { LegalLinks } from "@/components/legal/LegalLinks";
+import { useRecordAcceptance } from "@/lib/legal/record-acceptance";
 
 const PasajeroWelcomeSplash = lazy(() =>
   import("@/components/pasajero/PasajeroWelcomeSplash").then((m) => ({ default: m.PasajeroWelcomeSplash })),
@@ -35,6 +38,7 @@ type PasajeroStep = "email" | "otp";
 function LoginPage() {
   const { signIn, user, loading, role } = useAuth();
   const navigate = useNavigate();
+  const recordAcceptance = useRecordAcceptance();
   const [tab, setTab] = useState<Tab>("operador");
 
   // Operador
@@ -42,6 +46,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [acceptOp, setAcceptOp] = useState(false);
 
   // Pasajero
   const [pStep, setPStep] = useState<PasajeroStep>("email");
@@ -50,6 +55,7 @@ function LoginPage() {
   const [pInfo, setPInfo] = useState<string | null>(null);
   const [pError, setPError] = useState<string | null>(null);
   const [pLoading, setPLoading] = useState(false);
+  const [acceptPas, setAcceptPas] = useState(false);
 
   // Splash
   const [showSplash, setShowSplash] = useState(false);
@@ -136,6 +142,13 @@ function LoginPage() {
       setError("Credenciales inválidas. Verifica usuario y contraseña.");
       return;
     }
+
+    // Registrar aceptación de Términos y Privacidad (no bloquea si falla).
+    void recordAcceptance({
+      types: ["terminos", "privacidad"],
+      contexto: "login_operador",
+      email,
+    });
 
     const displayName = preset ? preset.display_name : email.split("@")[0];
     const clientKey = preset ? preset.role : null;
@@ -232,7 +245,14 @@ function LoginPage() {
           setPLoading(false);
           return;
         }
-        await supabase.rpc("link_pasajero_to_auth");
+        const linkResp = await supabase.rpc("link_pasajero_to_auth");
+        const pasajeroIdT = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
+        void recordAcceptance({
+          types: ["terminos", "privacidad"],
+          contexto: "login_pasajero",
+          email,
+          pasajeroId: pasajeroIdT,
+        });
         setPLoading(false);
         startSplashSequence("Pasajero Testing", "pasajero", "/pasajero");
         return;
@@ -254,7 +274,14 @@ function LoginPage() {
       return;
     }
     // Link to pasajero profile + assign role
-    await supabase.rpc("link_pasajero_to_auth");
+    const linkResp = await supabase.rpc("link_pasajero_to_auth");
+    const pasajeroId = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
+    void recordAcceptance({
+      types: ["terminos", "privacidad"],
+      contexto: "login_pasajero",
+      email,
+      pasajeroId,
+    });
     setPLoading(false);
     startSplashSequence(pEmail.split("@")[0], "pasajero", "/pasajero");
   };
@@ -330,10 +357,17 @@ function LoginPage() {
                 </div>
               )}
 
+              <PolicyAcceptanceCheckbox
+                id="policy-op"
+                checked={acceptOp}
+                onChange={setAcceptOp}
+                disabled={submitting}
+              />
+
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-80 hover:shadow-md"
+                disabled={submitting || !acceptOp}
+                className="w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-md"
               >
                 {submitting ? (
                   <>
@@ -379,10 +413,16 @@ function LoginPage() {
                       {pError}
                     </div>
                   )}
+                  <PolicyAcceptanceCheckbox
+                    id="policy-pas"
+                    checked={acceptPas}
+                    onChange={setAcceptPas}
+                    disabled={pLoading}
+                  />
                   <button
                     type="submit"
-                    disabled={pLoading}
-                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-80"
+                    disabled={pLoading || !acceptPas}
+                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {pLoading ? (
                       <><Loader2 className="h-4 w-4 animate-spin" /> Enviando código...</>
@@ -441,6 +481,10 @@ function LoginPage() {
               )}
             </div>
           )}
+
+          <div className="mt-4 text-center">
+            <LegalLinks />
+          </div>
         </div>
       </div>
 

@@ -5,6 +5,8 @@ import { GlobalSearch } from "@/components/GlobalSearch";
 import { useLocation } from "@tanstack/react-router";
 import { AccessibilityPanel } from "./AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
+import { LegalLinks } from "@/components/legal/LegalLinks";
+import { EMPRESA } from "@/lib/legal/empresa";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
@@ -57,6 +59,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           className="page-transition flex-1 overflow-y-auto p-6 focus:outline-none"
         >
           {children}
+          <footer className="mt-10 pt-4 border-t border-border text-center text-[11px] text-muted-foreground flex flex-wrap items-center justify-center gap-x-2">
+            <span>© {new Date().getFullYear()} {EMPRESA.nombreComercial}</span>
+            <span>·</span>
+            <LegalLinks />
+          </footer>
         </main>
       </div>
       <AccessibilityPanel />
