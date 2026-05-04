@@ -80,6 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("auth_user_id", userId)
         .maybeSingle();
       setDisplayName(p?.nombre || profile?.display_name || profile?.email || "");
+    } else if (r === "conductor") {
+      const { data: c } = await (supabase.from("conductores") as any)
+        .select("nombre")
+        .eq("auth_user_id", userId)
+        .maybeSingle();
+      setDisplayName(c?.nombre || profile?.display_name || "Conductor");
     } else {
       setDisplayName(profile?.display_name || profile?.email || "");
     }
