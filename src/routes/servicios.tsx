@@ -232,9 +232,37 @@ function Servicios() {
 
   async function handleFieldChange(id: string, campo: "conductor" | "vehiculo", valor: string) {
     const nuevoValor = valor === "" ? null : valor;
-    setItems((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: nuevoValor } : s)));
+
+    // Si se asigna conductor: auto-llenar vehículo si solo tiene 1 asignado;
+    // si tiene varios, limpiar el vehículo previo (deja al usuario elegir entre los suyos).
+    let placaAuto: string | null | undefined;
+    if (campo === "conductor") {
+      const placas = placasDeConductor(nuevoValor);
+      const servicioActual = items.find((s) => s.id === id);
+      if (placas.length === 1) {
+        placaAuto = placas[0].placa;
+      } else if (placas.length > 1) {
+        // Si la placa actual no pertenece al nuevo conductor, limpiar
+        if (servicioActual?.vehiculo && !placas.some((p) => p.placa === servicioActual.vehiculo)) {
+          placaAuto = null;
+        }
+      } else if (nuevoValor === null) {
+        // Quitar conductor: no tocar vehículo automáticamente
+        placaAuto = undefined;
+      }
+    }
+
+    setItems((prev) => prev.map((s) => {
+      if (s.id !== id) return s;
+      const next = { ...s, [campo]: nuevoValor } as ServicioRow;
+      if (campo === "conductor" && placaAuto !== undefined) next.vehiculo = placaAuto;
+      return next;
+    }));
+
     const payload: { conductor?: string | null; vehiculo?: string | null } =
       campo === "conductor" ? { conductor: nuevoValor } : { vehiculo: nuevoValor };
+    if (campo === "conductor" && placaAuto !== undefined) payload.vehiculo = placaAuto;
+
     const { error } = await supabase.from("servicios").update(payload).eq("id", id);
     if (error) {
       alert(`Error al actualizar ${campo}: ` + error.message);
