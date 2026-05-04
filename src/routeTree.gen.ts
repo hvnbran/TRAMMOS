@@ -27,6 +27,7 @@ import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
+import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
 import { Route as ApiTestLoginRouteImport } from './routes/api/test-login'
 import { Route as ApiSeedRouteImport } from './routes/api/seed'
 import { Route as ApiPublicConductorLoginRouteImport } from './routes/api/public/conductor-login'
@@ -125,6 +126,11 @@ const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
   path: '/legal/privacidad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConductorLoginRoute = ConductorLoginRouteImport.update({
+  id: '/conductor/login',
+  path: '/conductor/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTestLoginRoute = ApiTestLoginRouteImport.update({
   id: '/api/test-login',
   path: '/api/test-login',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/api/public/conductor-login'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/api/public/conductor-login'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/api/public/conductor-login'
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   VehiculosRoute: typeof VehiculosRoute
   ApiSeedRoute: typeof ApiSeedRoute
   ApiTestLoginRoute: typeof ApiTestLoginRoute
+  ConductorLoginRoute: typeof ConductorLoginRoute
   LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   LegalTerminosRoute: typeof LegalTerminosRoute
   ApiPublicConductorLoginRoute: typeof ApiPublicConductorLoginRoute
@@ -484,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalPrivacidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conductor/login': {
+      id: '/conductor/login'
+      path: '/conductor/login'
+      fullPath: '/conductor/login'
+      preLoaderRoute: typeof ConductorLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/test-login': {
       id: '/api/test-login'
       path: '/api/test-login'
@@ -555,6 +575,7 @@ const rootRouteChildren: RootRouteChildren = {
   VehiculosRoute: VehiculosRoute,
   ApiSeedRoute: ApiSeedRoute,
   ApiTestLoginRoute: ApiTestLoginRoute,
+  ConductorLoginRoute: ConductorLoginRoute,
   LegalPrivacidadRoute: LegalPrivacidadRoute,
   LegalTerminosRoute: LegalTerminosRoute,
   ApiPublicConductorLoginRoute: ApiPublicConductorLoginRoute,
