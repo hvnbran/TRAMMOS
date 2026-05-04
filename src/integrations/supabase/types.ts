@@ -598,6 +598,45 @@ export type Database = {
         }
         Relationships: []
       }
+      policy_acceptances: {
+        Row: {
+          accepted_at: string
+          email: string | null
+          id: string
+          ip: string | null
+          metadata: Json
+          pasajero_id: string | null
+          policy_type: string
+          policy_version: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          pasajero_id?: string | null
+          policy_type: string
+          policy_version: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          metadata?: Json
+          pasajero_id?: string | null
+          policy_type?: string
+          policy_version?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
