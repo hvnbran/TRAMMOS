@@ -90,6 +90,7 @@ function Servicios() {
   const [items, setItems] = useState<ServicioRow[]>([]);
   const [conductoresAll, setConductoresAll] = useState<ConductorOpt[]>([]);
   const [vehiculosAll, setVehiculosAll] = useState<VehiculoOpt[]>([]);
+  const [vehConductores, setVehConductores] = useState<VehConductorRel[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
