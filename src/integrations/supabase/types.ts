@@ -1189,7 +1189,7 @@ export type Database = {
       }
       set_conductor_password: {
         Args: { _conductor_id: string; _password: string }
-        Returns: Json
+        Returns: undefined
       }
       user_client: {
         Args: { _user_id: string }
@@ -1197,7 +1197,11 @@ export type Database = {
       }
       verify_conductor_password: {
         Args: { _cedula: string; _password: string }
-        Returns: Json
+        Returns: {
+          conductor_id: string
+          nombre: string
+          ok: boolean
+        }[]
       }
     }
     Enums: {
