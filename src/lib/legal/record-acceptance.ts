@@ -1,5 +1,4 @@
-import { useServerFn } from "@tanstack/react-start";
-import { recordPolicyAcceptance } from "@/server/legal.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   CURRENT_POLICY_VERSION,
   type PolicyType,
@@ -14,38 +13,64 @@ export interface RecordOptions {
 }
 
 /**
+ * Clave en localStorage para recordar localmente que el usuario ya aceptó la
+ * versión vigente. Esto evita que el modal de re-aceptación reaparezca aunque
+ * el insert en DB falle por red intermitente o RLS.
+ */
+function localKey(userId: string) {
+  return `trammos.policy_accepted.${userId}.${CURRENT_POLICY_VERSION}`;
+}
+
+export function markLocallyAccepted(userId: string) {
+  try {
+    localStorage.setItem(localKey(userId), new Date().toISOString());
+  } catch {
+    // ignore storage errors
+  }
+}
+
+export function isLocallyAccepted(userId: string): boolean {
+  try {
+    return !!localStorage.getItem(localKey(userId));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Hook helper para registrar la aceptación de una o más políticas.
- * Devuelve una función estable que se puede llamar desde un evento.
+ * Inserta directamente vía Supabase SDK (RLS: user_insert_own_acceptance).
+ * Marca también localStorage como respaldo, para que la UX no insista.
  */
 export function useRecordAcceptance() {
-  const fn = useServerFn(recordPolicyAcceptance);
-
   return async function record(opts: RecordOptions) {
     const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
-    const results = await Promise.allSettled(
-      opts.types.map((t) =>
-        fn({
-          data: {
-            policy_type: t,
-            policy_version: CURRENT_POLICY_VERSION,
-            pasajero_id: opts.pasajeroId ?? null,
-            email: opts.email ?? null,
-            contexto: opts.contexto,
-            user_agent: ua,
-          },
-        }),
-      ),
-    );
 
-    // Loguear sin bloquear el flujo de UX
-    results.forEach((r, i) => {
-      if (r.status === "rejected") {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[legal] No se pudo registrar aceptación de ${opts.types[i]}:`,
-          r.reason,
-        );
-      }
-    });
+    // Obtener el usuario autenticado actual
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.warn("[legal] No hay sesión activa al intentar registrar aceptación.");
+      return;
+    }
+
+    // Marcar localmente de inmediato — la UX no debe depender del round-trip
+    markLocallyAccepted(user.id);
+
+    // Insertar una fila por cada tipo de política
+    const rows = opts.types.map((t) => ({
+      user_id: user.id,
+      pasajero_id: opts.pasajeroId ?? null,
+      email: opts.email ?? user.email ?? null,
+      policy_type: t,
+      policy_version: CURRENT_POLICY_VERSION,
+      user_agent: ua,
+      metadata: { contexto: opts.contexto },
+    }));
+
+    const { error } = await supabase.from("policy_acceptances").insert(rows);
+    if (error) {
+      // No bloqueamos al usuario — ya quedó marcado localmente
+      console.warn("[legal] No se pudo registrar aceptación en DB:", error.message);
+    }
   };
 }
