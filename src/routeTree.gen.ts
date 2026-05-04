@@ -25,6 +25,7 @@ import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
 import { Route as ApiTestLoginRouteImport } from './routes/api/test-login'
 import { Route as ApiSeedRouteImport } from './routes/api/seed'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -112,6 +113,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
+  id: '/legal/privacidad',
+  path: '/legal/privacidad',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTestLoginRoute = ApiTestLoginRouteImport.update({
   id: '/api/test-login',
   path: '/api/test-login',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/legal/privacidad': typeof LegalPrivacidadRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/legal/privacidad': typeof LegalPrivacidadRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/vehiculos': typeof VehiculosRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/test-login': typeof ApiTestLoginRoute
+  '/legal/privacidad': typeof LegalPrivacidadRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/legal/privacidad'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/legal/privacidad'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/api/seed'
     | '/api/test-login'
+    | '/legal/privacidad'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   VehiculosRoute: typeof VehiculosRoute
   ApiSeedRoute: typeof ApiSeedRoute
   ApiTestLoginRoute: typeof ApiTestLoginRoute
+  LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   ApiPublicPushProcessRoute: typeof ApiPublicPushProcessRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/legal/privacidad': {
+      id: '/legal/privacidad'
+      path: '/legal/privacidad'
+      fullPath: '/legal/privacidad'
+      preLoaderRoute: typeof LegalPrivacidadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/test-login': {
       id: '/api/test-login'
       path: '/api/test-login'
@@ -495,6 +515,7 @@ const rootRouteChildren: RootRouteChildren = {
   VehiculosRoute: VehiculosRoute,
   ApiSeedRoute: ApiSeedRoute,
   ApiTestLoginRoute: ApiTestLoginRoute,
+  LegalPrivacidadRoute: LegalPrivacidadRoute,
   ApiPublicPushProcessRoute: ApiPublicPushProcessRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
