@@ -1,38 +1,75 @@
-## Objetivo
+## Footer corporativo TRAMMOS
 
-Hacer que cuando un admin genere una contraseña para un conductor, esta quede guardada y visible para él. Cada vez que abra el botón "Acceso app", verá la contraseña actual asignada al conductor (para reenviarla si el conductor la olvidó), con la opción de regenerarla si lo desea.
+Reemplazar el footer minimalista actual (una sola línea con © + links legales) por un footer corporativo más rico, inspirado en el de trammos.co (la imagen que enviaste), pero adaptado al estilo de la app y manteniendo nuestros tokens de diseño.
 
-## Cambios
+### Estructura visual del nuevo footer
 
-### 1. Base de datos (migración)
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│  [Logo TRAMMOS]        EMPRESA           LEGAL              CONTACTO │
+│  Transportes           · Inicio          · Términos         📧 correo│
+│  Especiales            · Servicios       · Privacidad       📞 tel   │
+│  ¡Contigo en cada      · Solicitar       · Cookies          📍 ciudad│
+│   tramo!                  transporte                                 │
+│                                                                       │
+│  [Vigilado              [Mintransporte]  [Supertransporte]            │
+│   SuperTransporte]                                                    │
+│                                                                       │
+│  ─────────────────────────────────────────────────────────────────── │
+│  © 2026 Trammos Transportes Especiales S.A.S. · NIT 901784897-1      │
+│                                       Hecho con cuidado en Colombia 🇨🇴│
+└──────────────────────────────────────────────────────────────────────┘
+```
 
-- Agregar columna `password_plain TEXT` a `public.conductores` (la contraseña actual visible para admins; el hash bcrypt sigue usándose para verificar el login).
-- Actualizar la función `set_conductor_password(_conductor_id, _password)` para que también guarde `password_plain = _password` además del hash bcrypt.
-- Crear función `get_conductor_password(_conductor_id uuid) RETURNS TABLE(password text, acceso_habilitado boolean, primer_login_at timestamptz)` con `SECURITY DEFINER` que SOLO devuelva la contraseña si `auth.uid()` es admin (`has_role(auth.uid(), 'admin')`). Si no es admin, retorna vacío. Esto evita exponer la columna a roles no-admin vía RLS normal.
+Tres variantes del mismo componente:
+- **`full`**: 4 columnas + sellos de vigilancia + barra inferior. Se usa en el dashboard interno (AppLayout) y en páginas legales.
+- **`compact`**: logo TRAMMOS + sellos pequeños + © + links legales en una franja angosta. Para `/login`, `/conductor/login`, `/conductor`, `/pasajero` (donde el espacio es ajustado y ya hay branding fuerte arriba).
+- Auto-responsive: en móvil colapsa a una sola columna apilada.
 
-Nota de seguridad: guardar contraseñas en texto plano es un riesgo conocido. Lo hacemos porque el flujo lo pide explícitamente y porque son credenciales operativas de baja sensibilidad (acceso a la app del conductor, no a banca). El acceso queda restringido a admins por la función `SECURITY DEFINER`.
+### Sellos institucionales (lado oficialidad)
 
-### 2. Componente `src/components/conductor/GenerarAccesoConductor.tsx`
+La página oficial muestra el sello "Vigilado SuperTransporte". Replicarlo como SVG inline (escudo + texto), más un badge "Ministerio de Transporte – República de Colombia" también en SVG inline. Razón: evitar dependencias de imágenes externas o subir binarios sin permiso de uso. Los SVG se construyen como blocks tipográficos sobrios en blanco/gris con la franja tricolor (amarillo/azul/rojo) abajo, fieles al estilo gubernamental colombiano sin reproducir el escudo nacional literal (que es marca registrada del Estado).
 
-Reescribir el flujo del modal:
+Los sellos se renderizan a un tamaño moderado (h ≈ 48px), monocromáticos, alineados en una fila con separación generosa.
 
-- Al abrir el modal, llamar `supabase.rpc("get_conductor_password", { _conductor_id })`.
-- Si retorna una contraseña existente → mostrar pantalla "Contraseña actual" con:
-  - La contraseña visible en grande (toggle mostrar/ocultar con ícono de ojo).
-  - Botón "Copiar".
-  - Botón "Copiar enlace + credenciales" (texto listo para WhatsApp: `tramos.online/conductor/login · Cédula: {cedula} · Contraseña: {pwd}`).
-  - Botón secundario "Regenerar contraseña" → vuelve a la vista de creación.
-- Si no hay contraseña → mostrar la vista actual de creación (input + aleatoria + guardar).
-- Después de guardar una contraseña nueva, mostrar la misma pantalla "Contraseña actual" (no la pantalla de "se mostrará una sola vez").
-- Quitar el texto "no se mostrará otra vez" porque ahora siempre estará disponible.
+### Estilo
 
-### 3. Pasar `cedula` al componente
+- Fondo: `bg-card` con borde superior `border-border` (modo claro). En el dashboard se ve como una banda sutil al final del scroll.
+- Tipografía: `text-xs` para listas, `text-[11px]` uppercase tracking-wide para títulos de columna, en `text-muted-foreground`. Títulos en `text-foreground font-semibold`.
+- Logo TRAMMOS: usar `src/assets/logo-trammos.png` (ya existe) a la izquierda, `h-12 w-auto`.
+- Acentos: una línea horizontal con gradiente sutil de los colores de marca (cyan → lime) sobre el borde superior, como guiño.
+- Hover de los links: subrayado + cambio a `text-primary`.
 
-`src/routes/conductores.tsx` ya tiene `c.cedula`; pasarla como prop a `<GenerarAccesoConductor>` para construir el mensaje de WhatsApp con cédula + contraseña.
+### Datos a mostrar
 
-## Resultado para el usuario
+Tomados de `src/lib/legal/empresa.ts` (que ya tiene razón social, NIT y correo correctos):
+- Razón social, NIT
+- Correo soporte/privacidad: `Trammostransportesespeciales@gmail.com`
+- Sitio: `trammos.online`
+- País: Colombia
+- Tagline: "¡Contigo en cada tramo!"
 
-- Admin hace clic en "Acceso app" de un conductor → ve la contraseña asignada actual (oculta por defecto, con botón mostrar).
-- Puede copiarla o copiar el mensaje completo para WhatsApp.
-- Si el conductor pide cambio, hay un botón "Regenerar" para crear otra.
-- Funciona para conductores que ya tienen contraseña creada antes de este cambio: la próxima vez que el admin se la regenere, quedará guardada y visible desde entonces.
+Las columnas "Empresa" enlazan a rutas que ya existen (Inicio, Solicitar transporte, Servicios). Si una ruta interna no aplica al rol (p. ej. en `/pasajero`), se filtran los enlaces para no llevar al usuario a páginas que requieren otra sesión.
+
+### Detalles técnicos
+
+**Archivos a crear:**
+- `src/components/layout/SiteFooter.tsx` — componente con prop `variant: "full" | "compact"`. Lee `EMPRESA` de `@/lib/legal/empresa`. Reutiliza `<LegalLinks />`.
+- `src/components/layout/seals/VigiladoSuperTransporte.tsx` — SVG inline del sello.
+- `src/components/layout/seals/MintransporteSeal.tsx` — SVG inline del sello/badge.
+
+**Archivos a editar:**
+- `src/components/layout/AppLayout.tsx` — reemplazar el `<footer>` actual por `<SiteFooter variant="full" />`.
+- `src/routes/login.tsx` — reemplazar el bloque `<LegalLinks />` final por `<SiteFooter variant="compact" />`.
+- `src/routes/conductor.login.tsx` — añadir `<SiteFooter variant="compact" />` al final del contenedor.
+- `src/routes/conductor.index.tsx` — añadir `<SiteFooter variant="compact" />` al final del scroll del dashboard del conductor.
+- `src/routes/pasajero.tsx` — añadir `<SiteFooter variant="compact" />` al final del scroll del panel pasajero.
+- `src/components/legal/LegalPageLayout.tsx` — reemplazar el footer simple por `<SiteFooter variant="full" />` para que las páginas legales también ganen presencia institucional.
+
+**Sin cambios** en rutas que no tienen footer propio (consumen `AppLayout` y heredan automáticamente).
+
+### Por qué este enfoque
+
+- Un solo componente reusable evita divergencia visual entre las 3 apps (admin, conductor, pasajero).
+- Los SVG inline para los sellos eliminan riesgos de derechos de imagen sobre logos oficiales y se ven crujientes en cualquier resolución.
+- La variante `compact` evita que las pantallas de login (que ya son densas y centradas) se sientan cargadas.

@@ -7,7 +7,7 @@ import bannerCorona from "@/assets/banner-corona.png";
 import bannerSodimac from "@/assets/banner-sodimac.png";
 import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
 import { PolicyAcceptanceCheckbox } from "@/components/legal/PolicyAcceptanceCheckbox";
-import { LegalLinks } from "@/components/legal/LegalLinks";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { useRecordAcceptance } from "@/lib/legal/record-acceptance";
 
 const PasajeroWelcomeSplash = lazy(() =>
@@ -288,7 +288,8 @@ function LoginPage() {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+      <div className="min-h-screen flex flex-col bg-background">
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md animate-fade-in">
           <div className="text-center -mb-6">
             <img src={banner} alt="TRAMMOS - Transportes Especiales" className="w-72 md:w-80 mx-auto h-auto drop-shadow-sm" />
@@ -483,9 +484,11 @@ function LoginPage() {
           )}
 
           <div className="mt-4 text-center">
-            <LegalLinks />
+            {/* Footer corporativo se muestra debajo del card */}
           </div>
         </div>
+        </div>
+        <SiteFooter variant="compact" />
       </div>
 
       {showSplash && splashClient === "pasajero" && (

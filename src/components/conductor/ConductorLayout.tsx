@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { LogOut, Truck, Home } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export function ConductorLayout({ children, title }: { children: ReactNode; title?: string }) {
   const { displayName, signOut } = useAuth();
@@ -49,7 +50,8 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
         )}
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-4 pb-24">{children}</main>
+      <main className="max-w-2xl mx-auto px-4 py-4 pb-12">{children}</main>
+      <SiteFooter variant="compact" />
     </div>
   );
 }

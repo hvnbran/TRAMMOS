@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import banner from "@/assets/banner-trammos.png";
 import { EMPRESA } from "@/lib/legal/empresa";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 interface Props {
   titulo: string;
@@ -40,18 +41,8 @@ export function LegalPageLayout({ titulo, version, children }: Props) {
           {children}
         </article>
 
-        <footer className="mt-12 pt-6 border-t border-border text-xs text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>© {new Date().getFullYear()} {EMPRESA.nombreComercial}</span>
-          <span>·</span>
-          <Link to="/legal/terminos" className="underline hover:text-foreground">Términos</Link>
-          <span>·</span>
-          <Link to="/legal/privacidad" className="underline hover:text-foreground">Privacidad</Link>
-          <span>·</span>
-          <a href={`mailto:${EMPRESA.correoPrivacidad}`} className="underline hover:text-foreground">
-            {EMPRESA.correoPrivacidad}
-          </a>
-        </footer>
       </main>
+      <SiteFooter variant="full" />
     </div>
   );
 }
