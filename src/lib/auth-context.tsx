@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "corona" | "sodimac" | "pasajero";
+export type AppRole = "admin" | "corona" | "sodimac" | "pasajero" | "conductor";
 export type ClienteTipo = "corona" | "sodimac";
 
 interface AuthState {
