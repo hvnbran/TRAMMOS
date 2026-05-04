@@ -444,7 +444,16 @@ function LoginPage() {
         </div>
       </div>
 
-      {showSplash && (
+      {showSplash && splashClient === "pasajero" && (
+        <Suspense fallback={<div className="fixed inset-0 z-[60]" style={{ background: "#C6FF00" }} />}>
+          <PasajeroWelcomeSplash
+            nombre={splashName}
+            onDone={() => navigate({ to: "/pasajero" })}
+          />
+        </Suspense>
+      )}
+
+      {showSplash && splashClient !== "pasajero" && (
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center bg-background transition-opacity duration-300 ${
             splashFadeOut ? "opacity-0" : "opacity-100 animate-fade-in"
@@ -483,7 +492,7 @@ function LoginPage() {
               className="text-xs text-muted-foreground animate-fade-in"
               style={{ animationDelay: "800ms", animationFillMode: "backwards" }}
             >
-              {splashClient === "pasajero" ? "Preparando tu viaje..." : "Cargando tu panel de control..."}
+              Cargando tu panel de control...
             </p>
           </div>
         </div>
