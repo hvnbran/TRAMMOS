@@ -128,7 +128,7 @@ function ServicioDetalle() {
     const { data, error: rpcErr } = await supabase.rpc("conductor_set_estado_servicio", {
       _servicio_id: id,
       _nuevo_estado: nuevoEstado,
-      _motivo: motivo,
+      _motivo: motivo ?? undefined,
     });
     setActionLoading(null);
     const r = data as { ok?: boolean; error?: string } | null;
