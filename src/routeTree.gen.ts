@@ -25,6 +25,7 @@ import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
@@ -116,6 +117,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConductorIndexRoute = ConductorIndexRouteImport.update({
+  id: '/conductor/',
+  path: '/conductor/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LegalTerminosRoute = LegalTerminosRouteImport.update({
   id: '/legal/terminos',
   path: '/legal/terminos',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -218,6 +225,7 @@ export interface FileRoutesByTo {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/conductor': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -247,6 +255,7 @@ export interface FileRoutesById {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/conductor/'
     | '/api/public/conductor-login'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/conductor'
     | '/api/public/conductor-login'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/conductor/'
     | '/api/public/conductor-login'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
@@ -362,6 +374,7 @@ export interface RootRouteChildren {
   ConductorLoginRoute: typeof ConductorLoginRoute
   LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   LegalTerminosRoute: typeof LegalTerminosRoute
+  ConductorIndexRoute: typeof ConductorIndexRoute
   ApiPublicConductorLoginRoute: typeof ApiPublicConductorLoginRoute
   ApiPublicPushProcessRoute: typeof ApiPublicPushProcessRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -483,6 +496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conductor/': {
+      id: '/conductor/'
+      path: '/conductor'
+      fullPath: '/conductor/'
+      preLoaderRoute: typeof ConductorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/legal/terminos': {
       id: '/legal/terminos'
       path: '/legal/terminos'
@@ -578,6 +598,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConductorLoginRoute: ConductorLoginRoute,
   LegalPrivacidadRoute: LegalPrivacidadRoute,
   LegalTerminosRoute: LegalTerminosRoute,
+  ConductorIndexRoute: ConductorIndexRoute,
   ApiPublicConductorLoginRoute: ApiPublicConductorLoginRoute,
   ApiPublicPushProcessRoute: ApiPublicPushProcessRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
