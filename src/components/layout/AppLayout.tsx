@@ -5,6 +5,8 @@ import { GlobalSearch } from "@/components/GlobalSearch";
 import { useLocation } from "@tanstack/react-router";
 import { AccessibilityPanel } from "./AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
+import { LegalLinks } from "@/components/legal/LegalLinks";
+import { EMPRESA } from "@/lib/legal/empresa";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
