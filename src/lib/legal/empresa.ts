@@ -8,12 +8,12 @@
  */
 export const EMPRESA = {
   nombreComercial: "TRAMMOS",
-  razonSocial: "{{RAZON_SOCIAL}}",
-  nit: "{{NIT}}",
+  razonSocial: "Trammos Transportes Especiales S.A.S.",
+  nit: "901784897-1",
   direccion: "{{DIRECCION}}",
   ciudad: "{{CIUDAD}}",
   pais: "Colombia",
-  correoPrivacidad: "{{CORREO_PRIVACIDAD}}",
-  correoSoporte: "soporte@trammos.app",
-  sitioWeb: "https://trammos.lovable.app",
+  correoPrivacidad: "Trammostransportesespeciales@gmail.com",
+  correoSoporte: "Trammostransportesespeciales@gmail.com",
+  sitioWeb: "https://trammos.online",
 } as const;
