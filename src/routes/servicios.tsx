@@ -169,6 +169,26 @@ function Servicios() {
     );
   }, [vehiculosAll, cliente, form.cliente]);
 
+  // Devuelve las placas asignadas al conductor (por nombre), principal primero,
+  // filtradas por las disponibles (cliente, estado, SOAT/RTM vigentes).
+  function placasDeConductor(nombreConductor: string | null | undefined): VehiculoOpt[] {
+    if (!nombreConductor) return [];
+    const cond = conductoresAll.find(
+      (c) => c.nombre.trim().toLowerCase() === nombreConductor.trim().toLowerCase()
+    );
+    if (!cond) return [];
+    const hoy = new Date().toISOString().slice(0, 10);
+    const rels = vehConductores
+      .filter((r) => r.conductor_id === cond.id && (!r.asignado_hasta || r.asignado_hasta >= hoy))
+      .sort((a, b) => Number(b.es_principal) - Number(a.es_principal));
+    const placas: VehiculoOpt[] = [];
+    for (const r of rels) {
+      const v = vehiculosDisponibles.find((vv) => vv.id === r.vehiculo_id);
+      if (v && !placas.some((p) => p.id === v.id)) placas.push(v);
+    }
+    return placas;
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
