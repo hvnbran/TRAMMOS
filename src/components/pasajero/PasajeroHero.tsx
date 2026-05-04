@@ -1,8 +1,7 @@
-import { ArrowRight } from "lucide-react";
+import { memo, useMemo } from "react";
 
 interface PasajeroHeroProps {
   nombre: string;
-  onPedir: () => void;
 }
 
 /**
