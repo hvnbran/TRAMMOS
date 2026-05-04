@@ -1,11 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useRef, lazy, Suspense, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import banner from "@/assets/banner-trammos.png";
 import bannerCorona from "@/assets/banner-corona.png";
 import bannerSodimac from "@/assets/banner-sodimac.png";
 import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
+
+const PasajeroWelcomeSplash = lazy(() =>
+  import("@/components/pasajero/PasajeroWelcomeSplash").then((m) => ({ default: m.PasajeroWelcomeSplash })),
+);
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -92,6 +96,9 @@ function LoginPage() {
     setSplashName(displayName);
     setSplashClient(clientKey);
     setShowSplash(true);
+    // El splash de pasajero maneja su propio temporizador y dispara la navegación
+    // vía onDone. Para los demás roles seguimos con el flujo de barra de progreso.
+    if (clientKey === "pasajero") return;
     timersRef.current.push(setTimeout(() => setProgress(100), 200));
     timersRef.current.push(setTimeout(() => setSplashFadeOut(true), 1800));
     timersRef.current.push(setTimeout(() => navigate({ to: target }), 2050));
