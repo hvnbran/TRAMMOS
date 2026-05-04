@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { DocumentManager, TIPOS_CONDUCTOR } from "@/components/DocumentManager";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+import { GenerarAccesoConductor } from "@/components/conductor/GenerarAccesoConductor";
 
 export const Route = createFileRoute("/conductores")({
   component: Conductores,
