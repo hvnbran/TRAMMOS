@@ -484,7 +484,7 @@ function LoginPage() {
           )}
 
           <div className="mt-4 text-center">
-            <LegalLinks />
+            {/* Footer corporativo se muestra debajo del card */}
           </div>
         </div>
         </div>
