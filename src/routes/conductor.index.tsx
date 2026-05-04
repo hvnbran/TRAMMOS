@@ -47,9 +47,12 @@ function badgeEstado(estado: string) {
 function ConductorHome() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
+    const { data: u } = await supabase.auth.getUser();
+    setUserId(u.user?.id ?? null);
     // RLS ya filtra a los servicios del conductor autenticado.
     const { data } = await supabase
       .from("servicios")
@@ -85,6 +88,10 @@ function ConductorHome() {
         </div>
       ) : (
         <div className="space-y-6">
+          <Suspense fallback={null}>
+            {userId && <PushNotificationsToggle userId={userId} />}
+            <InstallAppBanner />
+          </Suspense>
           <Section title={`Hoy (${hoy.length})`} servicios={hoy} empty="No tienes servicios hoy." />
           <Section title={`Próximos (${proximos.length})`} servicios={proximos} empty="Sin servicios programados." />
           {pasados.length > 0 && (
