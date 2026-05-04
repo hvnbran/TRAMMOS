@@ -1,18 +1,53 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { KeyRound, Loader2, Copy, Check } from "lucide-react";
+import { KeyRound, Loader2, Copy, Check, Eye, EyeOff, RefreshCw, MessageCircle } from "lucide-react";
 
 /**
- * Botón para que el admin genere/restablezca la contraseña de acceso
- * a la app del conductor. Muestra la contraseña una sola vez.
+ * Botón para que el admin genere/consulte/restablezca la contraseña de acceso
+ * a la app del conductor. La contraseña queda guardada y visible para admins.
  */
-export function GenerarAccesoConductor({ conductorId, nombre }: { conductorId: string; nombre: string }) {
+export function GenerarAccesoConductor({
+  conductorId,
+  nombre,
+  cedula,
+}: {
+  conductorId: string;
+  nombre: string;
+  cedula?: string | null;
+}) {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"loading" | "view" | "edit">("loading");
+  const [currentPassword, setCurrentPassword] = useState<string | null>(null);
   const [password, setPassword] = useState("");
-  const [generated, setGenerated] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"pwd" | "msg" | null>(null);
+
+  async function abrir() {
+    setOpen(true);
+    setView("loading");
+    setError(null);
+    setShow(false);
+    setCopied(null);
+    const { data, error: err } = await supabase.rpc("get_conductor_password", {
+      _conductor_id: conductorId,
+    });
+    if (err) {
+      setError(err.message);
+      setView("edit");
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    const pwd = row?.password as string | null | undefined;
+    if (pwd) {
+      setCurrentPassword(pwd);
+      setView("view");
+    } else {
+      setCurrentPassword(null);
+      setView("edit");
+    }
+  }
 
   function generarRandom() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -37,30 +72,46 @@ export function GenerarAccesoConductor({ conductorId, nombre }: { conductorId: s
       setError(err.message || "Error al guardar");
       return;
     }
-    setGenerated(password);
+    setCurrentPassword(password);
+    setPassword("");
+    setShow(true);
+    setView("view");
   }
 
   function cerrar() {
     setOpen(false);
     setPassword("");
-    setGenerated(null);
     setError(null);
-    setCopied(false);
+    setCopied(null);
+    setShow(false);
+    setCurrentPassword(null);
   }
 
-  async function copiar() {
-    if (!generated) return;
-    await navigator.clipboard.writeText(generated);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function copiarPwd() {
+    if (!currentPassword) return;
+    await navigator.clipboard.writeText(currentPassword);
+    setCopied("pwd");
+    setTimeout(() => setCopied(null), 2000);
+  }
+
+  async function copiarMensaje() {
+    if (!currentPassword) return;
+    const msg =
+      `Hola ${nombre}, este es tu acceso a TRAMMOS Conductor:\n` +
+      `Enlace: https://tramos.online/conductor/login\n` +
+      `Cédula: ${cedula ?? "(tu cédula)"}\n` +
+      `Contraseña: ${currentPassword}`;
+    await navigator.clipboard.writeText(msg);
+    setCopied("msg");
+    setTimeout(() => setCopied(null), 2000);
   }
 
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={abrir}
         className="text-[11px] inline-flex items-center gap-1 text-primary hover:underline"
-        title="Generar contraseña para la app del conductor"
+        title="Ver / generar contraseña para la app del conductor"
       >
         <KeyRound className="h-3 w-3" /> Acceso app
       </button>
@@ -73,15 +124,80 @@ export function GenerarAccesoConductor({ conductorId, nombre }: { conductorId: s
           >
             <div>
               <h3 className="text-lg font-bold flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-primary" /> Generar acceso
+                <KeyRound className="h-5 w-5 text-primary" /> Acceso del conductor
               </h3>
               <p className="text-sm text-muted-foreground">{nombre}</p>
             </div>
 
-            {!generated ? (
+            {view === "loading" && (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            )}
+
+            {view === "view" && currentPassword && (
+              <>
+                <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 text-center space-y-3">
+                  <p className="text-xs text-muted-foreground">Contraseña actual del conductor:</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-2xl font-mono font-bold tracking-wider">
+                      {show ? currentPassword : "•".repeat(currentPassword.length)}
+                    </p>
+                    <button
+                      onClick={() => setShow((s) => !s)}
+                      className="text-muted-foreground hover:text-primary p-1"
+                      title={show ? "Ocultar" : "Mostrar"}
+                    >
+                      {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={copiarPwd}
+                      className="inline-flex items-center gap-1 text-sm text-primary font-semibold hover:underline"
+                    >
+                      {copied === "pwd" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copied === "pwd" ? "Copiada" : "Copiar contraseña"}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={copiarMensaje}
+                  className="w-full inline-flex items-center justify-center gap-2 text-sm px-3 py-2 rounded-md border border-border hover:bg-secondary"
+                >
+                  {copied === "msg" ? <Check className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+                  {copied === "msg" ? "Mensaje copiado" : "Copiar mensaje para WhatsApp"}
+                </button>
+
+                <p className="text-[11px] text-muted-foreground">
+                  Entra a <strong>tramos.online/conductor/login</strong> con la <strong>cédula</strong>{cedula ? ` (${cedula})` : ""} y esta contraseña.
+                </p>
+
+                <div className="flex gap-2 justify-between items-center pt-2 border-t border-border">
+                  <button
+                    onClick={() => {
+                      setView("edit");
+                      setPassword("");
+                      setError(null);
+                    }}
+                    className="text-xs inline-flex items-center gap-1 text-muted-foreground hover:text-destructive"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Regenerar contraseña
+                  </button>
+                  <button onClick={cerrar} className="text-sm px-3 py-1.5 rounded bg-primary text-primary-foreground">
+                    Listo
+                  </button>
+                </div>
+              </>
+            )}
+
+            {view === "edit" && (
               <>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Contraseña</label>
+                  <label className="text-sm font-medium">
+                    {currentPassword ? "Nueva contraseña" : "Contraseña"}
+                  </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -100,12 +216,15 @@ export function GenerarAccesoConductor({ conductorId, nombre }: { conductorId: s
                   </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground bg-secondary/50 rounded p-2">
-                  El conductor entrará a <strong>tramos.online/conductor/login</strong> con su <strong>cédula</strong> y esta contraseña.
-                  Comparte el enlace por WhatsApp.
+                  Quedará guardada y la podrás consultar aquí cuando la necesites. El conductor entra a{" "}
+                  <strong>tramos.online/conductor/login</strong> con su <strong>cédula</strong> y esta contraseña.
                 </p>
                 {error && <div className="text-sm text-destructive">{error}</div>}
                 <div className="flex gap-2 justify-end">
-                  <button onClick={cerrar} className="text-sm px-3 py-1.5 rounded text-muted-foreground">
+                  <button
+                    onClick={currentPassword ? () => setView("view") : cerrar}
+                    className="text-sm px-3 py-1.5 rounded text-muted-foreground"
+                  >
                     Cancelar
                   </button>
                   <button
@@ -114,29 +233,7 @@ export function GenerarAccesoConductor({ conductorId, nombre }: { conductorId: s
                     className="text-sm px-3 py-1.5 rounded bg-primary text-primary-foreground disabled:opacity-50 inline-flex items-center gap-1"
                   >
                     {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    Guardar y habilitar
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="rounded-lg border-2 border-success bg-success/5 p-4 text-center space-y-2">
-                  <p className="text-xs text-muted-foreground">Contraseña creada (cópiala ahora, no se mostrará otra vez):</p>
-                  <p className="text-2xl font-mono font-bold tracking-wider">{generated}</p>
-                  <button
-                    onClick={copiar}
-                    className="inline-flex items-center gap-1 text-sm text-primary font-semibold hover:underline"
-                  >
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copied ? "Copiado" : "Copiar"}
-                  </button>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Comparte: <strong>tramos.online/conductor/login</strong> · Usuario: cédula · Contraseña: la de arriba
-                </p>
-                <div className="flex justify-end">
-                  <button onClick={cerrar} className="text-sm px-3 py-1.5 rounded bg-primary text-primary-foreground">
-                    Listo
+                    Guardar
                   </button>
                 </div>
               </>

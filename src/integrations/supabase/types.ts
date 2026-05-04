@@ -198,6 +198,7 @@ export type Database = {
           licencia: string | null
           nombre: string
           password_hash: string | null
+          password_plain: string | null
           primer_login_at: string | null
           servicios: number | null
           telefono: string | null
@@ -220,6 +221,7 @@ export type Database = {
           licencia?: string | null
           nombre: string
           password_hash?: string | null
+          password_plain?: string | null
           primer_login_at?: string | null
           servicios?: number | null
           telefono?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           licencia?: string | null
           nombre?: string
           password_hash?: string | null
+          password_plain?: string | null
           primer_login_at?: string | null
           servicios?: number | null
           telefono?: string | null
@@ -1136,6 +1139,14 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_conductor_password: {
+        Args: { _conductor_id: string }
+        Returns: {
+          acceso_habilitado: boolean
+          password: string
+          primer_login_at: string
+        }[]
       }
       get_conductor_publico_por_nombre: {
         Args: { _nombre: string }
