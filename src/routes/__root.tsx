@@ -1,10 +1,15 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import appCss from "../styles.css?url";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { A11yProvider } from "../lib/a11y-context";
 import { ColorBlindFilters } from "../components/layout/ColorBlindFilters";
+import { useEnforcePolicyAcceptance } from "../lib/legal/use-enforce-acceptance";
+
+const PolicyReacceptModal = lazy(() =>
+  import("../components/legal/PolicyReacceptModal").then((m) => ({ default: m.PolicyReacceptModal })),
+);
 
 function NotFoundComponent() {
   return (
