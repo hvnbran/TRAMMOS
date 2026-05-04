@@ -481,6 +481,10 @@ function LoginPage() {
               )}
             </div>
           )}
+
+          <div className="mt-4 text-center">
+            <LegalLinks />
+          </div>
         </div>
       </div>
 
