@@ -1,18 +1,30 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PasajeroHeader } from "@/components/pasajero/PasajeroHeader";
 import { PedirServicioForm, type PasajeroPerfil } from "@/components/pasajero/PedirServicioForm";
 import { ViajeEnCurso, type EstadoSolicitud } from "@/components/pasajero/ViajeEnCurso";
 import { CalificarServicio } from "@/components/pasajero/CalificarServicio";
-import { ReportarIncidenteModal } from "@/components/pasajero/ReportarIncidenteModal";
-import { AccessibilityPanel } from "@/components/layout/AccessibilityPanel";
-import { TramiAssistant } from "@/components/TramiAssistant";
-import { InstallAppBanner } from "@/components/pasajero/InstallAppBanner";
 import { PasajeroHero } from "@/components/pasajero/PasajeroHero";
-import { PushNotificationsToggle } from "@/components/pasajero/PushNotificationsToggle";
 import { Loader2 } from "lucide-react";
+
+// Lazy: componentes no críticos para el LCP de /pasajero
+const ReportarIncidenteModal = lazy(() =>
+  import("@/components/pasajero/ReportarIncidenteModal").then((m) => ({ default: m.ReportarIncidenteModal })),
+);
+const AccessibilityPanel = lazy(() =>
+  import("@/components/layout/AccessibilityPanel").then((m) => ({ default: m.AccessibilityPanel })),
+);
+const TramiAssistant = lazy(() =>
+  import("@/components/TramiAssistant").then((m) => ({ default: m.TramiAssistant })),
+);
+const InstallAppBanner = lazy(() =>
+  import("@/components/pasajero/InstallAppBanner").then((m) => ({ default: m.InstallAppBanner })),
+);
+const PushNotificationsToggle = lazy(() =>
+  import("@/components/pasajero/PushNotificationsToggle").then((m) => ({ default: m.PushNotificationsToggle })),
+);
 
 export const Route = createFileRoute("/pasajero")({
   component: PasajeroPage,
@@ -418,13 +430,7 @@ function PasajeroPage() {
           />
         ) : (
           <>
-            <PasajeroHero
-              nombre={displayName || perfil.nombre}
-              onPedir={() => {
-                const el = document.getElementById("pedir-form");
-                el?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            />
+            <PasajeroHero nombre={displayName || perfil.nombre} />
             <div id="pedir-form">
               <PedirServicioForm
                 perfil={perfil}
@@ -437,19 +443,22 @@ function PasajeroPage() {
         )}
 
         <div className="mt-6 space-y-3">
-          {user && <PushNotificationsToggle userId={user.id} />}
-          <InstallAppBanner />
+          <Suspense fallback={null}>
+            {user && <PushNotificationsToggle userId={user.id} />}
+            <InstallAppBanner />
+          </Suspense>
         </div>
       </main>
-      <AccessibilityPanel />
-      <TramiAssistant />
-
-      <ReportarIncidenteModal
-        open={showIncidente}
-        saving={savingIncidente}
-        onClose={() => setShowIncidente(false)}
-        onSubmit={handleEnviarIncidente}
-      />
+      <Suspense fallback={null}>
+        <AccessibilityPanel />
+        <TramiAssistant />
+        <ReportarIncidenteModal
+          open={showIncidente}
+          saving={savingIncidente}
+          onClose={() => setShowIncidente(false)}
+          onSubmit={handleEnviarIncidente}
+        />
+      </Suspense>
     </div>
   );
 }
