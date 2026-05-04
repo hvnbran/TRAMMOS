@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CURRENT_POLICY_VERSION } from "./version";
+import { isLocallyAccepted, markLocallyAccepted } from "./record-acceptance";
 
 /**
  * Hook que verifica si el usuario actual ya aceptó la versión vigente de la
  * Política de Privacidad. Devuelve `needsReaccept = true` cuando hay sesión
  * activa pero la última aceptación es de una versión anterior (o no existe).
  *
- * `markAccepted()` se llama desde el modal tras aceptar, para ocultar la UI
- * inmediatamente sin esperar otro round-trip.
+ * Usa localStorage como respaldo: si el usuario ya aceptó en este dispositivo
+ * (aunque la consulta a DB falle), no le volvemos a mostrar el modal.
  */
 export function useEnforcePolicyAcceptance(userId: string | null | undefined) {
   const [needsReaccept, setNeedsReaccept] = useState(false);
@@ -22,6 +23,15 @@ export function useEnforcePolicyAcceptance(userId: string | null | undefined) {
         setChecked(true);
         return;
       }
+
+      // 1) Respaldo local: si ya aceptó en este dispositivo, no insistir.
+      if (isLocallyAccepted(userId)) {
+        setNeedsReaccept(false);
+        setChecked(true);
+        return;
+      }
+
+      // 2) Consultar DB
       const { data, error } = await supabase
         .from("policy_acceptances")
         .select("policy_version")
@@ -36,7 +46,12 @@ export function useEnforcePolicyAcceptance(userId: string | null | undefined) {
         setNeedsReaccept(false);
       } else {
         const latest = data?.[0]?.policy_version ?? null;
-        setNeedsReaccept(latest !== CURRENT_POLICY_VERSION);
+        const ok = latest === CURRENT_POLICY_VERSION;
+        if (ok) {
+          // Sincronizar con localStorage para no volver a consultar.
+          markLocallyAccepted(userId);
+        }
+        setNeedsReaccept(!ok);
       }
       setChecked(true);
     }
@@ -48,6 +63,9 @@ export function useEnforcePolicyAcceptance(userId: string | null | undefined) {
 
   return {
     needsReaccept: checked && needsReaccept,
-    markAccepted: () => setNeedsReaccept(false),
+    markAccepted: () => {
+      if (userId) markLocallyAccepted(userId);
+      setNeedsReaccept(false);
+    },
   };
 }
