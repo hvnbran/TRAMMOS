@@ -6,6 +6,9 @@ import banner from "@/assets/banner-trammos.png";
 import bannerCorona from "@/assets/banner-corona.png";
 import bannerSodimac from "@/assets/banner-sodimac.png";
 import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
+import { PolicyAcceptanceCheckbox } from "@/components/legal/PolicyAcceptanceCheckbox";
+import { LegalLinks } from "@/components/legal/LegalLinks";
+import { useRecordAcceptance } from "@/lib/legal/record-acceptance";
 
 const PasajeroWelcomeSplash = lazy(() =>
   import("@/components/pasajero/PasajeroWelcomeSplash").then((m) => ({ default: m.PasajeroWelcomeSplash })),
