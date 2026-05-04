@@ -143,6 +143,13 @@ function LoginPage() {
       return;
     }
 
+    // Registrar aceptación de Términos y Privacidad (no bloquea si falla).
+    void recordAcceptance({
+      types: ["terminos", "privacidad"],
+      contexto: "login_operador",
+      email,
+    });
+
     const displayName = preset ? preset.display_name : email.split("@")[0];
     const clientKey = preset ? preset.role : null;
     startSplashSequence(displayName, clientKey, "/");
