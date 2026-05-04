@@ -28,14 +28,13 @@ export function GenerarAccesoConductor({ conductorId, nombre }: { conductorId: s
     }
     setLoading(true);
     setError(null);
-    const { data, error: err } = await supabase.rpc("set_conductor_password", {
+    const { error: err } = await supabase.rpc("set_conductor_password", {
       _conductor_id: conductorId,
       _password: password,
     });
     setLoading(false);
-    const r = data as { ok?: boolean; error?: string } | null;
-    if (err || !r?.ok) {
-      setError(err?.message || r?.error || "Error al guardar");
+    if (err) {
+      setError(err.message || "Error al guardar");
       return;
     }
     setGenerated(password);
