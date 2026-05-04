@@ -1,8 +1,7 @@
-import { ArrowRight } from "lucide-react";
+import { memo, useMemo } from "react";
 
 interface PasajeroHeroProps {
   nombre: string;
-  onPedir: () => void;
 }
 
 /**
@@ -14,8 +13,8 @@ interface PasajeroHeroProps {
  *   - Carro entrando desde la izquierda con bounce + flotación sutil
  *   - Pines pulsantes sugiriendo ubicaciones activas
  */
-export function PasajeroHero({ nombre, onPedir }: PasajeroHeroProps) {
-  const primerNombre = (nombre || "").trim().split(/\s+/)[0] || "amigo";
+function PasajeroHeroBase({ nombre }: PasajeroHeroProps) {
+  const primerNombre = useMemo(() => (nombre || "").trim().split(/\s+/)[0] || "amigo", [nombre]);
 
   return (
     <section
@@ -180,19 +179,7 @@ export function PasajeroHero({ nombre, onPedir }: PasajeroHeroProps) {
           </svg>
         </div>
 
-        {/* CTA */}
-        <button
-          onClick={onPedir}
-          className="hero-text mt-2 group w-full h-14 rounded-2xl font-bold text-white text-base inline-flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-[0.98]"
-          style={{
-            ["--i" as string]: 4,
-            background: "linear-gradient(135deg, #00CAFF 0%, #0099CC 100%)",
-            boxShadow: "0 10px 30px -8px rgba(0, 153, 204, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)",
-          }}
-        >
-          Pedir mi carro
-          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-        </button>
+        {/* CTA removido: el formulario "Pedir mi carro" aparece justo debajo del hero. */}
 
         {/* Línea inferior decorativa - como el mapa del afiche */}
         <svg
@@ -215,3 +202,5 @@ export function PasajeroHero({ nombre, onPedir }: PasajeroHeroProps) {
     </section>
   );
 }
+
+export const PasajeroHero = memo(PasajeroHeroBase);

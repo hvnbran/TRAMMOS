@@ -1,94 +1,98 @@
 ## Objetivo
 
-Adoptar la identidad visual oficial de TRAMMOS (manual de marca) como guía maestra de diseño en toda la aplicación —tanto admin como pasajeros— y crear una pantalla de inicio del pasajero con la estética del afiche "Todo Colombia es territorio TRAMMOS" más una animación elegante.
+1. **Splash de bienvenida del pasajero**: cuando un pasajero inicia sesión correctamente, mostrar una pantalla animada con la imagen del afiche TRAMMOS ("Todo Colombia es territorio TRAMMOS" + carro) durante ~1.8s y luego redirigir automáticamente a `/pasajero` (pantalla de pedir carro).
+2. **Hero existente**: conservar el `PasajeroHero` actual pero **quitar el botón "Pedir mi carro"** (ya no será necesario porque el flujo entra directo al formulario; el hero queda como banner decorativo).
+3. **Optimizaciones de rendimiento** para aligerar el bundle y la primera carga.
 
-## 1. Sistema de color global (src/styles.css)
+---
 
-Reescribir las variables CSS para reflejar la **paleta oficial del manual**:
+## 1. Splash de bienvenida del pasajero
 
-- **Verde lima Pantone 389C** `#C6FF00` → color de **acento principal** y fondos hero (es el color insignia del afiche).
-- **Cyan Pantone 306C** `#00CAFF` → color **primario** (botones, links, estados activos, gradientes).
-- **Gradiente verde→azul lineal 0°** (del manual) → para hero, headers destacados, CTAs primarios.
-- **Gris K70** `#666666` y **gris K50** `#929496` → neutros de texto y bordes.
-- Blanco y negro puros para contraste (positivo/negativo del manual).
+### Asset
+- Copiar `user-uploads://image-2.png` a `src/assets/welcome-trammos.png` para usarlo como imagen del splash.
 
-Mapeo de tokens:
-- `--primary` = Cyan 306C
-- `--accent` = Lima 389C
-- `--secondary` = lima muy clara (10% opacidad sobre blanco)
-- Sidebar: mantener oscuro (gris K70 profundo) con detalles cyan/lima
-- Charts: 1=cyan, 2=lima, 3=verde-azul medio, 4=gris, 5=cyan oscuro
-- Nuevo token utilitario `--gradient-brand: linear-gradient(0deg, #00CAFF 0%, #C6FF00 100%)`
+### Componente nuevo: `src/components/pasajero/PasajeroWelcomeSplash.tsx`
+- Pantalla full-screen, fondo lima `#C6FF00`.
+- Imagen del afiche centrada con animación de entrada:
+  - `scale(0.92) → 1` + `opacity 0 → 1` en 600 ms (`ease-out`).
+  - Carro con un sutil "float" continuo (ya soportado en `styles.css`).
+- Texto inferior "Bienvenido, {nombre}" con `hero-text-rise`.
+- Barra de progreso fina cyan que se llena en 1.6 s.
+- Fade-out global a los 1.8 s y luego desmonta.
+- Acepta `onDone` callback.
+- Respeta `prefers-reduced-motion` (sin animaciones, redirección a 800 ms).
 
-## 2. Tipografía
+### Integración: `src/routes/login.tsx`
+- En el flujo del **pasajero** (después de validar OTP correctamente), en vez de navegar inmediatamente a `/pasajero`:
+  - Setear `setSplashClient("pasajero")` y `setShowSplash(true)` (ya existe la infraestructura `showSplash` en `LoginPage`).
+  - Renderizar `<PasajeroWelcomeSplash nombre={...} onDone={() => navigate({ to: "/pasajero" })} />` cuando `showSplash && splashClient === "pasajero"`.
+- El splash de operadores (corona/sodimac/admin) actual no se toca.
 
-El manual exige **BW Seido Round** (Light/Bold/Black). Como esa fuente es comercial y no está en Google Fonts, usaremos **Quicksand** como sustituto fiel (sans-serif redondeada, mismo carácter geométrico-amigable). Se carga vía Google Fonts en `__root.tsx` y se aplica como `--font-display` y `--font-body`. Headings en `Quicksand 700/900`, body en `400/500`.
+---
 
-## 3. Componentes globales afectados
+## 2. Ajuste al `PasajeroHero`
 
-Auditar y ajustar para que respeten los nuevos tokens (sin tocar lógica):
-- `src/components/layout/Sidebar.tsx` — usar acento lima en item activo + indicador cyan.
-- `src/components/ui/button.tsx` (variantes) — variante `default` cyan, nueva variante `brand` con gradiente verde→azul.
-- Headers de admin (`PasajeroHeader`, dashboards) — degradado de marca sutil.
-- Email templates (`src/lib/email-templates/_brand.ts`) — actualizar hex a oficiales `#00CAFF` / `#C6FF00`.
+Archivo: `src/components/pasajero/PasajeroHero.tsx`
+- Eliminar el botón "Pedir mi carro" y el icono `ArrowRight` (import).
+- Eliminar la prop `onPedir` de `PasajeroHeroProps` (queda solo `nombre`).
+- Mantener: fondo lima, mapa SVG animado, carro animado, textos, línea decorativa inferior. El hero queda como banner.
 
-## 4. Nueva pantalla de inicio del pasajero
+Archivo: `src/routes/pasajero.tsx`
+- Quitar el `onPedir` y el `id="pedir-form"` ya no es necesario (pero no estorba — lo dejamos por compatibilidad de scroll).
+- `<PasajeroHero nombre={...} />` sin callback.
+- El formulario `PedirServicioForm` queda inmediatamente debajo del hero, así que el usuario lo ve enseguida tras el splash.
 
-Rediseñar el bloque superior de `src/routes/pasajero.tsx` (cuando no hay viaje activo) con un **Hero a pantalla completa** inspirado en el afiche subido:
+---
 
-```
-+--------------------------------------------------+
-|  [fondo lima #C6FF00 con líneas-mapa decorativas]|
-|                                                  |
-|   Hola, {nombre}                                 |
-|   Todo Colombia                                  |
-|   es territorio                                  |
-|   TRAMMOS                            (cyan bold) |
-|                                                  |
-|         🚗 ← carro animado deslizándose         |
-|                                                  |
-|   [ Pedir mi carro ]   ← botón cyan grande      |
-+--------------------------------------------------+
-```
+## 3. Optimizaciones de rendimiento
 
-### Mejoras sobre el boceto original
-1. **Mapa SVG animado** en el fondo (líneas curvas estilo trayecto del afiche) que se "dibujan" con `stroke-dashoffset` al cargar — refuerza el concepto "tramo entre A y B" del manual.
-2. **Carro SVG** que entra desde la izquierda (`translateX` + bounce suave) y queda flotando con un `float` sutil de 3px.
-3. **Texto en stagger**: "Hola" → "Todo Colombia" → "es territorio" → "TRAMMOS" aparecen en cascada (50ms de retardo cada uno) usando la utilidad `.stagger-item` ya existente.
-4. **Marcadores pulsantes** (puntos cyan) sobre el mapa en posiciones aleatorias — sugieren ubicaciones activas.
-5. **CTA "Pedir mi carro"** con gradiente cyan→lima invertido y `soft-glow` ya definido en styles.
+### 3.1 Lazy-load de componentes pesados en `/pasajero`
+Convertir a `React.lazy` + `Suspense` con fallback ligero:
+- `TramiAssistant` (chatbot, no crítico para LCP).
+- `ReportarIncidenteModal` (solo se monta al abrir).
+- `AccessibilityPanel` (panel desplegable).
+- `InstallAppBanner`, `PushNotificationsToggle` (debajo del fold).
 
-### Nuevo componente
-- `src/components/pasajero/PasajeroHero.tsx` — encapsula el hero animado, recibe `nombre` y `onPedirCarro`.
-- `src/assets/hero-mapa.svg` — líneas decorativas del mapa (creadas a mano, ~6 curvas Bézier).
-- `src/assets/hero-carro.svg` — silueta del carro estilizada en blanco con detalle cyan/lima como en el afiche.
+Esto reduce el JS inicial de la ruta `/pasajero` significativamente (chatbot y modales suelen ser los más pesados).
 
-El formulario `PedirServicioForm` se muestra al pulsar el CTA (modal/sheet) o debajo del hero al hacer scroll, manteniendo toda la lógica actual intacta.
+### 3.2 Lazy-load del splash en login
+- `PasajeroWelcomeSplash` con `React.lazy` para que no infle el bundle de `/login`.
 
-## 5. Memoria de marca
+### 3.3 Optimización de imágenes
+- Para `welcome-trammos.png`: importar con `?w=720&format=webp` (ya soportado por Vite si está disponible) o, alternativamente, agregar `loading="eager"` + `decoding="async"` y `fetchPriority="high"` solo en el splash. En el resto de imágenes (`banner-trammos`, `banner-corona`, `banner-sodimac`) marcar `loading="lazy"` y `decoding="async"`.
 
-Actualizar `mem://design/brand-colors` con los hex oficiales del manual (`#C6FF00`, `#00CAFF`, `#666666`) y registrar la regla "lima como acento protagonista en superficies hero del pasajero".
+### 3.4 Realtime subscription cleanup
+- Verificar (en `pasajero.tsx`) que el canal `solicitudes-pasajero-self` se suscribe solo cuando hay `user`. Ya está, pero añadir guard para evitar re-suscripciones innecesarias.
 
-## 6. Archivos a crear/modificar
+### 3.5 Memoización menor
+- Envolver `PasajeroHero` en `React.memo` (props estables = solo `nombre`).
+- `useMemo` para `primerNombre` dentro del Hero (evita split en cada render).
 
-**Crear:**
-- `src/components/pasajero/PasajeroHero.tsx`
-- `src/assets/hero-mapa.svg`
-- `src/assets/hero-carro.svg`
+### 3.6 Reducir trabajo en el efecto del fetch de info del vehículo
+- Saltar el RPC `get_vehiculo_publico_por_placa` si la `placa` no cambió (ya lo hace por dependencia, pero añadir early-return si `vehiculoInfo?.foto_url` ya corresponde a la misma placa cacheada en un `useRef`).
 
-**Modificar:**
-- `src/styles.css` (paleta + gradiente + tipografía)
-- `src/routes/__root.tsx` (cargar Quicksand desde Google Fonts)
-- `src/routes/pasajero.tsx` (montar `PasajeroHero` antes del formulario)
-- `src/lib/email-templates/_brand.ts` (hex oficiales)
-- `src/components/ui/button.tsx` (variante `brand` con gradiente)
-- `mem://design/brand-colors` (refresh)
+### 3.7 Service worker / PWA
+- Confirmar que `public/sw.js` cachea las rutas estáticas básicas (no se modifica si ya lo hace; solo verificación, no cambio invasivo).
 
-## 7. Verificación
+---
 
-Tras los cambios revisaré con el navegador:
-1. `/pasajero` — el hero debe verse limpio con animaciones suaves.
-2. `/` (admin) — sidebar y dashboards deben mostrar la nueva paleta sin romper layouts.
-3. Modo oscuro / accesibilidad — confirmar contraste WCAG AA (lima sobre blanco no se usa para texto pequeño; siempre como fondo o icono grande).
+## Archivos a crear / modificar
 
-¿Apruebas el plan para que lo implemente?
+**Crear**
+- `src/assets/welcome-trammos.png` (copia de la imagen subida)
+- `src/components/pasajero/PasajeroWelcomeSplash.tsx`
+
+**Modificar**
+- `src/routes/login.tsx` — disparar splash en flujo pasajero
+- `src/components/pasajero/PasajeroHero.tsx` — quitar CTA, memo
+- `src/routes/pasajero.tsx` — `lazy()` de componentes pesados, hero sin callback
+
+---
+
+## Resultado esperado
+
+- Pasajero hace login → ve un splash branded ~1.8s con la imagen TRAMMOS → aterriza directamente en la pantalla de pedir carro.
+- El hero decorativo sigue ahí pero sin botón redundante.
+- La página `/pasajero` carga más rápido al diferir chat, modales y paneles auxiliares.
+
+¿Apruebas?
