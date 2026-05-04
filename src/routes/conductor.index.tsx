@@ -1,8 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ConductorLayout } from "@/components/conductor/ConductorLayout";
 import { Calendar, MapPin, Clock, ChevronRight, Loader2, Inbox } from "lucide-react";
+
+const InstallAppBanner = lazy(() =>
+  import("@/components/conductor/InstallAppBanner").then((m) => ({ default: m.InstallAppBanner })),
+);
+const PushNotificationsToggle = lazy(() =>
+  import("@/components/conductor/PushNotificationsToggle").then((m) => ({ default: m.PushNotificationsToggle })),
+);
 
 export const Route = createFileRoute("/conductor/")({
   component: ConductorHome,
