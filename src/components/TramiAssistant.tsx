@@ -1,22 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { Mic, MicOff, X, Send, Loader2, Volume2 } from "lucide-react";
+import { Mic, MicOff, X, Send, Loader2, Volume2, Brain, Search, Check } from "lucide-react";
 import { TramiAvatar } from "@/components/trami/TramiAvatar";
-import { classifyIntent, askTrami } from "@/lib/trami-client";
+import { chatWithTrami, loadTramiHistory } from "@/lib/trami-client";
+import { useTramiContext } from "@/hooks/useTramiContext";
 
-type Msg = { from: "user" | "trami"; text: string; intent?: string };
-
-const INTENT_ROUTES: Record<string, string> = {
-  consultar_eta: "/operacion",
-  ver_servicios: "/servicios",
-  registrar_pasajero: "/pasajeros-pcd",
-  reportar_problema: "/alertas",
-  boton_panico: "/alertas",
-  ayuda_general: "/",
+type Msg = {
+  from: "user" | "trami" | "tool";
+  text: string;
+  toolName?: string;
 };
 
-// Web Speech API types (browser-only, mantenemos any para compatibilidad)
-type SpeechRec = typeof window extends { SpeechRecognition: infer T } ? T : unknown;
+type LoadingStep = "idle" | "thinking" | "consultando_viaje" | "consultando_historial" | "respondiendo";
+
+const STEP_LABELS: Record<Exclude<LoadingStep, "idle">, { label: string; icon: typeof Brain }> = {
+  thinking: { label: "TRAMI está pensando…", icon: Brain },
+  consultando_viaje: { label: "Consultando tu viaje…", icon: Search },
+  consultando_historial: { label: "Revisando tu historial…", icon: Search },
+  respondiendo: { label: "Preparando respuesta…", icon: Check },
+};
+
+const TOOL_TO_STEP: Record<string, LoadingStep> = {
+  consultar_mi_viaje_activo: "consultando_viaje",
+  consultar_mis_servicios_recientes: "consultando_historial",
+};
 
 declare global {
   interface Window {
@@ -40,39 +46,65 @@ function speak(text: string) {
   synth.speak(u);
 }
 
-/**
- * TRAMI — Asistente accesible flotante con voz y texto.
- * Usa Web Speech API para escuchar y leer en voz alta.
- * Clasifica intención con IA y sugiere navegar a la sección correcta.
- */
 export function TramiAssistant() {
-  const navigate = useNavigate();
+  const pageContext = useTramiContext();
   const [open, setOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<LoadingStep>("idle");
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([
     {
       from: "trami",
       text:
-        "Hola, soy TRAMI. Puedo ayudarte a moverte por TRAMMOS. " +
-        "Pulsa el micrófono y di lo que necesitas, o escríbeme.",
+        "Hola, soy TRAMI. Recuerdo nuestra conversación y puedo consultar tu viaje. " +
+        "Pulsa el micrófono o escríbeme.",
     },
   ]);
-  const recognitionRef = useRef<unknown>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const historyLoaded = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loadingStep]);
+
+  // Cargar historial cuando se abre por primera vez
+  useEffect(() => {
+    if (!open || historyLoaded.current) return;
+    historyLoaded.current = true;
+    (async () => {
+      try {
+        const { conversationId: cid, messages: hist } = await loadTramiHistory();
+        if (cid && hist.length > 0) {
+          setConversationId(cid);
+          const restored: Msg[] = hist
+            .filter((m) => m.role === "user" || m.role === "assistant")
+            .map((m) => ({
+              from: m.role === "user" ? "user" : "trami",
+              text: m.content,
+            }));
+          if (restored.length > 0) {
+            setMessages([
+              {
+                from: "trami",
+                text: `Hola otra vez. Aquí está nuestra conversación reciente:`,
+              },
+              ...restored,
+            ]);
+          }
+        }
+      } catch (e) {
+        console.warn("trami history", e);
+      }
+    })();
+  }, [open]);
 
   function startListening() {
     const Ctor = getRecognitionCtor();
     if (!Ctor) {
-      setMessages((m) => [
-        ...m,
-        { from: "trami", text: "Tu navegador no soporta entrada por voz. Por favor escríbeme." },
-      ]);
+      setMessages((m) => [...m, { from: "trami", text: "Tu navegador no soporta voz. Escríbeme." }]);
       return;
     }
     try {
@@ -87,9 +119,7 @@ export function TramiAssistant() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       rec.onresult = (e: any) => {
         const transcript = e.results?.[0]?.[0]?.transcript ?? "";
-        if (transcript) {
-          handleSend(transcript);
-        }
+        if (transcript) handleSend(transcript);
       };
       recognitionRef.current = rec;
       rec.start();
@@ -100,46 +130,57 @@ export function TramiAssistant() {
   }
 
   function stopListening() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rec = recognitionRef.current as any;
-    if (rec?.stop) rec.stop();
+    recognitionRef.current?.stop?.();
     setListening(false);
   }
 
   async function handleSend(textRaw?: string) {
     const text = (textRaw ?? input).trim();
-    if (!text || loading) return;
+    if (!text || loadingStep !== "idle") return;
     setInput("");
     setMessages((m) => [...m, { from: "user", text }]);
-    setLoading(true);
-    try {
-      // 1. Clasifica intención
-      const intent = await classifyIntent(text);
-      const reply = intent.respuesta_corta || "Aquí estoy para ayudarte.";
-      setMessages((m) => [...m, { from: "trami", text: reply, intent: intent.intent }]);
-      speak(reply);
+    setLoadingStep("thinking");
 
-      // 2. Si hay ruta sugerida, ofrécela
-      const route = intent.accion_sugerida || INTENT_ROUTES[intent.intent];
-      if (route && route !== window.location.pathname) {
-        setTimeout(() => {
-          // navegamos automáticamente excepto en pánico (más adelante en Fase D)
-          if (intent.intent !== "boton_panico") {
-            try {
-              navigate({ to: route });
-            } catch {
-              // ignore si la ruta no existe
-            }
-          }
-        }, 1200);
+    // Pequeña heurística para anticipar el paso visible mientras llega la respuesta
+    const lower = text.toLowerCase();
+    if (/(viaje|carro|conductor|llega|cuando|donde está)/.test(lower)) {
+      setTimeout(() => setLoadingStep((s) => (s === "thinking" ? "consultando_viaje" : s)), 600);
+    } else if (/(historial|últimos|anteriores|pasados)/.test(lower)) {
+      setTimeout(() => setLoadingStep((s) => (s === "thinking" ? "consultando_historial" : s)), 600);
+    }
+
+    try {
+      const res = await chatWithTrami(text, conversationId, pageContext);
+
+      // Mostrar qué herramientas usó (transparencia)
+      if (res.tools_used.length > 0) {
+        const last = res.tools_used[res.tools_used.length - 1];
+        setLoadingStep(TOOL_TO_STEP[last] ?? "respondiendo");
+        await new Promise((r) => setTimeout(r, 350));
+        setLoadingStep("respondiendo");
+        await new Promise((r) => setTimeout(r, 250));
+
+        for (const t of res.tools_used) {
+          setMessages((m) => [
+            ...m,
+            { from: "tool", toolName: t, text: t === "consultar_mi_viaje_activo" ? "Consulté tu viaje activo" : "Consulté tu historial" },
+          ]);
+        }
       }
+
+      if (res.conversationId) setConversationId(res.conversationId);
+      setMessages((m) => [...m, { from: "trami", text: res.reply }]);
+      speak(res.reply);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Hubo un error con el asistente.";
       setMessages((m) => [...m, { from: "trami", text: msg }]);
     } finally {
-      setLoading(false);
+      setLoadingStep("idle");
     }
   }
+
+  const stepInfo = loadingStep !== "idle" ? STEP_LABELS[loadingStep] : null;
+  const StepIcon = stepInfo?.icon;
 
   return (
     <>
@@ -150,13 +191,7 @@ export function TramiAssistant() {
         className="group fixed bottom-5 right-24 z-50 h-16 w-16 rounded-full bg-white border-2 border-primary/30 shadow-xl flex items-center justify-center overflow-hidden hover:scale-110 hover:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/40 transition-all"
         title="Hola, soy TRAMI"
       >
-        <TramiAvatar
-          state="wave"
-          size="sm"
-          bobbing
-          className="h-14 w-14 group-hover:scale-110 transition-transform"
-          alt=""
-        />
+        <TramiAvatar state="wave" size="sm" bobbing className="h-14 w-14 group-hover:scale-110 transition-transform" alt="" />
       </button>
 
       {open && (
@@ -174,24 +209,22 @@ export function TramiAssistant() {
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-full bg-white border-2 border-primary/40 flex items-center justify-center overflow-hidden shrink-0">
                   <TramiAvatar
-                    state={loading ? "thinking" : "wave"}
+                    state={loadingStep !== "idle" ? "thinking" : "wave"}
                     size="sm"
                     className="h-11 w-11"
                     alt=""
                   />
                 </div>
                 <div>
-                  <h2 id="trami-title" className="text-sm font-semibold text-foreground">
-                    TRAMI
-                  </h2>
-                  <p className="text-[11px] text-muted-foreground">Tu ayudante TRAMMOS · Accesible</p>
+                  <h2 id="trami-title" className="text-sm font-semibold text-foreground">TRAMI</h2>
+                  <p className="text-[11px] text-muted-foreground">
+                    {conversationId ? "Recuerdo tu conversación · " : ""}
+                    {pageContext.seccion as string}
+                  </p>
                 </div>
               </div>
               <button
-                onClick={() => {
-                  stopListening();
-                  setOpen(false);
-                }}
+                onClick={() => { stopListening(); setOpen(false); }}
                 aria-label="Cerrar TRAMI"
                 className="h-8 w-8 rounded-md hover:bg-muted flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
@@ -200,45 +233,53 @@ export function TramiAssistant() {
             </div>
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
-                      m.from === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-muted text-foreground rounded-bl-sm"
-                    }`}
-                  >
-                    {m.text}
-                    {m.from === "trami" && (
-                      <button
-                        type="button"
-                        onClick={() => speak(m.text)}
-                        aria-label="Leer en voz alta"
-                        className="ml-2 inline-flex items-center text-muted-foreground hover:text-primary"
-                      >
-                        <Volume2 className="h-3 w-3" aria-hidden="true" />
-                      </button>
-                    )}
+              {messages.map((m, i) => {
+                if (m.from === "tool") {
+                  return (
+                    <div key={i} className="flex justify-start">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-[11px] text-primary">
+                        <Search className="h-3 w-3" aria-hidden="true" />
+                        {m.text}
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                        m.from === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-muted text-foreground rounded-bl-sm"
+                      }`}
+                    >
+                      {m.text}
+                      {m.from === "trami" && (
+                        <button
+                          type="button"
+                          onClick={() => speak(m.text)}
+                          aria-label="Leer en voz alta"
+                          className="ml-2 inline-flex items-center text-muted-foreground hover:text-primary"
+                        >
+                          <Volume2 className="h-3 w-3" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {loading && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                );
+              })}
+
+              {stepInfo && StepIcon && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-full px-3 py-1.5 w-fit animate-pulse">
+                  <StepIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{stepInfo.label}</span>
                   <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-                  TRAMI está pensando…
                 </div>
               )}
             </div>
 
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSend();
-              }}
+              onSubmit={(e) => { e.preventDefault(); handleSend(); }}
               className="p-3 border-t border-border flex items-center gap-2"
             >
               <button
@@ -258,13 +299,14 @@ export function TramiAssistant() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={listening ? "Escuchando…" : "Escribe o usa la voz…"}
+                placeholder={listening ? "Escuchando…" : "Pregúntame por tu viaje…"}
                 aria-label="Mensaje para TRAMI"
-                className="flex-1 h-11 rounded-full border border-input bg-background px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                disabled={loadingStep !== "idle"}
+                className="flex-1 h-11 rounded-full border border-input bg-background px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
               />
               <button
                 type="submit"
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || loadingStep !== "idle"}
                 aria-label="Enviar"
                 className="h-11 w-11 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shrink-0 disabled:opacity-50 hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
