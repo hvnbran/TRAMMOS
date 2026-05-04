@@ -274,7 +274,14 @@ function LoginPage() {
       return;
     }
     // Link to pasajero profile + assign role
-    await supabase.rpc("link_pasajero_to_auth");
+    const linkResp = await supabase.rpc("link_pasajero_to_auth");
+    const pasajeroId = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
+    void recordAcceptance({
+      types: ["terminos", "privacidad"],
+      contexto: "login_pasajero",
+      email,
+      pasajeroId,
+    });
     setPLoading(false);
     startSplashSequence(pEmail.split("@")[0], "pasajero", "/pasajero");
   };
