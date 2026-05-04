@@ -930,6 +930,77 @@ export type Database = {
         }
         Relationships: []
       }
+      trami_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trami_messages: {
+        Row: {
+          content: string
+          context_snapshot: Json | null
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          tool_name: string | null
+          tool_payload: Json | null
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          context_snapshot?: Json | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          tool_name?: string | null
+          tool_payload?: Json | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          context_snapshot?: Json | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          tool_name?: string | null
+          tool_payload?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trami_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "trami_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
