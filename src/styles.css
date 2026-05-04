@@ -437,3 +437,18 @@ html.a11y-picto-mode .picto-hide-on-pictomode {
 html.a11y-picto-mode [role="img"] {
   outline: 2px solid transparent;
 }
+
+/* TRAMI mascot animations */
+@keyframes trami-bob {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-4px) rotate(1deg); }
+}
+@keyframes trami-peek {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.animate-trami-bob  { animation: trami-bob 3.6s ease-in-out infinite; }
+.animate-trami-peek { animation: trami-peek 320ms cubic-bezier(.2,.7,.2,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-trami-bob, .animate-trami-peek { animation: none !important; }
+}
