@@ -35,7 +35,9 @@ export const Route = createFileRoute("/api/public/conductor-login")({
               { status: 500 },
             );
           }
-          const v = verify as { ok?: boolean; error?: string; nombre?: string } | null;
+          const v = Array.isArray(verify)
+            ? (verify[0] as { ok?: boolean; error?: string; nombre?: string } | undefined)
+            : (verify as { ok?: boolean; error?: string; nombre?: string } | null);
           if (!v?.ok) {
             return Response.json({ error: v?.error ?? "credenciales" }, { status: 401 });
           }
