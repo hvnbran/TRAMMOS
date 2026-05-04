@@ -51,7 +51,6 @@ function ConductorLoginPage() {
       // 2. Verificar el token (inicia sesión en Supabase)
       const { error: otpErr } = await supabase.auth.verifyOtp({
         type: "magiclink",
-        email: json.email,
         token_hash: json.token_hash,
       });
       if (otpErr) {
