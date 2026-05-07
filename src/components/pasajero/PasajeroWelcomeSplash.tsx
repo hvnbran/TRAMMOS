@@ -61,15 +61,9 @@ export function PasajeroWelcomeSplash({ nombre, onDone, durationMs = 1800 }: Pro
         />
 
         {primerNombre && (
-          <div className="welcome-rise flex items-center gap-3">
-            <TramiAvatar state="wave" size="md" bobbing alt="" />
-            <div className="rounded-2xl bg-white px-4 py-2 shadow-md relative">
-              <span className="absolute -left-2 top-1/2 -translate-y-1/2 h-3 w-3 rotate-45 bg-white" />
-              <p className="text-[#0099CC] font-bold text-base">
-                ¡Hola, {primerNombre}!
-              </p>
-              <p className="text-[#00798F] text-xs">Soy TRAMI, te acompaño</p>
-            </div>
+          <div className="welcome-rise rounded-2xl bg-white px-4 py-2 shadow-md">
+            <p className="text-[#0099CC] font-bold text-base">¡Hola, {primerNombre}!</p>
+            <p className="text-[#00798F] text-xs">Bienvenido a TRAMMOS</p>
           </div>
         )}
 

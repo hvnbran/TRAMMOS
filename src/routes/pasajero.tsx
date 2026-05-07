@@ -9,6 +9,7 @@ import { CalificarServicio } from "@/components/pasajero/CalificarServicio";
 import { PasajeroHero } from "@/components/pasajero/PasajeroHero";
 import { Loader2 } from "lucide-react";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { TRAMI_ENABLED } from "@/lib/feature-flags";
 
 // Lazy: componentes no críticos para el LCP de /pasajero
 const ReportarIncidenteModal = lazy(() =>
@@ -453,7 +454,7 @@ function PasajeroPage() {
       <SiteFooter variant="compact" />
       <Suspense fallback={null}>
         <AccessibilityPanel />
-        <TramiAssistant />
+        {TRAMI_ENABLED && <TramiAssistant />}
         <ReportarIncidenteModal
           open={showIncidente}
           saving={savingIncidente}
