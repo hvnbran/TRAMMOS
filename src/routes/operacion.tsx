@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AdminOnly } from "../components/layout/AdminOnly";
-import { Plus, MapPin, Building2, DollarSign, Inbox, Trash2, Loader2, X } from "lucide-react";
+import { Plus, MapPin, Building2, DollarSign, Inbox, Trash2, Loader2, X, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { TarifaEditable } from "@/components/operacion/TarifaEditable";
+import { ImportarExcelModal } from "@/components/operacion/ImportarExcelModal";
 
 
 export const Route = createFileRoute("/operacion")({
