@@ -169,13 +169,22 @@ function Operacion() {
             <h1 className="text-2xl font-bold">Operación</h1>
             <p className="text-sm text-muted-foreground">Centros de costo, rutas y tarifas</p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva Ruta
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary transition-colors"
+            >
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva Ruta
+            </button>
+          </div>
         </div>
 
         {/* Las solicitudes entrantes en vivo se gestionan ahora desde "Servicios" */}
@@ -252,7 +261,13 @@ function Operacion() {
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTipoBadge(cc.tipo)}`}>{cc.tipo}</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium">{formatCOP(cc.tarifa)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <TarifaEditable
+                          id={cc.id}
+                          value={cc.tarifa}
+                          onSaved={(v) => setRows((rs) => rs.map((r) => (r.id === cc.id ? { ...r, tarifa: v } : r)))}
+                        />
+                      </td>
                       <td className="px-4 py-3 text-right">{srvMesFor(cc)}</td>
                       <td className="px-4 py-3">
                         <button
