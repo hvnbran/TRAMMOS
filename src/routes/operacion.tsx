@@ -418,6 +418,14 @@ function Operacion() {
           </form>
         </div>
       )}
+
+      {showImport && (
+        <ImportarExcelModal
+          defaultCliente={cliente ?? null}
+          onClose={() => setShowImport(false)}
+          onDone={() => void load()}
+        />
+      )}
     </AppLayout>
   );
 }
