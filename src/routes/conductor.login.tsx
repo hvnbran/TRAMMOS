@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, KeyRound, IdCard, Truck } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { TramiAvatar } from "@/components/trami/TramiAvatar";
+
 
 export const Route = createFileRoute("/conductor/login")({
   component: ConductorLoginPage,

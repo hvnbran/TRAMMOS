@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import welcomeImg from "@/assets/welcome-trammos.png";
-import { TramiAvatar } from "@/components/trami/TramiAvatar";
+
 
 interface Props {
   nombre?: string;

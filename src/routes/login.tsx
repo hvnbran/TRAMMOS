@@ -8,7 +8,7 @@ import bannerSodimac from "@/assets/banner-sodimac.png";
 import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
 import { PolicyAcceptanceCheckbox } from "@/components/legal/PolicyAcceptanceCheckbox";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { TramiAvatar } from "@/components/trami/TramiAvatar";
+
 import { useRecordAcceptance } from "@/lib/legal/record-acceptance";
 
 const PasajeroWelcomeSplash = lazy(() =>
