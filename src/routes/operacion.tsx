@@ -61,6 +61,7 @@ function Operacion() {
   const [rows, setRows] = useState<CentroCosto[]>([]);
   const [serviciosMesByCC, setServiciosMesByCC] = useState<Map<string, number>>(new Map());
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     codigo: "",
