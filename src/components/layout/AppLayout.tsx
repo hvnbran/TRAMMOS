@@ -6,6 +6,7 @@ import { useLocation } from "@tanstack/react-router";
 import { AccessibilityPanel } from "./AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { SiteFooter } from "./SiteFooter";
+import { TRAMI_ENABLED } from "@/lib/feature-flags";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
@@ -62,7 +63,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <AccessibilityPanel />
-      <TramiAssistant />
+      {TRAMI_ENABLED && <TramiAssistant />}
     </div>
   );
 }

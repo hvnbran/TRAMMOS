@@ -8,7 +8,7 @@ import bannerSodimac from "@/assets/banner-sodimac.png";
 import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
 import { PolicyAcceptanceCheckbox } from "@/components/legal/PolicyAcceptanceCheckbox";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { TramiAvatar } from "@/components/trami/TramiAvatar";
+
 import { useRecordAcceptance } from "@/lib/legal/record-acceptance";
 
 const PasajeroWelcomeSplash = lazy(() =>
@@ -388,14 +388,9 @@ function LoginPage() {
             <div className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
               {pStep === "email" ? (
                 <form onSubmit={handleRequestCode} className="space-y-4">
-                  <div className="flex items-center justify-center gap-3 -mt-2">
-                    <TramiAvatar state="wave" size="md" bobbing alt="" />
-                    <div className="text-left">
-                      <h2 className="text-base font-semibold text-foreground">¡Hola! Soy TRAMI</h2>
-                      <p className="text-xs text-muted-foreground">
-                        Te acompaño a pedir tu carro. Sin contraseñas que recordar.
-                      </p>
-                    </div>
+                  <div className="text-center -mt-2">
+                    <h2 className="text-base font-semibold text-foreground">Pide tu carro</h2>
+                    <p className="text-xs text-muted-foreground">Sin contraseñas que recordar.</p>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">

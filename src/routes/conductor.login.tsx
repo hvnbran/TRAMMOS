@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, KeyRound, IdCard, Truck } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { SiteFooter } from "@/components/layout/SiteFooter";
-import { TramiAvatar } from "@/components/trami/TramiAvatar";
+
 
 export const Route = createFileRoute("/conductor/login")({
   component: ConductorLoginPage,
@@ -97,12 +97,6 @@ function ConductorLoginPage() {
             App Conductor
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Acceso privado para conductores TRAMMOS</p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-card border border-border px-3 py-1.5 shadow-sm">
-            <TramiAvatar state="wave" size="xs" alt="" />
-            <span className="text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">TRAMI</span> te acompaña en la ruta
-            </span>
-          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 shadow-lg space-y-4">

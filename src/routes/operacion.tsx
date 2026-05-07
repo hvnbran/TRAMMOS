@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppLayout } from "../components/layout/AppLayout";
 import { AdminOnly } from "../components/layout/AdminOnly";
-import { Plus, MapPin, Building2, DollarSign, Inbox, Trash2, Loader2, X } from "lucide-react";
+import { Plus, MapPin, Building2, DollarSign, Inbox, Trash2, Loader2, X, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { TarifaEditable } from "@/components/operacion/TarifaEditable";
+import { ImportarExcelModal } from "@/components/operacion/ImportarExcelModal";
 
 
 export const Route = createFileRoute("/operacion")({
@@ -49,9 +51,6 @@ function getTipoBadge(tipo: string) {
   }
 }
 
-function formatCOP(n: number) {
-  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-}
 
 function Operacion() {
   const { cliente } = useAuth();
@@ -59,6 +58,7 @@ function Operacion() {
   const [rows, setRows] = useState<CentroCosto[]>([]);
   const [serviciosMesByCC, setServiciosMesByCC] = useState<Map<string, number>>(new Map());
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     codigo: "",
@@ -166,13 +166,22 @@ function Operacion() {
             <h1 className="text-2xl font-bold">Operación</h1>
             <p className="text-sm text-muted-foreground">Centros de costo, rutas y tarifas</p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva Ruta
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium hover:bg-secondary transition-colors"
+            >
+              <Upload className="h-4 w-4" />
+              Importar Excel
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva Ruta
+            </button>
+          </div>
         </div>
 
         {/* Las solicitudes entrantes en vivo se gestionan ahora desde "Servicios" */}
@@ -249,7 +258,13 @@ function Operacion() {
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTipoBadge(cc.tipo)}`}>{cc.tipo}</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium">{formatCOP(cc.tarifa)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <TarifaEditable
+                          id={cc.id}
+                          value={cc.tarifa}
+                          onSaved={(v) => setRows((rs) => rs.map((r) => (r.id === cc.id ? { ...r, tarifa: v } : r)))}
+                        />
+                      </td>
                       <td className="px-4 py-3 text-right">{srvMesFor(cc)}</td>
                       <td className="px-4 py-3">
                         <button
@@ -399,6 +414,14 @@ function Operacion() {
             </div>
           </form>
         </div>
+      )}
+
+      {showImport && (
+        <ImportarExcelModal
+          defaultCliente={cliente ?? null}
+          onClose={() => setShowImport(false)}
+          onDone={() => void load()}
+        />
       )}
     </AppLayout>
   );
