@@ -1,89 +1,68 @@
-## Objetivo
+## Mejoras al módulo de Operación: filtros + paginación
 
-Tres cambios en TRAMMOS:
+Reorganizar la tabla de rutas en `src/routes/operacion.tsx` para que sea fácil encontrar y editar rutas cuando hay cientos (como las 283 de Bogotá).
 
-1. **Apagar TRAMI** (la mascota IA) sin borrar el código — se reactiva más adelante.
-2. **Importar masivamente** las rutas amarillas del Excel `Cuadro_auxiliar_tarifas_edwin_bogotá.xlsx` como centros de costo en Operación.
-3. **Subir Excel y editar tarifas** desde la pantalla de Operación (sin volver a tocar código cada vez).
+### 1. Barra de filtros (encima de la tabla)
 
----
+Una fila compacta con 4 controles:
 
-## 1. Deshabilitar TRAMI
+- **Buscar** (input de texto): filtra por código, origen o destino (case-insensitive, match parcial)
+- **Cliente** (select): Todos · Corona · Sodimac (oculto si el usuario ya está fijado a un cliente)
+- **Departamento** (select): Todos + lista única de departamentos presentes en los datos, ordenada alfabéticamente
+- **Tipo** (select): Todos · Empresarial · VIP · Especial · Otro
 
-Comentar/condicionar el render del asistente para que no aparezca en ningún lado, conservando todos los archivos para reactivarlo después con un solo flag.
+Botón "Limpiar filtros" aparece solo cuando hay algún filtro activo.
 
-- Crear `src/lib/feature-flags.ts` con `export const TRAMI_ENABLED = false;`.
-- En `src/components/layout/AppLayout.tsx`, `src/routes/pasajero.tsx`, `src/routes/login.tsx`, `src/routes/conductor.login.tsx`, `src/components/pasajero/PasajeroWelcomeSplash.tsx`: envolver `<TramiAssistant />` y los `<TramiAvatar>` decorativos con `{TRAMI_ENABLED && (...)}`.
-- No tocar tablas `trami_*` ni la edge function (quedan dormidas, sin costo).
+Los filtros se guardan en **search params de la URL** (`?q=...&cliente=...&depto=...&tipo=...&page=1`) usando `zodValidator + fallback` de TanStack, para que recargar la página o compartir el link mantenga el estado.
 
-Para volver a encenderla en el futuro: cambiar el flag a `true`.
+### 2. Agrupación visual por departamento (opcional, toggle)
 
----
+Botón "Agrupar por departamento" que cuando está activo:
+- Inserta filas separadoras con el nombre del departamento y el conteo (`Cundinamarca · 45 rutas`)
+- Las rutas se ordenan: departamento → código
+- Cuando está apagado, la tabla es plana ordenada por código
 
-## 2. Importar las rutas del Excel (one-shot, automático)
+Por defecto: agrupado **encendido** porque ayuda con cientos de rutas.
 
-El archivo tiene **343 filas amarillas** (las que tienen `VALOR UNITARIO` en amarillo) en la hoja `BOGOTA INTER-URBANA`. Vamos a generar un script local que las inserte en `centros_costo` con esta lógica:
+### 3. Paginación
 
-- **Cliente**: si la columna `SODIMAC URBANA` tiene marca → `sodimac`, si no → `corona`.
-- **Código**: `BOG-XXX` autoincremental por ruta (BOG-001, BOG-002…).
-- **Origen / destino / departamento / tarifa**: directos del Excel.
-- **Tipo**: `Empresarial`.
-- Se omiten filas sin valor unitario o no amarillas.
-- Se evita duplicar: si ya existe un centro con mismo `(cliente, origen, destino)` se actualiza la tarifa en vez de insertar.
+- **10 rutas por página** por defecto, con selector (10 / 25 / 50 / 100)
+- Controles abajo de la tabla: `« 1 2 3 ... 28 »` + texto "Mostrando 1–10 de 283"
+- Cuando se cambia un filtro, vuelve a página 1 automáticamente
+- Si está activado el modo "agrupar", la paginación cuenta filas de datos (no separadores) para no cortar grupos a la mitad de forma extraña
 
-Esto se ejecuta una sola vez como migración de datos (vía script `code--exec` con `psql` insert).
+### 4. Edición rápida de departamento (in-place)
 
----
+Hoy `Tarifa` y `Tipo` ya se editan inline. Añadir lo mismo para **Departamento**:
+- Nuevo componente `DepartamentoEditable.tsx` similar a `TarifaEditable.tsx`
+- Click → input de texto con autocompletado de departamentos existentes (datalist HTML nativo)
+- Guarda con `supabase.from("centros_costo").update({ departamento })`
 
-## 3. Editar y subir Excel desde Operación
+También permitir editar **Tipo** inline con un `<select>` (hoy es solo lectura como badge).
 
-Mejorar `src/routes/operacion.tsx` con dos nuevas capacidades:
+### 5. Contador en las tarjetas de resumen
 
-### 3a. Editar tarifa inline
-- En la tabla, la celda **Tarifa** se vuelve clickeable: al hacer click se convierte en input numérico, al guardar (Enter o blur) actualiza vía `supabase.from("centros_costo").update({ tarifa }).eq("id", ...)`.
-- Indicador de guardado (spinner pequeño) + toast de éxito/error.
-- Mismo patrón para `tipo` (select inline).
-
-### 3b. Botón "Importar Excel"
-- Botón nuevo junto a "Nueva Ruta" → abre modal con dropzone.
-- Acepta `.xlsx`. Parseo en el navegador con la librería **`xlsx`** (SheetJS, ~200KB, sin dependencias del lado servidor).
-- El parser detecta automáticamente las columnas: `ORIGEN`, `DESTINO`, `CIUDAD` (departamento), `VALOR UNITARIO`, `SODIMAC URBANA`.
-- Muestra **vista previa** (primeras 20 filas) con conteo total y permite:
-  - Elegir cliente por defecto (Corona / Sodimac / Auto-detectar por columna SODIMAC).
-  - Elegir prefijo de código (default `BOG`).
-  - Elegir si actualizar precios cuando ya existe la ruta o saltarla.
-- Al confirmar, inserta/upserta en lotes de 100 con feedback de progreso.
-- Tras importar, refresca la tabla.
-
-### Dependencia nueva
-- `bun add xlsx` (SheetJS, compatible con browser y SSR).
+La tarjeta "Rutas activas" muestra ahora `X de Y` cuando hay filtros aplicados (ej: `45 de 283`), para dejar claro cuántas se están viendo.
 
 ---
 
-## Archivos
+### Archivos a crear
 
-**Nuevos**
-- `src/lib/feature-flags.ts`
-- `src/components/operacion/ImportarExcelModal.tsx`
-- `src/components/operacion/TarifaEditable.tsx`
+- `src/components/operacion/DepartamentoEditable.tsx` — input inline con datalist
+- `src/components/operacion/TipoEditable.tsx` — select inline
 
-**Editados**
-- `src/components/layout/AppLayout.tsx`
-- `src/routes/pasajero.tsx`
-- `src/routes/login.tsx`
-- `src/routes/conductor.login.tsx`
-- `src/components/pasajero/PasajeroWelcomeSplash.tsx`
-- `src/routes/operacion.tsx` (botón importar + edición inline + columna acciones extendida)
-- `package.json` (dependencia `xlsx`)
+### Archivos a editar
 
-**Migración de datos (one-shot)**
-- Script para insertar las 343 rutas amarillas de Bogotá como centros de costo.
+- `src/routes/operacion.tsx`:
+  - Agregar `validateSearch` con zod para `q`, `cliente`, `depto`, `tipo`, `page`, `pageSize`, `agrupar`
+  - Calcular `departamentosUnicos` con `useMemo` desde `rows`
+  - Calcular `rowsFiltradas` con `useMemo` aplicando filtros
+  - Calcular `rowsPaginadas` y `totalPages`
+  - Renderizar barra de filtros + tabla agrupada/plana + paginación
+  - Reemplazar celda de tipo por `<TipoEditable>` y celda de departamento por `<DepartamentoEditable>`
 
----
+### Detalles técnicos
 
-## Resultado para el usuario
-
-- TRAMI desaparece visualmente de toda la app (queda dormida, lista para encenderse).
-- Las 343 rutas de Bogotá quedan cargadas hoy mismo en Operación, listas para usarse.
-- En adelante, cada vez que llegue un Excel nuevo (otra ciudad, ajuste de tarifas, etc.) se sube desde un botón sin tocar código.
-- Las tarifas se pueden cambiar haciendo click directo en la celda de la tabla.
+- Search params con `zodValidator(z.object({ q: fallback(z.string(), "").default(""), page: fallback(z.number().int().min(1), 1).default(1), pageSize: fallback(z.enum(["10","25","50","100"]), "10").default("10"), agrupar: fallback(z.boolean(), true).default(true), cliente: fallback(z.enum(["all","corona","sodimac"]), "all").default("all"), depto: fallback(z.string(), "all").default("all"), tipo: fallback(z.string(), "all").default("all") }))`
+- Navegación con `navigate({ search: (prev) => ({ ...prev, page: 1, q: value }) })` para no perder otros filtros
+- No se necesita migración de BD ni cambios en Supabase — todo es UI sobre los datos ya existentes
