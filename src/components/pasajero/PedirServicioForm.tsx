@@ -38,6 +38,20 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
     return local.toISOString().slice(0, 16);
   });
   const [error, setError] = useState<string | null>(null);
+  const geo = useGeolocation(true);
+
+  // Si el GPS otorga permiso y el origen sigue vacío, hacer reverse geocode
+  useEffect(() => {
+    if (geo.status !== "granted" || geo.lat == null || geo.lon == null) return;
+    if (origen.trim().length > 0) return;
+    let cancel = false;
+    reverseGeocode(geo.lat, geo.lon).then((s) => {
+      if (cancel || !s) return;
+      setOrigen(s.label);
+    });
+    return () => { cancel = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geo.status, geo.lat, geo.lon]);
 
   useEffect(() => {
     if (perfil.direccion_habitual && !origen) setOrigen(perfil.direccion_habitual);
