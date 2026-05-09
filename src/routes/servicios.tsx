@@ -10,6 +10,7 @@ import { Pictograma } from "@/components/Pictograma";
 import { SimplifyText } from "@/components/SimplifyText";
 import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 import { SolicitudesEntrantes } from "@/components/operacion/SolicitudesEntrantes";
+import { AddressAutocomplete, type ExtraSuggestion } from "@/components/AddressAutocomplete";
 
 function isVencido(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
@@ -91,6 +92,7 @@ function Servicios() {
   const [conductoresAll, setConductoresAll] = useState<ConductorOpt[]>([]);
   const [vehiculosAll, setVehiculosAll] = useState<VehiculoOpt[]>([]);
   const [vehConductores, setVehConductores] = useState<VehConductorRel[]>([]);
+  const [centrosRutas, setCentrosRutas] = useState<{ codigo: string; origen: string; destino: string; departamento: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
@@ -125,18 +127,20 @@ function Servicios() {
 
   async function load() {
     setLoading(true);
-    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes] = await Promise.all([
+    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes, centrosRes] = await Promise.all([
       supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
       supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia"),
       supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm"),
       supabase.from("pasajeros_pcd").select("*").order("nombre"),
       supabase.from("vehiculo_conductores").select("conductor_id,vehiculo_id,es_principal,asignado_hasta"),
+      supabase.from("centros_costo").select("codigo,origen,destino,departamento").eq("activo", true).order("codigo"),
     ]);
     if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
     if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
     if (!vehiculosRes.error && vehiculosRes.data) setVehiculosAll(vehiculosRes.data as VehiculoOpt[]);
     if (!pcdRes.error && pcdRes.data) setPasajerosPCD(pcdRes.data as PasajeroPCD[]);
     if (!vcRes.error && vcRes.data) setVehConductores(vcRes.data as VehConductorRel[]);
+    if (!centrosRes.error && centrosRes.data) setCentrosRutas(centrosRes.data as typeof centrosRutas);
     setLoading(false);
   }
 
@@ -168,6 +172,30 @@ function Servicios() {
       !isVencido(v.vence_rtm)
     );
   }, [vehiculosAll, cliente, form.cliente]);
+
+  const sugerenciasOrigen: ExtraSuggestion[] = useMemo(() => {
+    const seen = new Set<string>();
+    const out: ExtraSuggestion[] = [];
+    for (const r of centrosRutas) {
+      const key = r.origen.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ label: r.origen, sublabel: [r.codigo, r.departamento].filter(Boolean).join(" · "), group: "Rutas de Operación" });
+    }
+    return out;
+  }, [centrosRutas]);
+
+  const sugerenciasDestino: ExtraSuggestion[] = useMemo(() => {
+    const seen = new Set<string>();
+    const out: ExtraSuggestion[] = [];
+    for (const r of centrosRutas) {
+      const key = r.destino.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ label: r.destino, sublabel: [r.codigo, r.departamento].filter(Boolean).join(" · "), group: "Rutas de Operación" });
+    }
+    return out;
+  }, [centrosRutas]);
 
   // Devuelve las placas asignadas al conductor (por nombre), principal primero,
   // filtradas por las disponibles (cliente, estado, SOAT/RTM vigentes).
@@ -328,11 +356,25 @@ function Servicios() {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Origen</label>
-                <input required value={form.origen} onChange={(e) => setForm({ ...form, origen: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <AddressAutocomplete
+                  value={form.origen}
+                  onChange={(v) => setForm({ ...form, origen: v })}
+                  extraSuggestions={sugerenciasOrigen}
+                  placeholder="Buscar dirección o ruta…"
+                  required
+                  inputClassName="h-10 text-sm"
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Destino</label>
-                <input required value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <AddressAutocomplete
+                  value={form.destino}
+                  onChange={(v) => setForm({ ...form, destino: v })}
+                  extraSuggestions={sugerenciasDestino}
+                  placeholder="Buscar dirección o ruta…"
+                  required
+                  inputClassName="h-10 text-sm"
+                />
               </div>
               <div className="md:col-span-2">
                 <label className="text-xs text-muted-foreground flex items-center gap-1">
