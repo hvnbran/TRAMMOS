@@ -356,11 +356,25 @@ function Servicios() {
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Origen</label>
-                <input required value={form.origen} onChange={(e) => setForm({ ...form, origen: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <AddressAutocomplete
+                  value={form.origen}
+                  onChange={(v) => setForm({ ...form, origen: v })}
+                  extraSuggestions={sugerenciasOrigen}
+                  placeholder="Buscar dirección o ruta…"
+                  required
+                  inputClassName="h-10 text-sm"
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Destino</label>
-                <input required value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                <AddressAutocomplete
+                  value={form.destino}
+                  onChange={(v) => setForm({ ...form, destino: v })}
+                  extraSuggestions={sugerenciasDestino}
+                  placeholder="Buscar dirección o ruta…"
+                  required
+                  inputClassName="h-10 text-sm"
+                />
               </div>
               <div className="md:col-span-2">
                 <label className="text-xs text-muted-foreground flex items-center gap-1">
