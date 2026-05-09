@@ -124,15 +124,29 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
           <label className="text-sm font-semibold text-foreground flex items-center gap-2">
             <Pictograma name="casa" size="sm" />
             Sales de
+            {geo.status === "granted" && (
+              <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                <Navigation className="h-3 w-3" /> Usando tu ubicación
+              </span>
+            )}
+            {geo.status === "denied" && (
+              <button
+                type="button"
+                onClick={geo.request}
+                className="ml-auto text-[11px] font-medium text-primary underline"
+              >
+                Activar ubicación
+              </button>
+            )}
           </label>
-          <input
-            type="text"
+          <AddressAutocomplete
             value={origen}
-            onChange={(e) => setOrigen(e.target.value)}
+            onChange={(v) => setOrigen(v)}
             placeholder="Tu ubicación de salida"
-            className="w-full h-14 rounded-xl border-2 border-input bg-background px-4 text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
-            autoComplete="street-address"
+            bias={geo.lat != null && geo.lon != null ? { lat: geo.lat, lon: geo.lon } : null}
             required
+            inputClassName="h-14"
+            autoComplete="street-address"
           />
         </div>
 
@@ -141,13 +155,13 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
             <Pictograma name="ubicacion" size="sm" />
             Vas a
           </label>
-          <input
-            type="text"
+          <AddressAutocomplete
             value={destino}
-            onChange={(e) => setDestino(e.target.value)}
+            onChange={(v) => setDestino(v)}
             placeholder="Tu destino"
-            className="w-full h-14 rounded-xl border-2 border-input bg-background px-4 text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all"
+            bias={geo.lat != null && geo.lon != null ? { lat: geo.lat, lon: geo.lon } : null}
             required
+            inputClassName="h-14"
           />
         </div>
 
