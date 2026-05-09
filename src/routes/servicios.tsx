@@ -92,6 +92,7 @@ function Servicios() {
   const [conductoresAll, setConductoresAll] = useState<ConductorOpt[]>([]);
   const [vehiculosAll, setVehiculosAll] = useState<VehiculoOpt[]>([]);
   const [vehConductores, setVehConductores] = useState<VehConductorRel[]>([]);
+  const [centrosRutas, setCentrosRutas] = useState<{ codigo: string; origen: string; destino: string; departamento: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
