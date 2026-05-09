@@ -10,6 +10,7 @@ import { Pictograma } from "@/components/Pictograma";
 import { SimplifyText } from "@/components/SimplifyText";
 import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 import { SolicitudesEntrantes } from "@/components/operacion/SolicitudesEntrantes";
+import { AddressAutocomplete, type ExtraSuggestion } from "@/components/AddressAutocomplete";
 
 function isVencido(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
