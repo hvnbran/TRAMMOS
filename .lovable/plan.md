@@ -1,68 +1,69 @@
-## Mejoras al módulo de Operación: filtros + paginación
+## Plan: Autocompletado de direcciones para Colombia
 
-Reorganizar la tabla de rutas en `src/routes/operacion.tsx` para que sea fácil encontrar y editar rutas cuando hay cientos (como las 283 de Bogotá).
+### Objetivo
+Agregar sugerencias inteligentes de origen y destino en dos lugares:
+1. **App del pasajero** (`PedirServicioForm`) — usa GPS del teléfono y autocompleta direcciones cercanas.
+2. **Servicios del admin** (`servicios.tsx`) — sugiere primero rutas conocidas de Operación, y como respaldo cualquier dirección de Colombia.
 
-### 1. Barra de filtros (encima de la tabla)
+### Proveedor: Photon (gratis, sin API key)
+- Endpoint: `https://photon.komoot.io/api/?q={query}&lang=es&limit=8&lat={lat}&lon={lon}&location_bias_scale=0.5`
+- Filtro por país: `&osm_tag=:!boundary` y validamos en cliente que `country_code === 'co'`.
+- Reverse geocoding: `https://photon.komoot.io/reverse?lat={lat}&lon={lon}&lang=es`
 
-Una fila compacta con 4 controles:
+### Componentes nuevos
 
-- **Buscar** (input de texto): filtra por código, origen o destino (case-insensitive, match parcial)
-- **Cliente** (select): Todos · Corona · Sodimac (oculto si el usuario ya está fijado a un cliente)
-- **Departamento** (select): Todos + lista única de departamentos presentes en los datos, ordenada alfabéticamente
-- **Tipo** (select): Todos · Empresarial · VIP · Especial · Otro
+**`src/lib/geo/photon.ts`** — Cliente con:
+- `searchAddresses(query, { lat?, lon? })` — devuelve `{ label, lat, lon, departamento, ciudad }[]` filtrado a Colombia.
+- `reverseGeocode(lat, lon)` — devuelve dirección legible.
+- Debounce de 300ms y cache en memoria por sesión para no spamear el API público.
 
-Botón "Limpiar filtros" aparece solo cuando hay algún filtro activo.
+**`src/hooks/useGeolocation.ts`** — Wrapper de `navigator.geolocation` con estados (`idle | requesting | granted | denied | error`) y permiso recordado en `localStorage`.
 
-Los filtros se guardan en **search params de la URL** (`?q=...&cliente=...&depto=...&tipo=...&page=1`) usando `zodValidator + fallback` de TanStack, para que recargar la página o compartir el link mantenga el estado.
+**`src/components/AddressAutocomplete.tsx`** — Input con dropdown de sugerencias (basado en `Popover` + `Command` de shadcn). Props:
+```ts
+{
+  value: string;
+  onChange: (value: string, meta?: { lat?: number; lon?: number }) => void;
+  placeholder?: string;
+  bias?: { lat: number; lon: number } | null;  // sesgo geográfico
+  extraSuggestions?: { label: string; sublabel?: string; group?: string }[]; // para mostrar rutas de Operación
+  icon?: ReactNode;
+}
+```
+Muestra primero `extraSuggestions` agrupadas (ej. "Rutas de Operación"), luego resultados de Photon agrupados como "Sugerencias cercanas".
 
-### 2. Agrupación visual por departamento (opcional, toggle)
+### Cambios en pantallas
 
-Botón "Agrupar por departamento" que cuando está activo:
-- Inserta filas separadoras con el nombre del departamento y el conteo (`Cundinamarca · 45 rutas`)
-- Las rutas se ordenan: departamento → código
-- Cuando está apagado, la tabla es plana ordenada por código
+**`PedirServicioForm.tsx`** (pasajero)
+- Al montar, llama `useGeolocation()` y, si el usuario acepta, hace reverse geocoding para prellenar `origen` (solo si está vacío y no hay `direccion_habitual`).
+- Si rechaza GPS o falla, mantiene `direccion_habitual` como fallback (comportamiento actual).
+- Reemplaza los `<input>` de origen y destino por `<AddressAutocomplete>` pasando `bias={ lat, lon }` cuando hay GPS.
+- Agrega una notita pequeña "Usando tu ubicación" cuando el GPS está activo.
 
-Por defecto: agrupado **encendido** porque ayuda con cientos de rutas.
-
-### 3. Paginación
-
-- **10 rutas por página** por defecto, con selector (10 / 25 / 50 / 100)
-- Controles abajo de la tabla: `« 1 2 3 ... 28 »` + texto "Mostrando 1–10 de 283"
-- Cuando se cambia un filtro, vuelve a página 1 automáticamente
-- Si está activado el modo "agrupar", la paginación cuenta filas de datos (no separadores) para no cortar grupos a la mitad de forma extraña
-
-### 4. Edición rápida de departamento (in-place)
-
-Hoy `Tarifa` y `Tipo` ya se editan inline. Añadir lo mismo para **Departamento**:
-- Nuevo componente `DepartamentoEditable.tsx` similar a `TarifaEditable.tsx`
-- Click → input de texto con autocompletado de departamentos existentes (datalist HTML nativo)
-- Guarda con `supabase.from("centros_costo").update({ departamento })`
-
-También permitir editar **Tipo** inline con un `<select>` (hoy es solo lectura como badge).
-
-### 5. Contador en las tarjetas de resumen
-
-La tarjeta "Rutas activas" muestra ahora `X de Y` cuando hay filtros aplicados (ej: `45 de 283`), para dejar claro cuántas se están viendo.
-
----
-
-### Archivos a crear
-
-- `src/components/operacion/DepartamentoEditable.tsx` — input inline con datalist
-- `src/components/operacion/TipoEditable.tsx` — select inline
-
-### Archivos a editar
-
-- `src/routes/operacion.tsx`:
-  - Agregar `validateSearch` con zod para `q`, `cliente`, `depto`, `tipo`, `page`, `pageSize`, `agrupar`
-  - Calcular `departamentosUnicos` con `useMemo` desde `rows`
-  - Calcular `rowsFiltradas` con `useMemo` aplicando filtros
-  - Calcular `rowsPaginadas` y `totalPages`
-  - Renderizar barra de filtros + tabla agrupada/plana + paginación
-  - Reemplazar celda de tipo por `<TipoEditable>` y celda de departamento por `<DepartamentoEditable>`
+**`src/routes/servicios.tsx`** (admin — formulario crear/editar servicio)
+- Carga al montar `centros_costo` activos del cliente actual: `select('codigo, origen, destino, departamento')`.
+- Construye listas únicas de `origenes` y `destinos` a partir de esos centros.
+- Reemplaza los inputs de origen/destino por `<AddressAutocomplete>` con `extraSuggestions` poblado de esas rutas (etiqueta = `origen`, sublabel = `código · departamento`).
+- Sin sesgo de GPS (admin trabaja desde escritorio).
 
 ### Detalles técnicos
 
-- Search params con `zodValidator(z.object({ q: fallback(z.string(), "").default(""), page: fallback(z.number().int().min(1), 1).default(1), pageSize: fallback(z.enum(["10","25","50","100"]), "10").default("10"), agrupar: fallback(z.boolean(), true).default(true), cliente: fallback(z.enum(["all","corona","sodimac"]), "all").default("all"), depto: fallback(z.string(), "all").default("all"), tipo: fallback(z.string(), "all").default("all") }))`
-- Navegación con `navigate({ search: (prev) => ({ ...prev, page: 1, q: value }) })` para no perder otros filtros
-- No se necesita migración de BD ni cambios en Supabase — todo es UI sobre los datos ya existentes
+- **Sin nuevas dependencias**: Photon se llama con `fetch`, el dropdown usa shadcn `Command` + `Popover` ya instalados.
+- **Sin secretos nuevos** ni cambios en backend o base de datos.
+- **Rate limit Photon**: ~1 req/s público. Mitigamos con debounce 300ms, mínimo 3 caracteres y cache LRU simple en memoria.
+- **Privacidad**: la posición GPS solo se usa en el cliente para sesgar búsquedas; nunca se persiste en la base de datos sin acción explícita del usuario.
+- **Accesibilidad**: el componente mantiene navegación por teclado (flechas + Enter) gracias a `cmdk`.
+
+### Archivos a crear
+- `src/lib/geo/photon.ts`
+- `src/hooks/useGeolocation.ts`
+- `src/components/AddressAutocomplete.tsx`
+
+### Archivos a editar
+- `src/components/pasajero/PedirServicioForm.tsx`
+- `src/routes/servicios.tsx`
+
+### Fuera de alcance (para después)
+- Mapa visual con pin para ajustar ubicación.
+- Guardar coordenadas en `solicitudes_pasajero` (hoy solo se guarda texto).
+- Autocompletar en otros formularios (incidentes, conductor, etc.).
