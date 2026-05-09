@@ -127,18 +127,20 @@ function Servicios() {
 
   async function load() {
     setLoading(true);
-    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes] = await Promise.all([
+    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes, centrosRes] = await Promise.all([
       supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
       supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia"),
       supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm"),
       supabase.from("pasajeros_pcd").select("*").order("nombre"),
       supabase.from("vehiculo_conductores").select("conductor_id,vehiculo_id,es_principal,asignado_hasta"),
+      supabase.from("centros_costo").select("codigo,origen,destino,departamento").eq("activo", true).order("codigo"),
     ]);
     if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
     if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
     if (!vehiculosRes.error && vehiculosRes.data) setVehiculosAll(vehiculosRes.data as VehiculoOpt[]);
     if (!pcdRes.error && pcdRes.data) setPasajerosPCD(pcdRes.data as PasajeroPCD[]);
     if (!vcRes.error && vcRes.data) setVehConductores(vcRes.data as VehConductorRel[]);
+    if (!centrosRes.error && centrosRes.data) setCentrosRutas(centrosRes.data as typeof centrosRutas);
     setLoading(false);
   }
 
