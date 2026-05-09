@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pictograma } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
-import { Loader2, MapPin, Send, Clock, Briefcase, Home, Repeat } from "lucide-react";
+import { AddressAutocomplete } from "@/components/AddressAutocomplete";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { reverseGeocode } from "@/lib/geo/photon";
+import { Loader2, MapPin, Send, Clock, Briefcase, Home, Repeat, Navigation } from "lucide-react";
 
 export interface PasajeroPerfil {
   id: string;
