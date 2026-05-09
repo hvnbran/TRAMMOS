@@ -173,6 +173,30 @@ function Servicios() {
     );
   }, [vehiculosAll, cliente, form.cliente]);
 
+  const sugerenciasOrigen: ExtraSuggestion[] = useMemo(() => {
+    const seen = new Set<string>();
+    const out: ExtraSuggestion[] = [];
+    for (const r of centrosRutas) {
+      const key = r.origen.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ label: r.origen, sublabel: [r.codigo, r.departamento].filter(Boolean).join(" · "), group: "Rutas de Operación" });
+    }
+    return out;
+  }, [centrosRutas]);
+
+  const sugerenciasDestino: ExtraSuggestion[] = useMemo(() => {
+    const seen = new Set<string>();
+    const out: ExtraSuggestion[] = [];
+    for (const r of centrosRutas) {
+      const key = r.destino.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ label: r.destino, sublabel: [r.codigo, r.departamento].filter(Boolean).join(" · "), group: "Rutas de Operación" });
+    }
+    return out;
+  }, [centrosRutas]);
+
   // Devuelve las placas asignadas al conductor (por nombre), principal primero,
   // filtradas por las disponibles (cliente, estado, SOAT/RTM vigentes).
   function placasDeConductor(nombreConductor: string | null | undefined): VehiculoOpt[] {
