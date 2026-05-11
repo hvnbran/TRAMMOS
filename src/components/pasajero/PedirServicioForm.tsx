@@ -144,6 +144,9 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
             onChange={(v) => setOrigen(v)}
             placeholder="Tu ubicación de salida"
             bias={geo.lat != null && geo.lon != null ? { lat: geo.lat, lon: geo.lon } : null}
+            bbox={geo.bbox}
+            departamento={geo.departamento}
+            strictDepartamento
             required
             inputClassName="h-14"
             autoComplete="street-address"
@@ -160,6 +163,9 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
             onChange={(v) => setDestino(v)}
             placeholder="Tu destino"
             bias={geo.lat != null && geo.lon != null ? { lat: geo.lat, lon: geo.lon } : null}
+            bbox={geo.bbox}
+            departamento={geo.departamento}
+            strictDepartamento
             required
             inputClassName="h-14"
           />
