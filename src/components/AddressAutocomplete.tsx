@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Loader2, MapPin } from "lucide-react";
-import { searchAddresses, type AddressSuggestion } from "@/lib/geo/photon";
+import { searchAddresses, type AddressSuggestion, type Bbox } from "@/lib/geo/photon";
 import { cn } from "@/lib/utils";
 
 export interface ExtraSuggestion {
   label: string;
   sublabel?: string;
-  group?: string; // ej. "Rutas de Operación"
+  group?: string;
 }
 
 interface Props {
@@ -14,6 +14,9 @@ interface Props {
   onChange: (value: string, meta?: { lat?: number; lon?: number }) => void;
   placeholder?: string;
   bias?: { lat: number; lon: number } | null;
+  bbox?: Bbox | null;
+  departamento?: string | null;
+  strictDepartamento?: boolean;
   extraSuggestions?: ExtraSuggestion[];
   icon?: ReactNode;
   required?: boolean;
@@ -23,11 +26,18 @@ interface Props {
   autoComplete?: string;
 }
 
+function normalize(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
 export function AddressAutocomplete({
   value,
   onChange,
   placeholder,
   bias,
+  bbox,
+  departamento,
+  strictDepartamento = false,
   extraSuggestions = [],
   icon,
   required,
@@ -44,7 +54,6 @@ export function AddressAutocomplete({
   const debounceRef = useRef<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Filtrar extras por el texto actual
   const filteredExtras = value.trim().length === 0
     ? extraSuggestions.slice(0, 6)
     : extraSuggestions.filter((s) =>
@@ -54,7 +63,7 @@ export function AddressAutocomplete({
 
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    if (value.trim().length < 3) {
+    if (value.trim().length < 2) {
       setResults([]);
       setLoading(false);
       return;
@@ -64,16 +73,21 @@ export function AddressAutocomplete({
       abortRef.current?.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
-      searchAddresses(value, { lat: bias?.lat, lon: bias?.lon, signal: ctrl.signal })
+      searchAddresses(value, {
+        lat: bias?.lat,
+        lon: bias?.lon,
+        bbox: bbox ?? null,
+        departamento: departamento ?? null,
+        signal: ctrl.signal,
+      })
         .then((r) => { setResults(r); setLoading(false); })
         .catch(() => setLoading(false));
-    }, 300);
+    }, 350);
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [value, bias?.lat, bias?.lon]);
+  }, [value, bias?.lat, bias?.lon, bbox, departamento]);
 
-  // Cerrar al hacer clic fuera
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
@@ -82,10 +96,37 @@ export function AddressAutocomplete({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  // Lista plana para navegación por teclado
-  const flat: Array<{ kind: "extra" | "geo"; label: string; sublabel?: string; lat?: number; lon?: number; group?: string }> = [
-    ...filteredExtras.map((s) => ({ kind: "extra" as const, label: s.label, sublabel: s.sublabel, group: s.group ?? "Rutas de Operación" })),
-    ...results.map((s) => ({ kind: "geo" as const, label: s.label, sublabel: s.sublabel, lat: s.lat, lon: s.lon, group: "Sugerencias cercanas" })),
+  // Particionar resultados: en departamento del usuario vs otras zonas
+  const dn = departamento ? normalize(departamento) : null;
+  const inDept = dn ? results.filter((r) => r.departamento && normalize(r.departamento) === dn) : results;
+  const otherDept = dn ? results.filter((r) => !r.departamento || normalize(r.departamento) !== dn) : [];
+  const visibleGeo = strictDepartamento && dn && inDept.length > 0 ? inDept : [...inDept, ...otherDept];
+
+  const flat: Array<{
+    kind: "extra" | "geo";
+    label: string;
+    sublabel?: string;
+    lat?: number;
+    lon?: number;
+    group?: string;
+  }> = [
+    ...filteredExtras.map((s) => ({
+      kind: "extra" as const,
+      label: s.label,
+      sublabel: s.sublabel,
+      group: s.group ?? "Rutas de Operación",
+    })),
+    ...visibleGeo.map((s) => {
+      const sameDept = dn && s.departamento && normalize(s.departamento) === dn;
+      return {
+        kind: "geo" as const,
+        label: s.label,
+        sublabel: s.sublabel,
+        lat: s.lat,
+        lon: s.lon,
+        group: sameDept || !dn ? "Sugerencias cercanas" : "Otras zonas de Colombia",
+      };
+    }),
   ];
 
   function pick(idx: number) {
@@ -107,9 +148,15 @@ export function AddressAutocomplete({
     else if (e.key === "Escape") { setOpen(false); setHighlight(-1); }
   }
 
-  // Agrupar para render
   let lastGroup = "";
-  const showDropdown = open && (loading || flat.length > 0 || value.trim().length >= 3);
+  const showDropdown = open && (loading || flat.length > 0 || value.trim().length >= 2);
+
+  const emptyMessage = (() => {
+    if (value.trim().length < 2) return "Escribe al menos 2 letras…";
+    if (!bias) return "Activa la ubicación para ver direcciones cercanas a ti.";
+    if (departamento) return `No encontramos esa dirección en ${departamento}. Prueba con el barrio o el nombre del lugar.`;
+    return "Sin resultados. Intenta escribir el barrio o el municipio.";
+  })();
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
@@ -144,7 +191,7 @@ export function AddressAutocomplete({
         <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover shadow-lg overflow-hidden max-h-80 overflow-y-auto">
           {flat.length === 0 && !loading && (
             <div className="px-3 py-3 text-sm text-muted-foreground">
-              {value.trim().length < 3 ? "Escribe al menos 3 letras…" : "Sin resultados."}
+              {emptyMessage}
             </div>
           )}
           {flat.map((item, idx) => {
