@@ -126,7 +126,7 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
             Sales de
             {geo.status === "granted" && (
               <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-primary">
-                <Navigation className="h-3 w-3" /> Usando tu ubicación
+                <Navigation className="h-3 w-3" /> Usando tu ubicación{geo.departamento ? ` · ${geo.departamento}` : ""}
               </span>
             )}
             {geo.status === "denied" && (
