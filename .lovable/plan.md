@@ -1,98 +1,126 @@
-# Arreglar autocompletado y filtrar por departamento
 
-## Problema detectado
+# Integrar el GPS de serverusa.digital a TRAMMOS
 
-Hoy el autocompletado dice "Sin resultados" en muchos casos porque el código filtra del lado del cliente con `p.countrycode === "CO"`, pero Photon **no siempre devuelve `countrycode` en `properties`** (sobre todo en calles y POIs). Como resultado, casi todos los features se descartan y el usuario ve la lista vacía aunque la API devolvió resultados válidos.
+## Qué es serverusa.digital
 
-Además, hoy solo hay un sesgo de proximidad (`location_bias_scale`), pero no hay filtro real por país ni por departamento, así que aparecen calles homónimas de Bogotá cuando el usuario está en Medellín o Barranquilla.
+Es una plataforma tipo **GPSWOX** (la app móvil oficial es "My Tracking Client"). Expone una API REST en `https://serverusa.digital/api/` con endpoints estándar:
 
-## Objetivo
+- `POST /api/login` → devuelve un `user_api_hash` (token permanente, no expira hasta que cambies la contraseña).
+- `GET  /api/get_devices?user_api_hash=...` → lista de dispositivos GPS (IMEI, nombre, placa, ícono, grupo).
+- `GET  /api/get_devices_short_info?user_api_hash=...` → posición y estado en vivo de cada dispositivo (lat, lon, velocidad, curso, online/offline, batería, ignición, hora del último fix).
+- `GET  /api/get_route?...` → histórico de un dispositivo entre dos fechas.
 
-1. Que el autocompletado **funcione** (deje de salir "Sin resultados" cuando sí los hay).
-2. Que **filtre por Colombia** de forma confiable.
-3. Que **priorice y limite** los resultados al **departamento del teléfono** del usuario.
+Esto es ideal: **no hay que pedirte la contraseña cada vez**, basta con generar el `user_api_hash` una vez y guardarlo como secreto en el backend. Tu correo y contraseña no quedan en la app.
 
-## Cambios
+> **Importante de seguridad:** no voy a iniciar sesión yo con tu cuenta. El paso 1 lo haces tú una sola vez (te dejo un comando listo) y pegas el hash en Lovable Cloud como secreto.
 
-### 1. `src/lib/geo/photon.ts` — filtro robusto a Colombia
+## Plan en 4 pasos
 
-- Quitar el filtro estricto `countrycode === "CO"`. En su lugar, aceptar el feature si **cualquiera** de estas condiciones se cumple:
-  - `properties.countrycode` es `"CO"`, **o**
-  - `properties.country` es `"Colombia"` / `"Colombia (CO)"`, **o**
-  - las coordenadas caen dentro del bounding box de Colombia (`lon ∈ [-79, -66]`, `lat ∈ [-4.3, 13.5]`).
-- Añadir un parámetro opcional `bbox` a `searchAddresses(query, { lat, lon, bbox, departamento, signal })`.
-  - `bbox`: `[minLon, minLat, maxLon, maxLat]` que se envía a Photon como `bbox=...` para acotar la búsqueda al departamento del usuario.
-  - `departamento`: si está, se usa además como filtro post-hoc (`properties.state` debe coincidir, ignorando tildes/mayúsculas).
-- Añadir helper `colombiaBboxFor(departamento: string): [number, number, number, number] | null` con un mapa estático de los 32 departamentos + Bogotá D.C. (bounding box aproximado por departamento). Cuando no se conozca el departamento, fallback al bbox país.
-- Añadir `subirRanking`: las sugerencias cuyo `state` coincide con el departamento del usuario van primero; las de otro departamento van después o se descartan según una bandera `strict`.
-- Mantener el cache LRU pero incluir `departamento` en la `cacheKey`.
+### 1. Conectar la cuenta (una sola vez, tú)
 
-### 2. `src/hooks/useGeolocation.ts` — exponer departamento detectado
+Te paso un `curl` que ejecutas tú (o yo desde el sandbox cuando apruebes):
 
-- Tras obtener `lat/lon`, llamar a `reverseGeocode(lat, lon)` una vez y exponer:
-  - `departamento: string | null`
-  - `ciudad: string | null`
-  - `bbox: [number,number,number,number] | null` (vía `colombiaBboxFor`)
-- Persistir en `localStorage` el último `departamento` conocido para que el primer render ya tenga sesgo aunque el GPS aún esté pidiendo permiso.
-- Mejorar mensaje de error: distinguir `denied` (usuario lo bloqueó), `unsupported` (navegador sin GPS), `timeout` y `error` para mostrar acciones distintas en la UI.
-
-### 3. `src/components/AddressAutocomplete.tsx` — usar el filtro por departamento
-
-- Aceptar nuevas props: `departamento?: string | null`, `bbox?: [number,number,number,number] | null`, `strictDepartamento?: boolean` (default `true` en pasajero, `false` en admin).
-- Pasar esos parámetros a `searchAddresses`.
-- Cambiar el copy del estado vacío a algo accionable:
-  - Sin GPS: "Activa la ubicación para ver direcciones cercanas".
-  - Con GPS pero sin resultados: "No encontramos esa dirección en {Departamento}. Prueba con el barrio o intenta otra ciudad."
-- Reducir el umbral mínimo de 3 a **2 caracteres** y aumentar el debounce a 350 ms (Photon agradece menos requests).
-- Si Photon devuelve 0 resultados con `strictDepartamento`, hacer un **segundo intento** sin el filtro de departamento y mostrar esos resultados bajo un grupo "Otras zonas de Colombia". Así el usuario nunca ve un dropdown completamente vacío cuando hay resultados nacionales.
-
-### 4. `src/components/pasajero/PedirServicioForm.tsx`
-
-- Pasar `departamento`, `bbox` y `strictDepartamento={true}` a los dos `AddressAutocomplete` (origen y destino).
-- En el indicador "Usando tu ubicación", añadir el departamento detectado: "Usando tu ubicación · Antioquia".
-- Si `geo.status === "denied"`, mostrar arriba del formulario un banner sutil: "Activa tu ubicación para ver direcciones cercanas a ti", con botón que llama a `geo.request()`.
-
-### 5. `src/routes/servicios.tsx` (admin)
-
-- Pasar `strictDepartamento={false}` para que los operadores puedan crear servicios en cualquier ciudad, conservando solo el sesgo por proximidad.
-
-## Detalles técnicos
-
-```ts
-// Bbox por departamento (extracto)
-const DEPT_BBOX: Record<string, [number,number,number,number]> = {
-  "Antioquia":      [-77.13, 5.42, -73.88, 8.88],
-  "Cundinamarca":   [-75.00, 3.69, -73.04, 5.83],
-  "Bogotá D.C.":    [-74.45, 4.46, -73.99, 4.84],
-  "Valle del Cauca":[-77.66, 3.05, -75.69, 5.08],
-  "Atlántico":      [-75.10,10.24, -74.71,11.10],
-  // …32 entradas
-};
-
-// Llamada a Photon
-const params = new URLSearchParams({ q, lang: "es", limit: "10" });
-if (bbox) params.set("bbox", bbox.join(","));      // minLon,minLat,maxLon,maxLat
-if (lat && lon) {
-  params.set("lat", String(lat));
-  params.set("lon", String(lon));
-  params.set("location_bias_scale", "0.6");
-}
+```bash
+curl -s "https://serverusa.digital/api/login" \
+  -d "email=brandonmunetonavendano@gmail.com" \
+  -d "password=TU_PASSWORD"
 ```
 
-```ts
-function isInColombia(props, lon, lat) {
-  if (props.countrycode === "CO") return true;
-  if (typeof props.country === "string" && props.country.toLowerCase().includes("colombia")) return true;
-  return lon >= -79 && lon <= -66 && lat >= -4.3 && lat <= 13.5;
-}
-```
+Devuelve algo como `{"status":1,"user_api_hash":"$2y$10$abc..."}`.
+
+Ese `user_api_hash` se guarda como **secreto** en Lovable Cloud:
+- `GPSWOX_API_BASE` = `https://serverusa.digital/api`
+- `GPSWOX_USER_API_HASH` = el hash que devolvió el login
+
+> Recomendación adicional: cambia la contraseña que compartiste en este chat (cualquier persona con acceso al historial podría usarla). Una vez generado el `user_api_hash`, la app ya no necesita la contraseña.
+
+### 2. Tabla `vehiculos_gps` y enlace con `vehiculos`
+
+Migración nueva:
+
+- Tabla `vehiculos_gps`:
+  - `vehiculo_id` (FK a `vehiculos`, nullable: un GPS puede llegar antes de tener vehículo creado)
+  - `gpswox_device_id` (int, único) — el id que devuelve la API
+  - `imei` (text, único)
+  - `nombre_dispositivo`, `placa_gps`, `grupo`
+  - `last_lat`, `last_lon`, `last_speed_kmh`, `last_course`, `last_fix_at`, `online` (bool), `bateria`, `ignicion`
+  - `last_synced_at`
+  - `activo` (bool, default true)
+
+- Añadir a `vehiculos`:
+  - `gps_device_id` (int, nullable) — referencia rápida al `gpswox_device_id`.
+
+- RLS: lectura para `admin` y `corona`; escritura solo `admin` y server functions.
+
+- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE public.vehiculos_gps;` para que `MonitoreoMap` se actualice solo.
+
+### 3. Server functions (TanStack)
+
+Archivo `src/lib/gps/gpswox.functions.ts`:
+
+- `gpswoxImportDevices()` — admin only:
+  1. Llama a `GET /api/get_devices`.
+  2. Hace `upsert` en `vehiculos_gps` por `gpswox_device_id`.
+  3. Intenta auto-emparejar con `vehiculos` por placa (normalizada: mayúsculas, sin espacios). Si no encuentra match, deja `vehiculo_id = null` y queda visible en una pantalla de "GPS sin vehículo".
+  4. Devuelve `{ importados, emparejados, sin_emparejar }`.
+
+- `gpswoxSyncPositions()` — admin / cron:
+  1. Llama a `GET /api/get_devices_short_info`.
+  2. Actualiza lat/lon/speed/online/last_fix_at en `vehiculos_gps`.
+  3. Idempotente, seguro de llamar cada 15-30 segundos.
+
+- `gpswoxGetHistory(vehiculoId, desde, hasta)` — admin: histórico de un vehículo entre dos fechas para reportes.
+
+Helpers en `src/lib/gps/gpswox.server.ts` (no se importa desde cliente).
+
+### 4. Cron + UI
+
+**Cron (sincronización en vivo):**
+- Ruta pública firmada `src/routes/api/public/gps.sync.ts` que llama a `gpswoxSyncPositions()`.
+- pg_cron cada 30 segundos golpea esa URL con un header `X-Cron-Secret`.
+- Resultado: `vehiculos_gps` siempre tiene la última posición sin que el cliente pegue al GPS directamente (más rápido y respeta el rate limit de la API).
+
+**Cambios de UI (esto es lo que recomiendo):**
+
+1. **`/vehiculos`** — nueva pestaña/sección "GPS":
+   - Botón "Importar dispositivos desde serverusa.digital" (llama a `gpswoxImportDevices`).
+   - Lista de GPS con estado (online/offline, último fix, vehículo emparejado).
+   - Para cada GPS sin vehículo: selector para vincularlo manualmente con un `vehiculo` existente.
+
+2. **`/monitoreo`** — pasar de mock a datos reales:
+   - `MonitoreoMap.tsx` deja de pintar el marcador fijo en Medellín y consulta `vehiculos_gps` (con realtime).
+   - Cada vehículo online muestra ícono cyan TRAMMOS, popup con placa, conductor asignado (si hay servicio activo), velocidad y hora del último fix.
+   - Vehículos offline > 5 min se ven en gris.
+   - Filtros por departamento (ya tenemos el bbox), por estado (en servicio / libre), y por conductor.
+
+3. **`/servicios`** y **`/conductor/servicio/$id`**:
+   - Cuando un servicio tenga vehículo asignado y ese vehículo tenga GPS, mostrar mini-mapa con la posición en vivo.
+   - El pasajero (`/pasajero` → `ViajeEnCurso.tsx`) ve el carrito moviéndose en el mapa cuando el servicio está `en_camino` o `a_bordo` (esto es el cambio más visible para el usuario final).
+
+4. **Reportes** (`/reportes`, `/tiempos-respuesta`):
+   - Usar `gpswoxGetHistory` para calcular kilómetros recorridos por servicio, velocidad promedio, tiempos reales puerta a puerta.
+   - Detección de excesos de velocidad (umbral configurable por departamento).
+
+5. **Alertas** (`/alertas`):
+   - Nueva alerta "GPS desconectado" cuando un vehículo en servicio activo no reporta hace > 3 min.
+   - Alerta "Vehículo fuera de ruta" comparando posición vs origen/destino del servicio.
+
+## Riesgos y notas
+
+- **Rate limit:** GPSWOX permite tranquilamente 1 request cada 10-30 s para `get_devices_short_info`. No exponer la API directo al navegador; siempre pasar por el cron + tabla `vehiculos_gps`.
+- **Emparejamiento por placa:** algunos GPS vienen con nombres tipo "MOTO-123" en vez de la placa real; por eso queda el match manual.
+- **El `user_api_hash` se invalida** si cambias la contraseña en serverusa.digital. Si pasa, simplemente regeneras el hash y actualizas el secreto.
+- **Si serverusa.digital no es exactamente GPSWOX** (puede ser un fork con diferencias menores), hago una llamada de prueba al login real al ejecutar el plan y ajusto los nombres de campos sobre la marcha antes de crear las tablas.
 
 ## Archivos
 
-- Editar: `src/lib/geo/photon.ts`, `src/hooks/useGeolocation.ts`, `src/components/AddressAutocomplete.tsx`, `src/components/pasajero/PedirServicioForm.tsx`, `src/routes/servicios.tsx`
-- Sin nuevas dependencias, sin secretos, sin cambios de backend.
+- **Nuevos:** `src/lib/gps/gpswox.server.ts`, `src/lib/gps/gpswox.functions.ts`, `src/routes/api/public/gps.sync.ts`, `src/components/vehiculos/GpsManager.tsx`, `src/components/monitoreo/VehiculoEnVivoMarker.tsx`.
+- **Editar:** `src/components/MonitoreoMap.tsx`, `src/routes/vehiculos.tsx`, `src/routes/monitoreo.tsx`, `src/components/pasajero/ViajeEnCurso.tsx`, `src/routes/servicios.tsx`.
+- **Migración:** crear `vehiculos_gps`, añadir `gps_device_id` a `vehiculos`, RLS, realtime, pg_cron.
+- **Secretos nuevos:** `GPSWOX_API_BASE`, `GPSWOX_USER_API_HASH`, `GPS_CRON_SECRET`.
 
-## Riesgos
+## ¿Qué necesito de ti antes de empezar?
 
-- El bbox por departamento es aproximado; en municipios fronterizos puede excluir resultados válidos. Por eso el fallback nacional ("Otras zonas de Colombia") siempre está disponible.
-- Photon es público y a veces lento; el debounce (350 ms) y el cache mitigan el impacto.
+1. Confirmar que apruebas este enfoque.
+2. Cambiar la contraseña que compartiste y generar el `user_api_hash` (te guío con el `curl` exacto).
+3. Decidir si quieres que el pasajero vea el carro moviéndose en vivo en el mapa (recomendado) o solo los admins.
