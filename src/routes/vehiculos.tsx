@@ -8,6 +8,7 @@ import { DocumentManager, TIPOS_VEHICULO } from "@/components/DocumentManager";
 import { VehiculoConductores } from "@/components/VehiculoConductores";
 import { ChecklistANS } from "@/components/ChecklistANS";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+import { GpsManager } from "@/components/vehiculos/GpsManager";
 
 export const Route = createFileRoute("/vehiculos")({
   component: Vehiculos,
@@ -215,6 +216,8 @@ function Vehiculos() {
             <Plus className="h-4 w-4" /> Nuevo Vehículo
           </button>
         </div>
+
+        {role === "admin" && <GpsManager />}
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Filtrar:</span>

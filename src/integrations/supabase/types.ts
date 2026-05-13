@@ -1136,6 +1136,7 @@ export type Database = {
           created_by: string | null
           estado: string
           foto_url: string | null
+          gps_device_id: number | null
           id: string
           linea: string | null
           marca: string | null
@@ -1155,6 +1156,7 @@ export type Database = {
           created_by?: string | null
           estado?: string
           foto_url?: string | null
+          gps_device_id?: number | null
           id?: string
           linea?: string | null
           marca?: string | null
@@ -1174,6 +1176,7 @@ export type Database = {
           created_by?: string | null
           estado?: string
           foto_url?: string | null
+          gps_device_id?: number | null
           id?: string
           linea?: string | null
           marca?: string | null
@@ -1185,6 +1188,83 @@ export type Database = {
           vence_soat?: string | null
         }
         Relationships: []
+      }
+      vehiculos_gps: {
+        Row: {
+          activo: boolean
+          bateria: string | null
+          created_at: string
+          gpswox_device_id: number
+          grupo: string | null
+          icon_color: string | null
+          id: string
+          ignicion: boolean | null
+          imei: string | null
+          last_course: number | null
+          last_fix_at: string | null
+          last_lat: number | null
+          last_lon: number | null
+          last_speed_kmh: number | null
+          last_synced_at: string | null
+          nombre_dispositivo: string
+          online: string | null
+          raw: Json | null
+          updated_at: string
+          vehiculo_id: string | null
+        }
+        Insert: {
+          activo?: boolean
+          bateria?: string | null
+          created_at?: string
+          gpswox_device_id: number
+          grupo?: string | null
+          icon_color?: string | null
+          id?: string
+          ignicion?: boolean | null
+          imei?: string | null
+          last_course?: number | null
+          last_fix_at?: string | null
+          last_lat?: number | null
+          last_lon?: number | null
+          last_speed_kmh?: number | null
+          last_synced_at?: string | null
+          nombre_dispositivo: string
+          online?: string | null
+          raw?: Json | null
+          updated_at?: string
+          vehiculo_id?: string | null
+        }
+        Update: {
+          activo?: boolean
+          bateria?: string | null
+          created_at?: string
+          gpswox_device_id?: number
+          grupo?: string | null
+          icon_color?: string | null
+          id?: string
+          ignicion?: boolean | null
+          imei?: string | null
+          last_course?: number | null
+          last_fix_at?: string | null
+          last_lat?: number | null
+          last_lon?: number | null
+          last_speed_kmh?: number | null
+          last_synced_at?: string | null
+          nombre_dispositivo?: string
+          online?: string | null
+          raw?: Json | null
+          updated_at?: string
+          vehiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehiculos_gps_vehiculo_id_fkey"
+            columns: ["vehiculo_id"]
+            isOneToOne: false
+            referencedRelation: "vehiculos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
