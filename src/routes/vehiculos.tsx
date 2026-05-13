@@ -217,6 +217,8 @@ function Vehiculos() {
           </button>
         </div>
 
+        {role === "admin" && <GpsManager />}
+
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Filtrar:</span>
           {([
