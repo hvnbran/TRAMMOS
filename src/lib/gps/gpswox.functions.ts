@@ -41,16 +41,15 @@ export const gpswoxImportDevices = createServerFn({ method: "POST" })
       if (vehiculo_id) emparejados++;
       else sinEmparejar++;
 
+      const row = {
+        ...n,
+        raw: n.raw as never,
+        vehiculo_id,
+        last_synced_at: new Date().toISOString(),
+      };
       const { error } = await supabaseAdmin
         .from("vehiculos_gps")
-        .upsert(
-          {
-            ...n,
-            vehiculo_id,
-            last_synced_at: new Date().toISOString(),
-          },
-          { onConflict: "gpswox_device_id" },
-        );
+        .upsert(row, { onConflict: "gpswox_device_id" });
       if (!error) importados++;
 
       if (vehiculo_id) {
