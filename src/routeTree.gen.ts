@@ -37,6 +37,7 @@ import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/e
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicPushProcessRouteImport } from './routes/api/public/push.process'
+import { Route as ApiPublicGpsSyncRouteImport } from './routes/api/public/gps.sync'
 
 const VehiculosRoute = VehiculosRouteImport.update({
   id: '/vehiculos',
@@ -179,6 +180,11 @@ const ApiPublicPushProcessRoute = ApiPublicPushProcessRouteImport.update({
   path: '/api/public/push/process',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicGpsSyncRoute = ApiPublicGpsSyncRouteImport.update({
+  id: '/api/public/gps/sync',
+  path: '/api/public/gps/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
+  '/api/public/gps/sync': typeof ApiPublicGpsSyncRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/conductor': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
+  '/api/public/gps/sync': typeof ApiPublicGpsSyncRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
+  '/api/public/gps/sync': typeof ApiPublicGpsSyncRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -298,6 +307,7 @@ export interface FileRouteTypes {
     | '/conductor/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
+    | '/api/public/gps/sync'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/conductor'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
+    | '/api/public/gps/sync'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/conductor/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
+    | '/api/public/gps/sync'
     | '/api/public/push/process'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -389,6 +401,7 @@ export interface RootRouteChildren {
   ConductorIndexRoute: typeof ConductorIndexRoute
   ApiPublicConductorLoginRoute: typeof ApiPublicConductorLoginRoute
   ConductorServicioIdRoute: typeof ConductorServicioIdRoute
+  ApiPublicGpsSyncRoute: typeof ApiPublicGpsSyncRoute
   ApiPublicPushProcessRoute: typeof ApiPublicPushProcessRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -593,6 +606,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPushProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/gps/sync': {
+      id: '/api/public/gps/sync'
+      path: '/api/public/gps/sync'
+      fullPath: '/api/public/gps/sync'
+      preLoaderRoute: typeof ApiPublicGpsSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -621,6 +641,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConductorIndexRoute: ConductorIndexRoute,
   ApiPublicConductorLoginRoute: ApiPublicConductorLoginRoute,
   ConductorServicioIdRoute: ConductorServicioIdRoute,
+  ApiPublicGpsSyncRoute: ApiPublicGpsSyncRoute,
   ApiPublicPushProcessRoute: ApiPublicPushProcessRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

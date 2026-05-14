@@ -1,6 +1,8 @@
 import { SpeakButton } from "@/components/SpeakButton";
 import { Phone, AlertOctagon, X, Loader2, CheckCircle2, Car, User, AlertTriangle } from "lucide-react";
 import { Pictograma } from "@/components/Pictograma";
+import { lazy, Suspense } from "react";
+const VehiculoLiveMiniMap = lazy(() => import("@/components/pasajero/VehiculoLiveMiniMap"));
 
 export type EstadoSolicitud = "solicitada" | "aceptada" | "en_camino" | "a_bordo" | "finalizada" | "cancelada";
 
@@ -145,6 +147,13 @@ export function ViajeEnCurso({
             )}
           </div>
         </article>
+      )}
+
+      {/* Mini-mapa en vivo del vehículo */}
+      {vehiculo && (estado === "aceptada" || estado === "en_camino" || estado === "a_bordo") && (
+        <Suspense fallback={<div className="rounded-2xl border-2 border-border bg-muted/40 h-[200px]" />}>
+          <VehiculoLiveMiniMap placa={vehiculo} height={220} />
+        </Suspense>
       )}
 
       {/* Origen / destino resumido */}

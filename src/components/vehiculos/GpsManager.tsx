@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { gpswoxImportDevices, gpswoxSyncPositions, gpswoxLinkVehiculo } from "@/lib/gps/gpswox.functions";
+import { gpswoxSyncPositions, gpswoxLinkVehiculo } from "@/lib/gps/gpswox.functions";
 import { Loader2, Satellite, RefreshCw, Link2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,11 +41,9 @@ export function GpsManager() {
   const [rows, setRows] = useState<GpsRow[]>([]);
   const [vehs, setVehs] = useState<VehOpt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [importing, setImporting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const importFn = useServerFn(gpswoxImportDevices);
   const syncFn = useServerFn(gpswoxSyncPositions);
   const linkFn = useServerFn(gpswoxLinkVehiculo);
 
@@ -62,22 +60,11 @@ export function GpsManager() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleImport() {
-    setImporting(true);
-    try {
-      const r = await importFn();
-      toast.success(`Importados ${r.importados} GPS · ${r.emparejados} con vehículo · ${r.sinEmparejar} sin emparejar`);
-      await load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Error al importar");
-    } finally { setImporting(false); }
-  }
-
   async function handleSync() {
     setSyncing(true);
     try {
       const r = await syncFn();
-      toast.success(`Posiciones actualizadas: ${r.actualizados}/${r.total}`);
+      toast.success(`Sincronizados ${r.upserted}/${r.total} dispositivos · ${r.emparejados} emparejados`);
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al sincronizar");
@@ -108,8 +95,8 @@ export function GpsManager() {
             <h3 className="font-semibold text-gray-900">Dispositivos GPS</h3>
             <p className="text-xs text-gray-500">
               {rows.length === 0
-                ? "Importa los GPS desde serverusa.digital"
-                : `${rows.length} GPS · ${rows.filter((r) => r.vehiculo_id).length} vinculados`}
+                ? "Esperando primera sincronización…"
+                : `${rows.length} GPS · ${rows.filter((r) => r.vehiculo_id).length} vinculados · actualización automática cada 30 s`}
             </p>
           </div>
         </div>
@@ -120,27 +107,19 @@ export function GpsManager() {
         <div className="border-t border-gray-200 p-5 space-y-4">
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={handleImport}
-              disabled={importing}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-            >
-              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Satellite className="w-4 h-4" />}
-              Importar dispositivos
-            </button>
-            <button
               onClick={handleSync}
-              disabled={syncing || rows.length === 0}
+              disabled={syncing}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium disabled:opacity-50"
             >
               {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Actualizar posiciones
+              Forzar sincronización
             </button>
           </div>
 
           {loading ? (
             <p className="text-sm text-gray-500">Cargando…</p>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-gray-500">Aún no hay dispositivos. Pulsa "Importar" para traerlos desde serverusa.digital.</p>
+            <p className="text-sm text-gray-500">Aún no hay dispositivos. Pulsa "Forzar sincronización" para traerlos ahora.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
