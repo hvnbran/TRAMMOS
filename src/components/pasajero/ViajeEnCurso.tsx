@@ -1,6 +1,8 @@
 import { SpeakButton } from "@/components/SpeakButton";
 import { Phone, AlertOctagon, X, Loader2, CheckCircle2, Car, User, AlertTriangle } from "lucide-react";
 import { Pictograma } from "@/components/Pictograma";
+import { lazy, Suspense } from "react";
+const VehiculoLiveMiniMap = lazy(() => import("@/components/pasajero/VehiculoLiveMiniMap"));
 
 export type EstadoSolicitud = "solicitada" | "aceptada" | "en_camino" | "a_bordo" | "finalizada" | "cancelada";
 
