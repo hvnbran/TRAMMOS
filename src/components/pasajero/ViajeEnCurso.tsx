@@ -149,6 +149,13 @@ export function ViajeEnCurso({
         </article>
       )}
 
+      {/* Mini-mapa en vivo del vehículo */}
+      {vehiculo && (estado === "aceptada" || estado === "en_camino" || estado === "a_bordo") && (
+        <Suspense fallback={<div className="rounded-2xl border-2 border-border bg-muted/40 h-[200px]" />}>
+          <VehiculoLiveMiniMap placa={vehiculo} height={220} />
+        </Suspense>
+      )}
+
       {/* Origen / destino resumido */}
       <section
         aria-label="Trayecto"
