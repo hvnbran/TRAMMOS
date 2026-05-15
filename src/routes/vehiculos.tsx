@@ -8,7 +8,7 @@ import { DocumentManager, TIPOS_VEHICULO } from "@/components/DocumentManager";
 import { VehiculoConductores } from "@/components/VehiculoConductores";
 import { ChecklistANS } from "@/components/ChecklistANS";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
-import { GpsManager } from "@/components/vehiculos/GpsManager";
+
 
 export const Route = createFileRoute("/vehiculos")({
   component: Vehiculos,
