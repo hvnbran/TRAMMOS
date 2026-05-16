@@ -85,6 +85,9 @@ function RegistroPage() {
     e.preventDefault();
     if (v.state !== "valid") return;
     setError(null);
+    if (v.tipo === "empresa" && !v.empresa_nombre && empresaNombre.trim().length < 2) {
+      return setError("Indica el nombre de la empresa.");
+    }
     if (password.length < 8) return setError("La contraseña debe tener mínimo 8 caracteres.");
     if (password !== password2) return setError("Las contraseñas no coinciden.");
 
