@@ -212,9 +212,7 @@ function CuentasPage() {
         </div>
 
         {tab === "empresa" && <EmpresaTab />}
-        {tab === "pasajero" && (
-          <PasajeroTab empresas={empresas} openCrearEmpresa={() => setModalOpen(true)} />
-        )}
+        {tab === "pasajero" && <PasajeroTab />}
         {tab === "conductor" && <ConductorTab />}
       </div>
 
