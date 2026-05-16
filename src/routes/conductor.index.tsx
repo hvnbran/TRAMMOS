@@ -10,6 +10,9 @@ const InstallAppBanner = lazy(() =>
 const PushNotificationsToggle = lazy(() =>
   import("@/components/conductor/PushNotificationsToggle").then((m) => ({ default: m.PushNotificationsToggle })),
 );
+const ShareLocationToggle = lazy(() =>
+  import("@/components/conductor/ShareLocationToggle").then((m) => ({ default: m.ShareLocationToggle })),
+);
 
 export const Route = createFileRoute("/conductor/")({
   component: ConductorHome,
@@ -89,6 +92,7 @@ function ConductorHome() {
       ) : (
         <div className="space-y-6">
           <Suspense fallback={null}>
+            <ShareLocationToggle />
             {userId && <PushNotificationsToggle userId={userId} />}
             <InstallAppBanner />
           </Suspense>

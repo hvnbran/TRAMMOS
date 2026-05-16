@@ -43,7 +43,7 @@ function Monitoreo() {
           <div>
             <h1 className="text-2xl font-bold">Monitoreo en Tiempo Real</h1>
             <p className="text-sm text-muted-foreground">
-              Posición GPS en vivo de toda la flota — actualización automática cada 30s
+              Ubicación en vivo de los conductores conectados desde su celular
             </p>
           </div>
           <div className="flex items-center gap-3 text-xs">
