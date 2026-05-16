@@ -240,6 +240,7 @@ export type Database = {
           licencia: string | null
           nombre: string
           password_hash: string | null
+          password_plain: string | null
           primer_login_at: string | null
           servicios: number | null
           telefono: string | null
@@ -263,6 +264,7 @@ export type Database = {
           licencia?: string | null
           nombre: string
           password_hash?: string | null
+          password_plain?: string | null
           primer_login_at?: string | null
           servicios?: number | null
           telefono?: string | null
@@ -286,6 +288,7 @@ export type Database = {
           licencia?: string | null
           nombre?: string
           password_hash?: string | null
+          password_plain?: string | null
           primer_login_at?: string | null
           servicios?: number | null
           telefono?: string | null

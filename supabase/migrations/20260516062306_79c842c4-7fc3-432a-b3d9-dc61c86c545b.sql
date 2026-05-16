@@ -1,0 +1,1 @@
+ALTER TABLE public.conductores ADD COLUMN IF NOT EXISTS password_plain text;
