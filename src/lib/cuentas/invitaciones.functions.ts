@@ -14,20 +14,23 @@ async function assertAdmin(userId: string) {
   }
 }
 
-function genToken(len = 48) {
+function genShortToken(len = 12) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
   const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  let out = "";
+  for (let i = 0; i < len; i++) out += alphabet[bytes[i] % alphabet.length];
+  return out;
 }
 
 // ===== Crear invitación (admin) =====
 
 const crearSchema = z.object({
   tipo: z.enum(["empresa", "pasajero"]),
-  empresaId: z.string().uuid(),
+  empresaId: z.string().uuid().optional(),
   email_sugerido: z.string().trim().email().max(255).optional().or(z.literal("")),
   display_name_sugerido: z.string().trim().max(255).optional(),
-  expires_in_hours: z.number().int().min(1).max(24 * 30).default(72),
+  expires_in_hours: z.number().int().min(1).max(24 * 30).default(168),
 });
 
 export const crearInvitacionRegistro = createServerFn({ method: "POST" })
@@ -36,22 +39,33 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
-    // Validar empresa y obtener cliente legacy (necesario para inserción en pasajeros_pcd).
-    const { data: empresa, error: eErr } = await supabaseAdmin
-      .from("empresas")
-      .select("id, nombre, cliente_legacy")
-      .eq("id", data.empresaId)
-      .maybeSingle();
-    if (eErr) throw new Error(eErr.message);
-    if (!empresa) throw new Error("La empresa indicada no existe.");
+    let empresaId: string | null = null;
+    let clienteLegacy: string | null = null;
 
-    if (data.tipo === "pasajero" && !empresa.cliente_legacy) {
-      throw new Error(
-        "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
-      );
+    if (data.empresaId) {
+      const { data: empresa, error: eErr } = await supabaseAdmin
+        .from("empresas")
+        .select("id, nombre, cliente_legacy")
+        .eq("id", data.empresaId)
+        .maybeSingle();
+      if (eErr) throw new Error(eErr.message);
+      if (!empresa) throw new Error("La empresa indicada no existe.");
+      empresaId = empresa.id;
+      clienteLegacy = empresa.cliente_legacy ?? null;
+
+      if (data.tipo === "pasajero" && !empresa.cliente_legacy) {
+        throw new Error(
+          "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
+        );
+      }
+    } else {
+      // Sin empresa pre-asignada: solo permitido para tipo "empresa" (auto-registro).
+      if (data.tipo !== "empresa") {
+        throw new Error("Las invitaciones de pasajero requieren una empresa.");
+      }
     }
 
-    const token = genToken(32);
+    const token = genShortToken(12);
     const expiresAt = new Date(Date.now() + data.expires_in_hours * 3_600_000).toISOString();
 
     const { data: row, error } = await supabaseAdmin
@@ -59,10 +73,9 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
       .insert({
         token,
         tipo: data.tipo,
-        // Mantener compatibilidad: si la empresa tiene cliente legacy, lo seteamos también.
-        rol: data.tipo === "empresa" ? (empresa.cliente_legacy ?? null) : null,
-        cliente: empresa.cliente_legacy ?? null,
-        empresa_id: empresa.id,
+        rol: (data.tipo === "empresa" ? clienteLegacy : null) as never,
+        cliente: clienteLegacy as never,
+        empresa_id: empresaId,
         email_sugerido: data.email_sugerido || null,
         display_name_sugerido: data.display_name_sugerido || null,
         created_by: context.userId,
@@ -77,7 +90,7 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
 
 // ===== Validar invitación (público, sin auth) =====
 
-const validarSchema = z.object({ token: z.string().min(10).max(128) });
+const validarSchema = z.object({ token: z.string().min(8).max(128) });
 
 export const validarInvitacionRegistro = createServerFn({ method: "POST" })
   .inputValidator((d) => validarSchema.parse(d))
@@ -122,10 +135,11 @@ export const validarInvitacionRegistro = createServerFn({ method: "POST" })
 // ===== Consumir invitación (público, sin auth) =====
 
 const consumirSchema = z.object({
-  token: z.string().min(10).max(128),
+  token: z.string().min(8).max(128),
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
   display_name: z.string().trim().max(255).optional(),
+  empresa_nombre: z.string().trim().min(2).max(120).optional(),
   pasajero: z
     .object({
       nombre: z.string().trim().min(1).max(255),
@@ -136,6 +150,17 @@ const consumirSchema = z.object({
     })
     .optional(),
 });
+
+function slugify(s: string) {
+  const base = s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return base || `empresa-${Date.now()}`;
+}
 
 export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
   .inputValidator((d) => consumirSchema.parse(d))
@@ -162,6 +187,11 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
         .eq("id", inv.id);
     }
 
+    if (inv.tipo === "empresa" && !inv.empresa_id && !data.empresa_nombre) {
+      await rollbackInvitacion();
+      throw new Error("Debes indicar el nombre de la empresa.");
+    }
+
     // 2. Crear usuario auth
     const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -177,7 +207,30 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
 
     try {
       if (inv.tipo === "empresa") {
-        // Rol legacy (corona/sodimac/admin) cuando aplique.
+        let empresaId = inv.empresa_id as string | null;
+
+        if (!empresaId && data.empresa_nombre) {
+          const baseSlug = slugify(data.empresa_nombre);
+          let slug = baseSlug;
+          for (let attempt = 0; attempt < 5; attempt++) {
+            const { data: empNew, error: empErr } = await supabaseAdmin
+              .from("empresas")
+              .insert({ nombre: data.empresa_nombre, slug, created_by: userId })
+              .select("id")
+              .single();
+            if (!empErr && empNew) {
+              empresaId = empNew.id;
+              break;
+            }
+            if (empErr && empErr.code === "23505") {
+              slug = `${baseSlug}-${Math.floor(Math.random() * 9999)}`;
+              continue;
+            }
+            throw new Error(empErr?.message ?? "No se pudo crear la empresa");
+          }
+          if (!empresaId) throw new Error("No se pudo generar slug único para la empresa");
+        }
+
         const rol = inv.rol;
         if (rol) {
           const { error: rErr } = await supabaseAdmin
@@ -186,11 +239,10 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
           if (rErr && rErr.code !== "23505") throw new Error(rErr.message);
         }
 
-        // Membresía empresa
-        if (inv.empresa_id) {
+        if (empresaId) {
           await supabaseAdmin
             .from("user_empresas")
-            .insert({ user_id: userId, empresa_id: inv.empresa_id, rol_empresa: "admin_empresa" })
+            .insert({ user_id: userId, empresa_id: empresaId, rol_empresa: "admin_empresa" })
             .then((r) => {
               if (r.error && r.error.code !== "23505") throw new Error(r.error.message);
             });

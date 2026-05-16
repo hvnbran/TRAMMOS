@@ -27,7 +27,7 @@ import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
-import { Route as RegistroTokenRouteImport } from './routes/registro.$token'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
@@ -129,9 +129,9 @@ const ConductorIndexRoute = ConductorIndexRouteImport.update({
   path: '/conductor/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RegistroTokenRoute = RegistroTokenRouteImport.update({
-  id: '/registro/$token',
-  path: '/registro/$token',
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LegalTerminosRoute = LegalTerminosRouteImport.update({
@@ -207,7 +207,7 @@ export interface FileRoutesByFullPath {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
-  '/registro/$token': typeof RegistroTokenRoute
+  '/r/$token': typeof RTokenRoute
   '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
@@ -238,7 +238,7 @@ export interface FileRoutesByTo {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
-  '/registro/$token': typeof RegistroTokenRoute
+  '/r/$token': typeof RTokenRoute
   '/conductor': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
@@ -270,7 +270,7 @@ export interface FileRoutesById {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
-  '/registro/$token': typeof RegistroTokenRoute
+  '/r/$token': typeof RTokenRoute
   '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
@@ -303,7 +303,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
-    | '/registro/$token'
+    | '/r/$token'
     | '/conductor/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
@@ -334,7 +334,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
-    | '/registro/$token'
+    | '/r/$token'
     | '/conductor'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
@@ -365,7 +365,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
-    | '/registro/$token'
+    | '/r/$token'
     | '/conductor/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
@@ -397,7 +397,7 @@ export interface RootRouteChildren {
   ConductorLoginRoute: typeof ConductorLoginRoute
   LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   LegalTerminosRoute: typeof LegalTerminosRoute
-  RegistroTokenRoute: typeof RegistroTokenRoute
+  RTokenRoute: typeof RTokenRoute
   ConductorIndexRoute: typeof ConductorIndexRoute
   ApiPublicConductorLoginRoute: typeof ApiPublicConductorLoginRoute
   ConductorServicioIdRoute: typeof ConductorServicioIdRoute
@@ -536,11 +536,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConductorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/registro/$token': {
-      id: '/registro/$token'
-      path: '/registro/$token'
-      fullPath: '/registro/$token'
-      preLoaderRoute: typeof RegistroTokenRouteImport
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/legal/terminos': {
@@ -637,7 +637,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConductorLoginRoute: ConductorLoginRoute,
   LegalPrivacidadRoute: LegalPrivacidadRoute,
   LegalTerminosRoute: LegalTerminosRoute,
-  RegistroTokenRoute: RegistroTokenRoute,
+  RTokenRoute: RTokenRoute,
   ConductorIndexRoute: ConductorIndexRoute,
   ApiPublicConductorLoginRoute: ApiPublicConductorLoginRoute,
   ConductorServicioIdRoute: ConductorServicioIdRoute,
@@ -650,13 +650,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

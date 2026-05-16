@@ -7,7 +7,7 @@ import {
 } from "@/lib/cuentas/invitaciones.functions";
 import { Loader2, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
 
-export const Route = createFileRoute("/registro/$token")({
+export const Route = createFileRoute("/r/$token")({
   component: RegistroPage,
   head: () => ({
     meta: [
@@ -34,6 +34,7 @@ function RegistroPage() {
   // Form state
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [empresaNombre, setEmpresaNombre] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   // Pasajero extra
@@ -84,6 +85,9 @@ function RegistroPage() {
     e.preventDefault();
     if (v.state !== "valid") return;
     setError(null);
+    if (v.tipo === "empresa" && !v.empresa_nombre && empresaNombre.trim().length < 2) {
+      return setError("Indica el nombre de la empresa.");
+    }
     if (password.length < 8) return setError("La contraseña debe tener mínimo 8 caracteres.");
     if (password !== password2) return setError("Las contraseñas no coinciden.");
 
@@ -95,6 +99,7 @@ function RegistroPage() {
           email,
           password,
           display_name: displayName || undefined,
+          empresa_nombre: v.tipo === "empresa" && !v.empresa_nombre ? empresaNombre.trim() : undefined,
           pasajero: v.tipo === "pasajero"
             ? {
                 nombre,
@@ -165,8 +170,22 @@ function RegistroPage() {
               <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </Field>
 
+            {v.tipo === "empresa" && !v.empresa_nombre && (
+              <Field label="Nombre de tu empresa">
+                <input
+                  className="input"
+                  required
+                  minLength={2}
+                  maxLength={120}
+                  value={empresaNombre}
+                  onChange={(e) => setEmpresaNombre(e.target.value)}
+                  placeholder="Ej: Bavaria SAS"
+                />
+              </Field>
+            )}
+
             {v.tipo === "empresa" && (
-              <Field label="Nombre visible">
+              <Field label="Tu nombre (responsable)">
                 <input className="input" required value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
               </Field>
             )}
