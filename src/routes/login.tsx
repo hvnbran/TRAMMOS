@@ -34,7 +34,6 @@ const SEED_USERS: Record<SeedKey, { email: string; display_name: string; role: "
 };
 
 type Tab = "operador" | "pasajero";
-type PasajeroStep = "email" | "otp";
 
 function LoginPage() {
   const { signIn, user, loading, role } = useAuth();
