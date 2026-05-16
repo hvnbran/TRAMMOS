@@ -17,6 +17,15 @@ export interface GpsLive {
   last_course: number | null;
   last_fix_at: string | null;
   online: string | null;
+  direccion?: string | null;
+  bateria_gps?: number | null;
+  bateria_vehiculo?: number | null;
+  sim_signal?: number | null;
+  satelites?: number | null;
+  kilometraje?: number | null;
+  ignicion?: boolean | null;
+  bloqueo?: boolean | null;
+  novedad?: string | null;
   vehiculo?: { placa: string; conductor: string | null } | null;
 }
 
@@ -103,7 +112,7 @@ export default function MonitoreoMap({ focusedId, onCount }: Props) {
     async function load() {
       const { data } = await supabase
         .from("vehiculos_gps")
-        .select("id, gpswox_device_id, nombre_dispositivo, vehiculo_id, last_lat, last_lon, last_speed_kmh, last_course, last_fix_at, online, last_synced_at, vehiculo:vehiculos(placa, conductor)");
+        .select("id, gpswox_device_id, nombre_dispositivo, vehiculo_id, last_lat, last_lon, last_speed_kmh, last_course, last_fix_at, online, last_synced_at, direccion, bateria_gps, bateria_vehiculo, sim_signal, satelites, kilometraje, ignicion, bloqueo, novedad, vehiculo:vehiculos(placa, conductor)");
       if (!cancel) setDevices(((data ?? []) as unknown) as GpsLive[]);
     }
     void load();
@@ -191,14 +200,25 @@ export default function MonitoreoMap({ focusedId, onCount }: Props) {
               icon={arrowIcon(s, d.last_course, d.id === focusedId)}
             >
               <Popup>
-                <div style={{ fontSize: 12, minWidth: 170 }}>
-                  <strong>{placa}</strong>
+                <div style={{ fontSize: 12, minWidth: 220 }}>
+                  <strong style={{ fontSize: 13 }}>{placa}</strong>
                   <div style={{ color: "#666" }}>{d.nombre_dispositivo}</div>
-                  {d.vehiculo?.conductor && <div>Conductor: {d.vehiculo.conductor}</div>}
-                  <div>Velocidad: {d.last_speed_kmh != null ? `${Math.round(d.last_speed_kmh)} km/h` : "—"}</div>
-                  <div>Estado: {s === "online" ? "En movimiento" : s === "idle" ? "Detenido" : "Sin reportar"}</div>
+                  {d.vehiculo?.conductor && <div>👤 {d.vehiculo.conductor}</div>}
+                  {d.direccion && <div style={{ marginTop: 4, color: "#444" }}>📍 {d.direccion}</div>}
+                  <div style={{ marginTop: 6, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
+                    <div>🚗 {d.last_speed_kmh != null ? `${Math.round(d.last_speed_kmh)} km/h` : "—"}</div>
+                    <div>{s === "online" ? "🟢 Moviéndose" : s === "idle" ? "🟡 Detenido" : "⚪ Sin señal"}</div>
+                    {d.ignicion != null && <div>🔑 {d.ignicion ? "Encendido" : "Apagado"}</div>}
+                    {d.bateria_vehiculo != null && <div>🔋 Veh: {Number(d.bateria_vehiculo).toFixed(1)}V</div>}
+                    {d.bateria_gps != null && <div>🔋 GPS: {d.bateria_gps}%</div>}
+                    {d.sim_signal != null && <div>📶 {d.sim_signal}</div>}
+                    {d.satelites != null && <div>🛰️ {d.satelites}</div>}
+                    {d.kilometraje != null && <div>🛣️ {Math.round(Number(d.kilometraje))} km</div>}
+                  </div>
+                  {d.bloqueo && <div style={{ marginTop: 4, color: "#dc2626", fontWeight: 600 }}>🔒 Bloqueado</div>}
+                  {d.novedad && <div style={{ marginTop: 4, color: "#b45309" }}>⚠️ {d.novedad}</div>}
                   {d.last_fix_at && (
-                    <div style={{ color: "#666" }}>Último: {new Date(d.last_fix_at).toLocaleString("es-CO")}</div>
+                    <div style={{ color: "#666", marginTop: 6, fontSize: 11 }}>Último: {new Date(d.last_fix_at).toLocaleString("es-CO")}</div>
                   )}
                 </div>
               </Popup>
