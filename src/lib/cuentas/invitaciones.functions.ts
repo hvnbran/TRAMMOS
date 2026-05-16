@@ -58,12 +58,9 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
           "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
         );
       }
-    } else {
-      // Sin empresa pre-asignada: solo permitido para tipo "empresa" (auto-registro).
-      if (data.tipo !== "empresa") {
-        throw new Error("Las invitaciones de pasajero requieren una empresa.");
-      }
     }
+    // Sin empresa pre-asignada: permitido tanto para "empresa" como "pasajero".
+    // En el caso pasajero, el propio usuario elige su empresa al registrarse.
 
     const token = genShortToken(12);
     const expiresAt = new Date(Date.now() + data.expires_in_hours * 3_600_000).toISOString();
