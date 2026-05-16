@@ -102,6 +102,7 @@ export const crearCuentaPasajero = createServerFn({ method: "POST" })
           nivel_asistencia: data.nuevo.nivel_asistencia,
           autorizado: true,
           auth_user_id: userId,
+          consentimiento_datos: true,
         }])
         .select("id")
         .single();
