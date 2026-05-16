@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminOnly } from "@/components/layout/AdminOnly";
-import { crearCuentaPasajero } from "@/lib/cuentas/cuentas.functions";
+
 import { crearInvitacionRegistro } from "@/lib/cuentas/invitaciones.functions";
 import { listarEmpresas, crearEmpresa } from "@/lib/empresas/empresas.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -191,7 +191,7 @@ function CrearEmpresaModal({
 
 function CuentasPage() {
   const [tab, setTab] = useState<Tab>("empresa");
-  const { empresas, refresh } = useEmpresas();
+  const { refresh } = useEmpresas();
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
@@ -212,9 +212,7 @@ function CuentasPage() {
         </div>
 
         {tab === "empresa" && <EmpresaTab />}
-        {tab === "pasajero" && (
-          <PasajeroTab empresas={empresas} openCrearEmpresa={() => setModalOpen(true)} />
-        )}
+        {tab === "pasajero" && <PasajeroTab />}
         {tab === "conductor" && <ConductorTab />}
       </div>
 
@@ -269,114 +267,6 @@ function ResultadoCredenciales({ email, password, onReset }: { email: string; pa
 }
 
 // ============== Generador de invitaciones ==============
-
-function InvitacionGenerator({
-  tipo,
-  empresas,
-  openCrearEmpresa,
-}: {
-  tipo: "empresa" | "pasajero";
-  empresas: Empresa[];
-  openCrearEmpresa: () => void;
-}) {
-  const crearInv = useServerFn(crearInvitacionRegistro);
-  const [empresaId, setEmpresaId] = useState("");
-  const [emailSug, setEmailSug] = useState("");
-  const [horas, setHoras] = useState(72);
-  const [loading, setLoading] = useState(false);
-  const [link, setLink] = useState<string | null>(null);
-  const [expira, setExpira] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  async function generar() {
-    if (!empresaId) {
-      setError("Selecciona una empresa.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const r = await crearInv({
-        data: {
-          tipo,
-          empresaId,
-          email_sugerido: emailSug || undefined,
-          expires_in_hours: horas,
-        },
-      });
-      const url = `${window.location.origin}/r/${r.token}`;
-      setLink(url);
-      setExpira(r.expiresAt);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <Link2 className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">Generar enlace de registro (un solo uso)</h3>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Crea un enlace secreto para que {tipo === "empresa" ? "el usuario de la empresa" : "el pasajero"} complete sus propios datos. El enlace deja de funcionar al usarse o al expirar.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Empresa">
-          <EmpresaSelector
-            empresas={empresas}
-            value={empresaId}
-            onChange={setEmpresaId}
-            onCreate={openCrearEmpresa}
-            filterOnlyLegacy={tipo === "pasajero"}
-          />
-        </Field>
-        <Field label="Email sugerido (opcional)">
-          <input className="input" type="email" value={emailSug} onChange={(e) => setEmailSug(e.target.value)} placeholder="usuario@ejemplo.com" />
-        </Field>
-        <Field label="Expira en (horas)">
-          <input className="input" type="number" min={1} max={720} value={horas} onChange={(e) => setHoras(Number(e.target.value))} />
-        </Field>
-      </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
-      <button onClick={generar} disabled={loading} className="btn-primary">
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-        Generar enlace
-      </button>
-
-      {link && (
-        <div className="space-y-2 mt-2">
-          <pre className="text-xs font-mono bg-background p-3 rounded border border-border whitespace-pre-wrap break-all">{link}</pre>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={async () => {
-                await navigator.clipboard.writeText(link);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
-              }}
-              className="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-primary-foreground"
-            >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copiado" : "Copiar enlace"}
-            </button>
-            {expira && (
-              <span className="text-[11px] text-muted-foreground">
-                Expira: {new Date(expira).toLocaleString("es-CO")}
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Compártelo por un canal seguro. Solo se puede abrir y completar una vez.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ============== Tab Empresa ==============
 
 function EmpresaTab() {
@@ -455,44 +345,23 @@ function EmpresaTab() {
 
 // ============== Tab Pasajero ==============
 
-function PasajeroTab({ empresas, openCrearEmpresa }: { empresas: Empresa[]; openCrearEmpresa: () => void }) {
-  const crear = useServerFn(crearCuentaPasajero);
-  const [nombre, setNombre] = useState("");
-  const [cedula, setCedula] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [email, setEmail] = useState("");
-  const [empresaId, setEmpresaId] = useState("");
-  const [tipoDisc, setTipoDisc] = useState("ninguna");
-  const [nivelAsist, setNivelAsist] = useState(0);
-  const [password, setPassword] = useState(genPassword());
+function PasajeroTab() {
+  const crearInv = useServerFn(crearInvitacionRegistro);
   const [loading, setLoading] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+  const [expira, setExpira] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!empresaId) {
-      setError("Selecciona una empresa.");
-      return;
-    }
-    setError(null);
+  async function generar() {
     setLoading(true);
+    setError(null);
+    setLink(null);
     try {
-      const r = await crear({
-        data: {
-          email,
-          password,
-          empresaId,
-          nuevo: {
-            nombre,
-            cedula: cedula || null,
-            telefono: telefono || null,
-            tipo_discapacidad: tipoDisc,
-            nivel_asistencia: nivelAsist,
-          },
-        },
-      });
-      setResult({ email: r.email, password: r.password });
+      const r = await crearInv({ data: { tipo: "pasajero", expires_in_hours: 168 } });
+      const url = `${window.location.origin}/r/${r.token}`;
+      setLink(url);
+      setExpira(r.expiresAt);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -500,81 +369,54 @@ function PasajeroTab({ empresas, openCrearEmpresa }: { empresas: Empresa[]; open
     }
   }
 
-  if (result) {
-    return (
-      <Card title="Cuenta de pasajero creada">
-        <ResultadoCredenciales
-          email={result.email}
-          password={result.password}
-          onReset={() => {
-            setResult(null);
-            setNombre("");
-            setCedula("");
-            setTelefono("");
-            setEmail("");
-            setPassword(genPassword());
-          }}
-        />
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <InvitacionGenerator tipo="pasajero" empresas={empresas} openCrearEmpresa={openCrearEmpresa} />
-      <Card title="Nueva cuenta de pasajero PcD">
-        <form onSubmit={submit} className="space-y-3 max-w-2xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Nombre completo">
-              <input className="input" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-            </Field>
-            <Field label="Empresa">
-              <EmpresaSelector
-                empresas={empresas}
-                value={empresaId}
-                onChange={setEmpresaId}
-                onCreate={openCrearEmpresa}
-                filterOnlyLegacy
-              />
-            </Field>
-            <Field label="Cédula">
-              <input className="input" value={cedula} onChange={(e) => setCedula(e.target.value)} />
-            </Field>
-            <Field label="Teléfono">
-              <input className="input" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
-            </Field>
-            <Field label="Email (login)">
-              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </Field>
-            <Field label="Contraseña">
-              <div className="flex gap-2">
-                <input className="input flex-1 font-mono" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-                <button type="button" onClick={() => setPassword(genPassword())} className="text-xs px-3 rounded border border-border hover:bg-secondary">
-                  Aleatoria
-                </button>
-              </div>
-            </Field>
-            <Field label="Tipo discapacidad">
-              <select value={tipoDisc} onChange={(e) => setTipoDisc(e.target.value)} className="input">
-                <option value="ninguna">Ninguna</option>
-                <option value="visual">Visual</option>
-                <option value="auditiva">Auditiva</option>
-                <option value="motriz">Motriz</option>
-                <option value="cognitiva">Cognitiva</option>
-                <option value="multiple">Múltiple</option>
-              </select>
-            </Field>
-            <Field label="Nivel de asistencia (0-3)">
-              <input className="input" type="number" min={0} max={3} value={nivelAsist} onChange={(e) => setNivelAsist(Number(e.target.value))} />
-            </Field>
+    <Card title="Enlace de auto-registro de pasajero">
+      <div className="space-y-4 max-w-2xl">
+        <p className="text-sm text-muted-foreground">
+          Genera un enlace y envíalo al pasajero. Él mismo completa todos sus datos
+          (incluyendo discapacidad, ayudas técnicas, contacto de emergencia, etc.) y
+          elige a qué empresa pertenece. Al finalizar, queda registrado automáticamente
+          en el listado de pasajeros PcD.
+        </p>
+
+        <button onClick={generar} disabled={loading} className="btn-primary">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+          Generar enlace de registro
+        </button>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        {link && (
+          <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Comparte este enlace con el pasajero. Es de un solo uso.
+            </p>
+            <pre className="text-sm font-mono bg-background p-3 rounded border border-border whitespace-pre-wrap break-all">{link}</pre>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(link);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                }}
+                className="text-sm inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-primary-foreground"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copiado" : "Copiar enlace"}
+              </button>
+              <button onClick={generar} className="text-sm px-3 py-1.5 rounded border border-border">
+                <Plus className="h-4 w-4 inline mr-1" /> Generar otro
+              </button>
+              {expira && (
+                <span className="text-[11px] text-muted-foreground">
+                  Expira: {new Date(expira).toLocaleString("es-CO")}
+                </span>
+              )}
+            </div>
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear cuenta
-          </button>
-        </form>
-      </Card>
-    </div>
+        )}
+      </div>
+    </Card>
   );
 }
 

@@ -58,12 +58,9 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
           "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
         );
       }
-    } else {
-      // Sin empresa pre-asignada: solo permitido para tipo "empresa" (auto-registro).
-      if (data.tipo !== "empresa") {
-        throw new Error("Las invitaciones de pasajero requieren una empresa.");
-      }
     }
+    // Sin empresa pre-asignada: permitido tanto para "empresa" como "pasajero".
+    // En el caso pasajero, el propio usuario elige su empresa al registrarse.
 
     const token = genShortToken(12);
     const expiresAt = new Date(Date.now() + data.expires_in_hours * 3_600_000).toISOString();
@@ -140,13 +137,29 @@ const consumirSchema = z.object({
   password: z.string().min(8).max(128),
   display_name: z.string().trim().max(255).optional(),
   empresa_nombre: z.string().trim().min(2).max(120).optional(),
+  empresa_id_elegida: z.string().uuid().optional(),
   pasajero: z
     .object({
       nombre: z.string().trim().min(1).max(255),
       cedula: z.string().trim().max(50).optional(),
       telefono: z.string().trim().max(50).optional(),
+      direccion_habitual: z.string().trim().max(255).optional(),
+      es_pcd: z.boolean().default(false),
       tipo_discapacidad: z.string().max(50).default("ninguna"),
-      nivel_asistencia: z.number().int().min(0).max(5).default(0),
+      nivel_asistencia: z.number().int().min(0).max(3).default(0),
+      comunicacion_preferida: z.string().max(50).default("voz"),
+      ayudas_tecnicas: z.array(z.string().max(50)).max(20).default([]),
+      silla_ruedas_medidas: z.string().trim().max(120).optional(),
+      condiciones_medicas: z.string().trim().max(1000).optional(),
+      alergias: z.string().trim().max(500).optional(),
+      medicamentos: z.string().trim().max(500).optional(),
+      contacto_emergencia_nombre: z.string().trim().max(120).optional(),
+      contacto_emergencia_telefono: z.string().trim().max(50).optional(),
+      contacto_emergencia_relacion: z.string().trim().max(50).optional(),
+      notas_conductor: z.string().trim().max(1000).optional(),
+      permite_acompanante: z.boolean().default(true),
+      requiere_vehiculo_adaptado: z.boolean().default(false),
+      consentimiento_datos: z.boolean().default(true),
     })
     .optional(),
 });
@@ -257,20 +270,55 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
       } else {
         // pasajero
         if (!data.pasajero) throw new Error("Faltan datos del pasajero");
-        const cliente = inv.cliente;
-        if (!cliente) throw new Error("Esta invitación no tiene cliente válido.");
+
+        // Resolver empresa: la de la invitación o la elegida por el pasajero
+        let empresaIdPas = inv.empresa_id as string | null;
+        let cliente = inv.cliente as "corona" | "sodimac" | null;
+
+        if (!empresaIdPas && data.empresa_id_elegida) {
+          const { data: empSel, error: empSelErr } = await supabaseAdmin
+            .from("empresas")
+            .select("id, cliente_legacy")
+            .eq("id", data.empresa_id_elegida)
+            .maybeSingle();
+          if (empSelErr) throw new Error(empSelErr.message);
+          if (!empSel) throw new Error("La empresa seleccionada no existe.");
+          empresaIdPas = empSel.id;
+          cliente = (empSel.cliente_legacy as "corona" | "sodimac" | null) ?? cliente;
+        }
+
+        if (!empresaIdPas) throw new Error("Debes seleccionar tu empresa.");
+        if (!cliente) {
+          throw new Error("La empresa seleccionada aún no está habilitada para registrar pasajeros.");
+        }
+
+        const p = data.pasajero;
+        const esPcd = p.es_pcd === true;
 
         const { error: pErr } = await supabaseAdmin
           .from("pasajeros_pcd")
           .insert([{
-            nombre: data.pasajero.nombre,
-            cedula: data.pasajero.cedula ?? null,
-            telefono: data.pasajero.telefono ?? null,
+            nombre: p.nombre,
+            cedula: p.cedula ?? null,
+            telefono: p.telefono ?? null,
             email: data.email,
             cliente,
-            empresa_id: inv.empresa_id,
-            tipo_discapacidad: data.pasajero.tipo_discapacidad,
-            nivel_asistencia: data.pasajero.nivel_asistencia,
+            empresa_id: empresaIdPas,
+            direccion_habitual: p.direccion_habitual ?? null,
+            tipo_discapacidad: esPcd ? p.tipo_discapacidad : "ninguna",
+            nivel_asistencia: esPcd ? p.nivel_asistencia : 0,
+            comunicacion_preferida: esPcd ? p.comunicacion_preferida : "voz",
+            ayudas_tecnicas: esPcd ? p.ayudas_tecnicas : [],
+            silla_ruedas_medidas: esPcd ? (p.silla_ruedas_medidas ?? null) : null,
+            condiciones_medicas: esPcd ? (p.condiciones_medicas ?? null) : null,
+            alergias: esPcd ? (p.alergias ?? null) : null,
+            medicamentos: esPcd ? (p.medicamentos ?? null) : null,
+            contacto_emergencia_nombre: p.contacto_emergencia_nombre ?? null,
+            contacto_emergencia_telefono: p.contacto_emergencia_telefono ?? null,
+            contacto_emergencia_relacion: p.contacto_emergencia_relacion ?? null,
+            notas_conductor: p.notas_conductor ?? null,
+            permite_acompanante: p.permite_acompanante,
+            requiere_vehiculo_adaptado: esPcd ? p.requiere_vehiculo_adaptado : false,
             autorizado: true,
             auth_user_id: userId,
             consentimiento_datos: true,
@@ -282,14 +330,19 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
           .insert({ user_id: userId, role: "pasajero" });
         if (rErr && rErr.code !== "23505") throw new Error(rErr.message);
 
-        if (inv.empresa_id) {
-          await supabaseAdmin
-            .from("user_empresas")
-            .insert({ user_id: userId, empresa_id: inv.empresa_id, rol_empresa: "pasajero" })
-            .then((r) => {
-              if (r.error && r.error.code !== "23505") throw new Error(r.error.message);
-            });
-        }
+        await supabaseAdmin
+          .from("user_empresas")
+          .insert({ user_id: userId, empresa_id: empresaIdPas, rol_empresa: "pasajero" })
+          .then((r) => {
+            if (r.error && r.error.code !== "23505") throw new Error(r.error.message);
+          });
+
+        await supabaseAdmin
+          .from("profiles")
+          .upsert(
+            { user_id: userId, email: data.email, display_name: data.display_name ?? p.nombre },
+            { onConflict: "user_id" },
+          );
       }
 
       // 3. Marcar consumed_user_id
@@ -337,4 +390,18 @@ export const revocarInvitacion = createServerFn({ method: "POST" })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ===== Listar empresas elegibles (público, para auto-registro pasajero) =====
+
+export const listarEmpresasParaRegistro = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { data, error } = await supabaseAdmin
+      .from("empresas")
+      .select("id, nombre, cliente_legacy")
+      .eq("activo", true)
+      .not("cliente_legacy", "is", null)
+      .order("nombre", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { empresas: (data ?? []) as Array<{ id: string; nombre: string; cliente_legacy: string | null }> };
   });
