@@ -99,6 +99,7 @@ function RegistroPage() {
           email,
           password,
           display_name: displayName || undefined,
+          empresa_nombre: v.tipo === "empresa" && !v.empresa_nombre ? empresaNombre.trim() : undefined,
           pasajero: v.tipo === "pasajero"
             ? {
                 nombre,
