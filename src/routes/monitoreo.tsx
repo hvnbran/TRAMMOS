@@ -65,8 +65,6 @@ function Monitoreo() {
             </Suspense>
           </div>
         </div>
-
-        <GpsManager />
       </div>
     </AppLayout>
   );
