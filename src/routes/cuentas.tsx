@@ -191,7 +191,7 @@ function CrearEmpresaModal({
 
 function CuentasPage() {
   const [tab, setTab] = useState<Tab>("empresa");
-  const { empresas, refresh } = useEmpresas();
+  const { refresh } = useEmpresas();
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
