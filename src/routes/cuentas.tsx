@@ -6,7 +6,6 @@ import { AdminOnly } from "@/components/layout/AdminOnly";
 import {
   crearCuentaEmpresa,
   crearCuentaPasajero,
-  resetPasswordCuenta,
 } from "@/lib/cuentas/cuentas.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, Accessibility, Users, Loader2, Copy, Check, KeyRound, Plus } from "lucide-react";
