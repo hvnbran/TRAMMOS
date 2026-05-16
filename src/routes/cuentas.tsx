@@ -214,9 +214,7 @@ function CuentasPage() {
           <TabBtn active={tab === "conductor"} onClick={() => setTab("conductor")} icon={<Users className="h-4 w-4" />} label="Conductor" />
         </div>
 
-        {tab === "empresa" && (
-          <EmpresaTab empresas={empresas} openCrearEmpresa={() => setModalOpen(true)} />
-        )}
+        {tab === "empresa" && <EmpresaTab />}
         {tab === "pasajero" && (
           <PasajeroTab empresas={empresas} openCrearEmpresa={() => setModalOpen(true)} />
         )}
