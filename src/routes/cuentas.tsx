@@ -7,8 +7,9 @@ import {
   crearCuentaEmpresa,
   crearCuentaPasajero,
 } from "@/lib/cuentas/cuentas.functions";
+import { crearInvitacionRegistro } from "@/lib/cuentas/invitaciones.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Accessibility, Users, Loader2, Copy, Check, KeyRound, Plus } from "lucide-react";
+import { Building2, Accessibility, Users, Loader2, Copy, Check, KeyRound, Plus, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/cuentas")({
   component: () => (
