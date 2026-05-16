@@ -14,20 +14,23 @@ async function assertAdmin(userId: string) {
   }
 }
 
-function genToken(len = 48) {
+function genShortToken(len = 12) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
   const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  let out = "";
+  for (let i = 0; i < len; i++) out += alphabet[bytes[i] % alphabet.length];
+  return out;
 }
 
 // ===== Crear invitación (admin) =====
 
 const crearSchema = z.object({
   tipo: z.enum(["empresa", "pasajero"]),
-  empresaId: z.string().uuid(),
+  empresaId: z.string().uuid().optional(),
   email_sugerido: z.string().trim().email().max(255).optional().or(z.literal("")),
   display_name_sugerido: z.string().trim().max(255).optional(),
-  expires_in_hours: z.number().int().min(1).max(24 * 30).default(72),
+  expires_in_hours: z.number().int().min(1).max(24 * 30).default(168),
 });
 
 export const crearInvitacionRegistro = createServerFn({ method: "POST" })
@@ -36,22 +39,33 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
-    // Validar empresa y obtener cliente legacy (necesario para inserción en pasajeros_pcd).
-    const { data: empresa, error: eErr } = await supabaseAdmin
-      .from("empresas")
-      .select("id, nombre, cliente_legacy")
-      .eq("id", data.empresaId)
-      .maybeSingle();
-    if (eErr) throw new Error(eErr.message);
-    if (!empresa) throw new Error("La empresa indicada no existe.");
+    let empresaId: string | null = null;
+    let clienteLegacy: string | null = null;
 
-    if (data.tipo === "pasajero" && !empresa.cliente_legacy) {
-      throw new Error(
-        "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
-      );
+    if (data.empresaId) {
+      const { data: empresa, error: eErr } = await supabaseAdmin
+        .from("empresas")
+        .select("id, nombre, cliente_legacy")
+        .eq("id", data.empresaId)
+        .maybeSingle();
+      if (eErr) throw new Error(eErr.message);
+      if (!empresa) throw new Error("La empresa indicada no existe.");
+      empresaId = empresa.id;
+      clienteLegacy = empresa.cliente_legacy ?? null;
+
+      if (data.tipo === "pasajero" && !empresa.cliente_legacy) {
+        throw new Error(
+          "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
+        );
+      }
+    } else {
+      // Sin empresa pre-asignada: solo permitido para tipo "empresa" (auto-registro).
+      if (data.tipo !== "empresa") {
+        throw new Error("Las invitaciones de pasajero requieren una empresa.");
+      }
     }
 
-    const token = genToken(32);
+    const token = genShortToken(12);
     const expiresAt = new Date(Date.now() + data.expires_in_hours * 3_600_000).toISOString();
 
     const { data: row, error } = await supabaseAdmin
@@ -59,10 +73,9 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
       .insert({
         token,
         tipo: data.tipo,
-        // Mantener compatibilidad: si la empresa tiene cliente legacy, lo seteamos también.
-        rol: data.tipo === "empresa" ? (empresa.cliente_legacy ?? null) : null,
-        cliente: empresa.cliente_legacy ?? null,
-        empresa_id: empresa.id,
+        rol: data.tipo === "empresa" ? clienteLegacy : null,
+        cliente: clienteLegacy,
+        empresa_id: empresaId,
         email_sugerido: data.email_sugerido || null,
         display_name_sugerido: data.display_name_sugerido || null,
         created_by: context.userId,
