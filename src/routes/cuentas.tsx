@@ -56,7 +56,7 @@ function useEmpresas() {
   async function refresh() {
     setLoading(true);
     try {
-      const r = await listar({});
+      const r = await listar();
       setEmpresas((r.empresas ?? []) as Empresa[]);
     } finally {
       setLoading(false);
