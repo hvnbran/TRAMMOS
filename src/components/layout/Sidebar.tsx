@@ -17,6 +17,7 @@ import {
   FolderOpen,
   LogOut,
   Accessibility,
+  UserCog,
 } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo-trammos.png";
@@ -41,6 +42,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/feedback", icon: Star, label: "Feedback" },
   { to: "/formatos", icon: FolderOpen, label: "Formatos" },
   { to: "/alertas", icon: Bell, label: "Alertas" },
+  { to: "/cuentas", icon: UserCog, label: "Creación de cuentas" },
 ];
 
 // Corona y Sodimac sólo ven estas

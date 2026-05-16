@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import banner from "@/assets/banner-trammos.png";
 import bannerCorona from "@/assets/banner-corona.png";
 import bannerSodimac from "@/assets/banner-sodimac.png";
-import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
+import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility } from "lucide-react";
 import { PolicyAcceptanceCheckbox } from "@/components/legal/PolicyAcceptanceCheckbox";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
@@ -34,7 +34,6 @@ const SEED_USERS: Record<SeedKey, { email: string; display_name: string; role: "
 };
 
 type Tab = "operador" | "pasajero";
-type PasajeroStep = "email" | "otp";
 
 function LoginPage() {
   const { signIn, user, loading, role } = useAuth();
@@ -49,11 +48,9 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [acceptOp, setAcceptOp] = useState(false);
 
-  // Pasajero
-  const [pStep, setPStep] = useState<PasajeroStep>("email");
+  // Pasajero (password-based)
   const [pEmail, setPEmail] = useState("");
-  const [pCode, setPCode] = useState("");
-  const [pInfo, setPInfo] = useState<string | null>(null);
+  const [pPassword, setPPassword] = useState("");
   const [pError, setPError] = useState<string | null>(null);
   const [pLoading, setPLoading] = useState(false);
   const [acceptPas, setAcceptPas] = useState(false);
@@ -126,125 +123,33 @@ function LoginPage() {
     startSplashSequence(displayName, clientKey, "/");
   };
 
-  const TEST_EMAIL = "trammos@admin.com";
-  const TEST_CODE = "123456";
 
-  const handleRequestCode = async (e: FormEvent) => {
+  const handlePasajeroLogin = async (e: FormEvent) => {
     e.preventDefault();
     setPError(null);
-    setPInfo(null);
     setPLoading(true);
     const email = pEmail.trim();
-    if (!email) {
-      setPError("Escribe tu correo.");
+    if (!email || !pPassword) {
+      setPError("Escribe tu correo y contraseña.");
       setPLoading(false);
       return;
     }
 
-    // Testing shortcut: skip Supabase OTP entirely.
-    if (email.toLowerCase() === TEST_EMAIL) {
-      setPInfo(`Modo testing: usa el código ${TEST_CODE} para entrar.`);
-      setPStep("otp");
-      setPLoading(false);
-      return;
-    }
-
-    // 1) Validate authorization
+    // Validar autorización
     const { data: authorized, error: rpcErr } = await supabase.rpc("is_pasajero_email_authorized", { _email: email });
-    if (rpcErr) {
-      setPError("No pudimos verificar tu correo. Intenta de nuevo.");
-      setPLoading(false);
-      return;
-    }
-    if (!authorized) {
+    if (rpcErr || !authorized) {
       setPError("Este correo no está autorizado. Contacta al equipo TRAMMOS.");
       setPLoading(false);
       return;
     }
-    // 2) Send OTP (6-digit code, NO magic link)
-    const { error: otpErr } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    });
-    if (otpErr) {
-      setPError("No pudimos enviar el código. Intenta de nuevo en unos segundos.");
-      setPLoading(false);
-      return;
-    }
-    setPInfo(`Te enviamos un código de 6 dígitos a ${email}. Revisa tu correo.`);
-    setPStep("otp");
-    setPLoading(false);
-  };
 
-  const handleVerifyCode = async (e: FormEvent) => {
-    e.preventDefault();
-    setPError(null);
-    setPLoading(true);
-    const code = pCode.trim();
-    const email = pEmail.trim();
-    if (code.length < 4) {
-      setPError("Ingresa el código que llegó a tu correo.");
+    const { error: sErr } = await supabase.auth.signInWithPassword({ email, password: pPassword });
+    if (sErr) {
+      setPError("Credenciales incorrectas. Verifica tu correo y contraseña.");
       setPLoading(false);
       return;
     }
 
-    // Testing shortcut: validate against the test backend route.
-    if (email.toLowerCase() === TEST_EMAIL) {
-      if (code !== TEST_CODE) {
-        setPError("Código de testing incorrecto. Usa 123456.");
-        setPLoading(false);
-        return;
-      }
-      try {
-        const res = await fetch("/api/test-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, code }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json.token_hash) {
-          setPError(`No pudimos entrar en modo testing (${json.error ?? res.status}).`);
-          setPLoading(false);
-          return;
-        }
-        const { error: vErr } = await supabase.auth.verifyOtp({
-          token_hash: json.token_hash,
-          type: "magiclink",
-        });
-        if (vErr) {
-          setPError(`Verificación fallida: ${vErr.message}`);
-          setPLoading(false);
-          return;
-        }
-        const linkResp = await supabase.rpc("link_pasajero_to_auth");
-        const pasajeroIdT = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
-        void recordAcceptance({
-          types: ["terminos", "privacidad"],
-          contexto: "login_pasajero",
-          email,
-          pasajeroId: pasajeroIdT,
-        });
-        setPLoading(false);
-        startSplashSequence("Pasajero Testing", "pasajero", "/pasajero");
-        return;
-      } catch (err) {
-        setPError("Error de red en modo testing.");
-        setPLoading(false);
-        return;
-      }
-    }
-
-    const { error: vErr } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: "email",
-    });
-    if (vErr) {
-      setPError("Código incorrecto o vencido. Pide uno nuevo.");
-      setPLoading(false);
-      return;
-    }
-    // Link to pasajero profile + assign role
     const linkResp = await supabase.rpc("link_pasajero_to_auth");
     const pasajeroId = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
     void recordAcceptance({
@@ -254,7 +159,7 @@ function LoginPage() {
       pasajeroId,
     });
     setPLoading(false);
-    startSplashSequence(pEmail.split("@")[0], "pasajero", "/pasajero");
+    startSplashSequence(email.split("@")[0], "pasajero", "/pasajero");
   };
 
   return (
@@ -356,99 +261,64 @@ function LoginPage() {
             </form>
           ) : (
             <div className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
-              {pStep === "email" ? (
-                <form onSubmit={handleRequestCode} className="space-y-4">
-                  <div className="text-center -mt-2">
-                    <h2 className="text-base font-semibold text-foreground">Pide tu carro</h2>
-                    <p className="text-xs text-muted-foreground">Sin contraseñas que recordar.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <Mail className="h-3.5 w-3.5" /> Tu correo
-                    </label>
-                    <input
-                      type="email"
-                      autoComplete="email"
-                      inputMode="email"
-                      value={pEmail}
-                      onChange={(e) => setPEmail(e.target.value)}
-                      placeholder="tunombre@correo.com"
-                      className="w-full h-12 rounded-md border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                      required
-                      disabled={pLoading}
-                    />
-                  </div>
-                  {pError && (
-                    <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
-                      {pError}
-                    </div>
-                  )}
-                  <PolicyAcceptanceCheckbox
-                    id="policy-pas"
-                    checked={acceptPas}
-                    onChange={setAcceptPas}
+              <form onSubmit={handlePasajeroLogin} className="space-y-4">
+                <div className="text-center -mt-2">
+                  <h2 className="text-base font-semibold text-foreground">Pide tu carro</h2>
+                  <p className="text-xs text-muted-foreground">Ingresa con el correo y la contraseña que te entregó TRAMMOS.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" /> Tu correo
+                  </label>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    value={pEmail}
+                    onChange={(e) => setPEmail(e.target.value)}
+                    placeholder="tunombre@correo.com"
+                    className="w-full h-12 rounded-md border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                    required
                     disabled={pLoading}
                   />
-                  <button
-                    type="submit"
-                    disabled={pLoading || !acceptPas}
-                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {pLoading ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Enviando código...</>
-                    ) : (
-                      <><Mail className="h-4 w-4" /> Enviarme el código</>
-                    )}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyCode} className="space-y-4">
-                  <button
-                    type="button"
-                    onClick={() => { setPStep("email"); setPCode(""); setPError(null); }}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <ArrowLeft className="h-3 w-3" /> Cambiar correo
-                  </button>
-                  {pInfo && (
-                    <div className="rounded-md bg-primary/10 border border-primary/30 px-3 py-2 text-xs text-foreground">
-                      {pInfo}
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <KeyRound className="h-3.5 w-3.5" /> Código de 6 dígitos
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      value={pCode}
-                      onChange={(e) => setPCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="••••••"
-                      className="w-full h-14 rounded-md border border-input bg-background px-3 text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-ring"
-                      required
-                      disabled={pLoading}
-                    />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <KeyRound className="h-3.5 w-3.5" /> Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={pPassword}
+                    onChange={(e) => setPPassword(e.target.value)}
+                    className="w-full h-12 rounded-md border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                    required
+                    disabled={pLoading}
+                  />
+                </div>
+                {pError && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
+                    {pError}
                   </div>
-                  {pError && (
-                    <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
-                      {pError}
-                    </div>
+                )}
+                <PolicyAcceptanceCheckbox
+                  id="policy-pas"
+                  checked={acceptPas}
+                  onChange={setAcceptPas}
+                  disabled={pLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={pLoading || !acceptPas}
+                  className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {pLoading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Ingresando...</>
+                  ) : (
+                    <><LogIn className="h-4 w-4" /> Entrar</>
                   )}
-                  <button
-                    type="submit"
-                    disabled={pLoading || pCode.length < 4}
-                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {pLoading ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Verificando...</>
-                    ) : (
-                      <><Check className="h-4 w-4" /> Entrar</>
-                    )}
-                  </button>
-                </form>
-              )}
+                </button>
+              </form>
             </div>
           )}
 

@@ -4,7 +4,6 @@ import { AppLayout } from "../components/layout/AppLayout";
 import { AdminOnly } from "../components/layout/AdminOnly";
 import { Skeleton } from "../components/ui/skeleton";
 import VehiculosLiveList from "../components/monitoreo/VehiculosLiveList";
-import { GpsManager } from "../components/vehiculos/GpsManager";
 import { Activity, WifiOff } from "lucide-react";
 
 const MonitoreoMap = lazy(() => import("../components/MonitoreoMap"));
@@ -66,8 +65,6 @@ function Monitoreo() {
             </Suspense>
           </div>
         </div>
-
-        <GpsManager />
       </div>
     </AppLayout>
   );

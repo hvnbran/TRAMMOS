@@ -22,6 +22,7 @@ import { Route as FormatosRouteImport } from './routes/formatos'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FacturacionRouteImport } from './routes/facturacion'
 import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
+import { Route as CuentasRouteImport } from './routes/cuentas'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
@@ -102,6 +103,11 @@ const CumplimientoRoute = CumplimientoRouteImport.update({
   path: '/cumplimiento',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CuentasRoute = CuentasRouteImport.update({
+  id: '/cuentas',
+  path: '/cuentas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConductoresRoute = ConductoresRouteImport.update({
   id: '/conductores',
   path: '/conductores',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/conductores': typeof ConductoresRoute
+  '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
   '/feedback': typeof FeedbackRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/conductores': typeof ConductoresRoute
+  '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
   '/feedback': typeof FeedbackRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/conductores': typeof ConductoresRoute
+  '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
   '/feedback': typeof FeedbackRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/conductores'
+    | '/cuentas'
     | '/cumplimiento'
     | '/facturacion'
     | '/feedback'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/conductores'
+    | '/cuentas'
     | '/cumplimiento'
     | '/facturacion'
     | '/feedback'
@@ -326,6 +337,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/conductores'
+    | '/cuentas'
     | '/cumplimiento'
     | '/facturacion'
     | '/feedback'
@@ -356,6 +368,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertasRoute: typeof AlertasRoute
   ConductoresRoute: typeof ConductoresRoute
+  CuentasRoute: typeof CuentasRoute
   CumplimientoRoute: typeof CumplimientoRoute
   FacturacionRoute: typeof FacturacionRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -475,6 +488,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CumplimientoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cuentas': {
+      id: '/cuentas'
+      path: '/cuentas'
+      fullPath: '/cuentas'
+      preLoaderRoute: typeof CuentasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/conductores': {
       id: '/conductores'
       path: '/conductores'
@@ -580,6 +600,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertasRoute: AlertasRoute,
   ConductoresRoute: ConductoresRoute,
+  CuentasRoute: CuentasRoute,
   CumplimientoRoute: CumplimientoRoute,
   FacturacionRoute: FacturacionRoute,
   FeedbackRoute: FeedbackRoute,
