@@ -263,99 +263,64 @@ function LoginPage() {
             </form>
           ) : (
             <div className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
-              {pStep === "email" ? (
-                <form onSubmit={handleRequestCode} className="space-y-4">
-                  <div className="text-center -mt-2">
-                    <h2 className="text-base font-semibold text-foreground">Pide tu carro</h2>
-                    <p className="text-xs text-muted-foreground">Sin contraseñas que recordar.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <Mail className="h-3.5 w-3.5" /> Tu correo
-                    </label>
-                    <input
-                      type="email"
-                      autoComplete="email"
-                      inputMode="email"
-                      value={pEmail}
-                      onChange={(e) => setPEmail(e.target.value)}
-                      placeholder="tunombre@correo.com"
-                      className="w-full h-12 rounded-md border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                      required
-                      disabled={pLoading}
-                    />
-                  </div>
-                  {pError && (
-                    <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
-                      {pError}
-                    </div>
-                  )}
-                  <PolicyAcceptanceCheckbox
-                    id="policy-pas"
-                    checked={acceptPas}
-                    onChange={setAcceptPas}
+              <form onSubmit={handlePasajeroLogin} className="space-y-4">
+                <div className="text-center -mt-2">
+                  <h2 className="text-base font-semibold text-foreground">Pide tu carro</h2>
+                  <p className="text-xs text-muted-foreground">Ingresa con el correo y la contraseña que te entregó TRAMMOS.</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" /> Tu correo
+                  </label>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    value={pEmail}
+                    onChange={(e) => setPEmail(e.target.value)}
+                    placeholder="tunombre@correo.com"
+                    className="w-full h-12 rounded-md border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                    required
                     disabled={pLoading}
                   />
-                  <button
-                    type="submit"
-                    disabled={pLoading || !acceptPas}
-                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {pLoading ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Enviando código...</>
-                    ) : (
-                      <><Mail className="h-4 w-4" /> Enviarme el código</>
-                    )}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyCode} className="space-y-4">
-                  <button
-                    type="button"
-                    onClick={() => { setPStep("email"); setPCode(""); setPError(null); }}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <ArrowLeft className="h-3 w-3" /> Cambiar correo
-                  </button>
-                  {pInfo && (
-                    <div className="rounded-md bg-primary/10 border border-primary/30 px-3 py-2 text-xs text-foreground">
-                      {pInfo}
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <KeyRound className="h-3.5 w-3.5" /> Código de 6 dígitos
-                    </label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      value={pCode}
-                      onChange={(e) => setPCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="••••••"
-                      className="w-full h-14 rounded-md border border-input bg-background px-3 text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-ring"
-                      required
-                      disabled={pLoading}
-                    />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <KeyRound className="h-3.5 w-3.5" /> Contraseña
+                  </label>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={pPassword}
+                    onChange={(e) => setPPassword(e.target.value)}
+                    className="w-full h-12 rounded-md border border-input bg-background px-3 text-base focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                    required
+                    disabled={pLoading}
+                  />
+                </div>
+                {pError && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
+                    {pError}
                   </div>
-                  {pError && (
-                    <div className="rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
-                      {pError}
-                    </div>
+                )}
+                <PolicyAcceptanceCheckbox
+                  id="policy-pas"
+                  checked={acceptPas}
+                  onChange={setAcceptPas}
+                  disabled={pLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={pLoading || !acceptPas}
+                  className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {pLoading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Ingresando...</>
+                  ) : (
+                    <><LogIn className="h-4 w-4" /> Entrar</>
                   )}
-                  <button
-                    type="submit"
-                    disabled={pLoading || pCode.length < 4}
-                    className="w-full h-12 rounded-md bg-primary text-primary-foreground text-base font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {pLoading ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Verificando...</>
-                    ) : (
-                      <><Check className="h-4 w-4" /> Entrar</>
-                    )}
-                  </button>
-                </form>
-              )}
+                </button>
+              </form>
             </div>
           )}
 
