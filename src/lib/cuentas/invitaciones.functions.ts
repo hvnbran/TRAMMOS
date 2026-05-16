@@ -73,8 +73,8 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
       .insert({
         token,
         tipo: data.tipo,
-        rol: data.tipo === "empresa" ? clienteLegacy : null,
-        cliente: clienteLegacy,
+        rol: (data.tipo === "empresa" ? clienteLegacy : null) as never,
+        cliente: clienteLegacy as never,
         empresa_id: empresaId,
         email_sugerido: data.email_sugerido || null,
         display_name_sugerido: data.display_name_sugerido || null,
