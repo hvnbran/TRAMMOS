@@ -102,7 +102,7 @@ export const crearCuentaPasajero = createServerFn({ method: "POST" })
           nivel_asistencia: data.nuevo.nivel_asistencia,
           autorizado: true,
           auth_user_id: userId,
-        })
+        }])
         .select("id")
         .single();
       if (pErr) throw new Error(`Cuenta creada pero falló registrar pasajero: ${pErr.message}`);
