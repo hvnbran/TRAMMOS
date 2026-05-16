@@ -170,8 +170,22 @@ function RegistroPage() {
               <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </Field>
 
+            {v.tipo === "empresa" && !v.empresa_nombre && (
+              <Field label="Nombre de tu empresa">
+                <input
+                  className="input"
+                  required
+                  minLength={2}
+                  maxLength={120}
+                  value={empresaNombre}
+                  onChange={(e) => setEmpresaNombre(e.target.value)}
+                  placeholder="Ej: Bavaria SAS"
+                />
+              </Field>
+            )}
+
             {v.tipo === "empresa" && (
-              <Field label="Nombre visible">
+              <Field label="Tu nombre (responsable)">
                 <input className="input" required value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
               </Field>
             )}
