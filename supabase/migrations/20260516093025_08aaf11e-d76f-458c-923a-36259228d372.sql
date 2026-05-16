@@ -1,0 +1,1 @@
+ALTER TABLE public.pasajeros_pcd ALTER COLUMN cliente SET NOT NULL;
