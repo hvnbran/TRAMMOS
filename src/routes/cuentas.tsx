@@ -308,7 +308,7 @@ function InvitacionGenerator({
           expires_in_hours: horas,
         },
       });
-      const url = `${window.location.origin}/registro/${r.token}`;
+      const url = `${window.location.origin}/r/${r.token}`;
       setLink(url);
       setExpira(r.expiresAt);
     } catch (err) {
