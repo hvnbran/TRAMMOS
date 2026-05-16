@@ -135,10 +135,11 @@ export const validarInvitacionRegistro = createServerFn({ method: "POST" })
 // ===== Consumir invitación (público, sin auth) =====
 
 const consumirSchema = z.object({
-  token: z.string().min(10).max(128),
+  token: z.string().min(8).max(128),
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
   display_name: z.string().trim().max(255).optional(),
+  empresa_nombre: z.string().trim().min(2).max(120).optional(),
   pasajero: z
     .object({
       nombre: z.string().trim().min(1).max(255),
@@ -149,6 +150,17 @@ const consumirSchema = z.object({
     })
     .optional(),
 });
+
+function slugify(s: string) {
+  const base = s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return base || `empresa-${Date.now()}`;
+}
 
 export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
   .inputValidator((d) => consumirSchema.parse(d))
@@ -175,6 +187,11 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
         .eq("id", inv.id);
     }
 
+    if (inv.tipo === "empresa" && !inv.empresa_id && !data.empresa_nombre) {
+      await rollbackInvitacion();
+      throw new Error("Debes indicar el nombre de la empresa.");
+    }
+
     // 2. Crear usuario auth
     const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -190,7 +207,30 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
 
     try {
       if (inv.tipo === "empresa") {
-        // Rol legacy (corona/sodimac/admin) cuando aplique.
+        let empresaId = inv.empresa_id as string | null;
+
+        if (!empresaId && data.empresa_nombre) {
+          const baseSlug = slugify(data.empresa_nombre);
+          let slug = baseSlug;
+          for (let attempt = 0; attempt < 5; attempt++) {
+            const { data: empNew, error: empErr } = await supabaseAdmin
+              .from("empresas")
+              .insert({ nombre: data.empresa_nombre, slug, created_by: userId })
+              .select("id")
+              .single();
+            if (!empErr && empNew) {
+              empresaId = empNew.id;
+              break;
+            }
+            if (empErr && empErr.code === "23505") {
+              slug = `${baseSlug}-${Math.floor(Math.random() * 9999)}`;
+              continue;
+            }
+            throw new Error(empErr?.message ?? "No se pudo crear la empresa");
+          }
+          if (!empresaId) throw new Error("No se pudo generar slug único para la empresa");
+        }
+
         const rol = inv.rol;
         if (rol) {
           const { error: rErr } = await supabaseAdmin
@@ -199,11 +239,10 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
           if (rErr && rErr.code !== "23505") throw new Error(rErr.message);
         }
 
-        // Membresía empresa
-        if (inv.empresa_id) {
+        if (empresaId) {
           await supabaseAdmin
             .from("user_empresas")
-            .insert({ user_id: userId, empresa_id: inv.empresa_id, rol_empresa: "admin_empresa" })
+            .insert({ user_id: userId, empresa_id: empresaId, rol_empresa: "admin_empresa" })
             .then((r) => {
               if (r.error && r.error.code !== "23505") throw new Error(r.error.message);
             });
