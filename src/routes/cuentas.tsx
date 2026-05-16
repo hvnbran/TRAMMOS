@@ -279,6 +279,7 @@ function EmpresaTab() {
         </button>
       </form>
     </Card>
+    </div>
   );
 }
 
@@ -394,6 +395,7 @@ function PasajeroTab() {
         </button>
       </form>
     </Card>
+    </div>
   );
 }
 
