@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   validarInvitacionRegistro,
   consumirInvitacionRegistro,
+  listarEmpresasParaRegistro,
 } from "@/lib/cuentas/invitaciones.functions";
 import { Loader2, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
 
@@ -20,29 +21,70 @@ export const Route = createFileRoute("/r/$token")({
 type ValidState =
   | { state: "loading" }
   | { state: "invalid"; reason: string }
-  | { state: "valid"; tipo: "empresa" | "pasajero"; cliente: string | null; rol: string | null; empresa_nombre: string | null; email_sugerido: string | null; display_name_sugerido: string | null };
+  | {
+      state: "valid";
+      tipo: "empresa" | "pasajero";
+      cliente: string | null;
+      rol: string | null;
+      empresa_id: string | null;
+      empresa_nombre: string | null;
+      email_sugerido: string | null;
+      display_name_sugerido: string | null;
+    };
+
+type EmpresaOption = { id: string; nombre: string; cliente_legacy: string | null };
+
+const AYUDAS = [
+  "silla_ruedas_manual",
+  "silla_ruedas_electrica",
+  "baston",
+  "muletas",
+  "caminador",
+  "perro_guia",
+  "audifonos",
+  "comunicador",
+];
 
 function RegistroPage() {
   const { token } = Route.useParams();
   const validar = useServerFn(validarInvitacionRegistro);
   const consumir = useServerFn(consumirInvitacionRegistro);
+  const listarEmpresas = useServerFn(listarEmpresasParaRegistro);
+
   const [v, setV] = useState<ValidState>({ state: "loading" });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
+  // Form base
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [empresaNombre, setEmpresaNombre] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
-  // Pasajero extra
+
+  // Pasajero
+  const [empresas, setEmpresas] = useState<EmpresaOption[]>([]);
+  const [empresaIdElegida, setEmpresaIdElegida] = useState("");
   const [nombre, setNombre] = useState("");
   const [cedula, setCedula] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [esPcd, setEsPcd] = useState(false);
   const [tipoDisc, setTipoDisc] = useState("ninguna");
   const [nivel, setNivel] = useState(0);
+  const [comunicacion, setComunicacion] = useState("voz");
+  const [ayudas, setAyudas] = useState<string[]>([]);
+  const [silla, setSilla] = useState("");
+  const [condiciones, setCondiciones] = useState("");
+  const [alergias, setAlergias] = useState("");
+  const [medicamentos, setMedicamentos] = useState("");
+  const [emerNombre, setEmerNombre] = useState("");
+  const [emerTel, setEmerTel] = useState("");
+  const [emerRel, setEmerRel] = useState("");
+  const [notasConductor, setNotasConductor] = useState("");
+  const [permiteAcomp, setPermiteAcomp] = useState(true);
+  const [requiereAdaptado, setRequiereAdaptado] = useState(false);
 
   useEffect(() => {
     let cancel = false;
@@ -64,6 +106,7 @@ function RegistroPage() {
             tipo: r.tipo,
             cliente: r.cliente,
             rol: r.rol,
+            empresa_id: r.empresa_id,
             empresa_nombre: r.empresa_nombre,
             email_sugerido: r.email_sugerido,
             display_name_sugerido: r.display_name_sugerido,
@@ -73,20 +116,37 @@ function RegistroPage() {
             setDisplayName(r.display_name_sugerido);
             setNombre(r.display_name_sugerido);
           }
+          // Si es pasajero sin empresa fija, cargar lista pública
+          if (r.tipo === "pasajero" && !r.empresa_id) {
+            try {
+              const e = await listarEmpresas();
+              if (!cancel) setEmpresas(e.empresas);
+            } catch {
+              /* ignore */
+            }
+          }
         }
       } catch (e) {
         setV({ state: "invalid", reason: e instanceof Error ? e.message : "Error validando el enlace" });
       }
     })();
     return () => { cancel = true; };
-  }, [token, validar]);
+  }, [token, validar, listarEmpresas]);
+
+  function toggleAyuda(a: string) {
+    setAyudas((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (v.state !== "valid") return;
     setError(null);
+
     if (v.tipo === "empresa" && !v.empresa_nombre && empresaNombre.trim().length < 2) {
       return setError("Indica el nombre de la empresa.");
+    }
+    if (v.tipo === "pasajero" && !v.empresa_id && !empresaIdElegida) {
+      return setError("Selecciona tu empresa.");
     }
     if (password.length < 8) return setError("La contraseña debe tener mínimo 8 caracteres.");
     if (password !== password2) return setError("Las contraseñas no coinciden.");
@@ -98,15 +158,31 @@ function RegistroPage() {
           token,
           email,
           password,
-          display_name: displayName || undefined,
+          display_name: displayName || nombre || undefined,
           empresa_nombre: v.tipo === "empresa" && !v.empresa_nombre ? empresaNombre.trim() : undefined,
+          empresa_id_elegida: v.tipo === "pasajero" && !v.empresa_id ? empresaIdElegida : undefined,
           pasajero: v.tipo === "pasajero"
             ? {
                 nombre,
                 cedula: cedula || undefined,
                 telefono: telefono || undefined,
+                direccion_habitual: direccion || undefined,
+                es_pcd: esPcd,
                 tipo_discapacidad: tipoDisc,
                 nivel_asistencia: nivel,
+                comunicacion_preferida: comunicacion,
+                ayudas_tecnicas: ayudas,
+                silla_ruedas_medidas: silla || undefined,
+                condiciones_medicas: condiciones || undefined,
+                alergias: alergias || undefined,
+                medicamentos: medicamentos || undefined,
+                contacto_emergencia_nombre: emerNombre || undefined,
+                contacto_emergencia_telefono: emerTel || undefined,
+                contacto_emergencia_relacion: emerRel || undefined,
+                notas_conductor: notasConductor || undefined,
+                permite_acompanante: permiteAcomp,
+                requiere_vehiculo_adaptado: requiereAdaptado,
+                consentimiento_datos: true,
               }
             : undefined,
         },
@@ -121,7 +197,7 @@ function RegistroPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg rounded-xl border border-border bg-card shadow-sm p-6 space-y-4">
+      <div className="w-full max-w-2xl rounded-xl border border-border bg-card shadow-sm p-6 space-y-4">
         <div className="flex items-center gap-2 text-primary">
           <ShieldCheck className="h-5 w-5" />
           <h1 className="text-lg font-semibold">Completa tu registro en TRAMMOS</h1>
@@ -160,16 +236,13 @@ function RegistroPage() {
         )}
 
         {v.state === "valid" && !done && (
-          <form onSubmit={submit} className="space-y-3">
+          <form onSubmit={submit} className="space-y-4">
             <p className="text-xs text-muted-foreground">
               Tipo de cuenta: <strong>{v.tipo === "empresa" ? "Empresa / Monitoreo" : "Pasajero"}</strong>
               {v.empresa_nombre && <> · Empresa: <strong>{v.empresa_nombre}</strong></>}
             </p>
 
-            <Field label="Email (será tu usuario)">
-              <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            </Field>
-
+            {/* Empresa: nombre cuando no está fijada */}
             {v.tipo === "empresa" && !v.empresa_nombre && (
               <Field label="Nombre de tu empresa">
                 <input
@@ -184,14 +257,29 @@ function RegistroPage() {
               </Field>
             )}
 
-            {v.tipo === "empresa" && (
-              <Field label="Tu nombre (responsable)">
-                <input className="input" required value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+            {/* Pasajero: selector de empresa cuando no está fijada */}
+            {v.tipo === "pasajero" && !v.empresa_id && (
+              <Field label="Tu empresa">
+                <select
+                  className="input"
+                  required
+                  value={empresaIdElegida}
+                  onChange={(e) => setEmpresaIdElegida(e.target.value)}
+                >
+                  <option value="">— Selecciona tu empresa —</option>
+                  {empresas.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.nombre}{e.cliente_legacy ? ` · ${e.cliente_legacy}` : ""}
+                    </option>
+                  ))}
+                </select>
               </Field>
             )}
 
+            {/* Bloque pasajero */}
             {v.tipo === "pasajero" && (
-              <>
+              <div className="space-y-3 rounded-lg border border-border p-3">
+                <h2 className="text-sm font-semibold">Datos del pasajero</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="Nombre completo">
                     <input className="input" required value={nombre} onChange={(e) => setNombre(e.target.value)} />
@@ -202,30 +290,140 @@ function RegistroPage() {
                   <Field label="Teléfono">
                     <input className="input" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
                   </Field>
-                  <Field label="Tipo discapacidad">
-                    <select className="input" value={tipoDisc} onChange={(e) => setTipoDisc(e.target.value)}>
-                      <option value="ninguna">Ninguna</option>
-                      <option value="visual">Visual</option>
-                      <option value="auditiva">Auditiva</option>
-                      <option value="motriz">Motriz</option>
-                      <option value="cognitiva">Cognitiva</option>
-                      <option value="multiple">Múltiple</option>
-                    </select>
-                  </Field>
-                  <Field label="Nivel asistencia (0-3)">
-                    <input className="input" type="number" min={0} max={3} value={nivel} onChange={(e) => setNivel(Number(e.target.value))} />
+                  <Field label="Dirección habitual">
+                    <input className="input" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
                   </Field>
                 </div>
-              </>
+
+                <label className="flex items-center gap-2 pt-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={esPcd}
+                    onChange={(e) => setEsPcd(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-medium">Soy persona con discapacidad (PcD)</span>
+                </label>
+
+                {esPcd && (
+                  <div className="space-y-3 rounded-lg bg-muted/30 p-3 border border-border">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label="Tipo de discapacidad">
+                        <select className="input" value={tipoDisc} onChange={(e) => setTipoDisc(e.target.value)}>
+                          <option value="ninguna">Ninguna</option>
+                          <option value="visual">Visual</option>
+                          <option value="auditiva">Auditiva</option>
+                          <option value="motriz">Motriz</option>
+                          <option value="cognitiva">Cognitiva</option>
+                          <option value="multiple">Múltiple</option>
+                        </select>
+                      </Field>
+                      <Field label="Nivel de asistencia (0-3)">
+                        <input className="input" type="number" min={0} max={3} value={nivel} onChange={(e) => setNivel(Number(e.target.value))} />
+                      </Field>
+                      <Field label="Comunicación preferida">
+                        <select className="input" value={comunicacion} onChange={(e) => setComunicacion(e.target.value)}>
+                          <option value="voz">Voz</option>
+                          <option value="texto_grande">Texto grande</option>
+                          <option value="pictogramas">Pictogramas</option>
+                          <option value="lengua_senas">Lengua de señas</option>
+                          <option value="escrita_simple">Escrita simple</option>
+                        </select>
+                      </Field>
+                      <Field label="Medidas silla de ruedas (opcional)">
+                        <input className="input" value={silla} onChange={(e) => setSilla(e.target.value)} placeholder="Ancho x largo (cm)" />
+                      </Field>
+                    </div>
+
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">Ayudas técnicas</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
+                        {AYUDAS.map((a) => (
+                          <label key={a} className="flex items-center gap-2 text-xs cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={ayudas.includes(a)}
+                              onChange={() => toggleAyuda(a)}
+                              className="h-3.5 w-3.5"
+                            />
+                            <span className="capitalize">{a.replace(/_/g, " ")}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Field label="Condiciones médicas">
+                      <textarea className="input min-h-[60px]" value={condiciones} onChange={(e) => setCondiciones(e.target.value)} />
+                    </Field>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label="Alergias">
+                        <textarea className="input min-h-[50px]" value={alergias} onChange={(e) => setAlergias(e.target.value)} />
+                      </Field>
+                      <Field label="Medicamentos">
+                        <textarea className="input min-h-[50px]" value={medicamentos} onChange={(e) => setMedicamentos(e.target.value)} />
+                      </Field>
+                    </div>
+
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={requiereAdaptado}
+                        onChange={(e) => setRequiereAdaptado(e.target.checked)}
+                        className="h-4 w-4"
+                      />
+                      Requiere vehículo adaptado
+                    </label>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Field label="Contacto emergencia (nombre)">
+                    <input className="input" value={emerNombre} onChange={(e) => setEmerNombre(e.target.value)} />
+                  </Field>
+                  <Field label="Teléfono emergencia">
+                    <input className="input" value={emerTel} onChange={(e) => setEmerTel(e.target.value)} />
+                  </Field>
+                  <Field label="Relación">
+                    <input className="input" value={emerRel} onChange={(e) => setEmerRel(e.target.value)} placeholder="Madre, hijo, …" />
+                  </Field>
+                </div>
+
+                <Field label="Notas para el conductor">
+                  <textarea className="input min-h-[50px]" value={notasConductor} onChange={(e) => setNotasConductor(e.target.value)} />
+                </Field>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={permiteAcomp}
+                    onChange={(e) => setPermiteAcomp(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  Permito viajar con acompañante
+                </label>
+              </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Contraseña (mín. 8)">
-                <input className="input" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            {v.tipo === "empresa" && (
+              <Field label="Tu nombre (responsable)">
+                <input className="input" required value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
               </Field>
-              <Field label="Confirmar contraseña">
-                <input className="input" type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
+            )}
+
+            {/* Credenciales */}
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <h2 className="text-sm font-semibold">Acceso</h2>
+              <Field label="Email (será tu usuario)">
+                <input className="input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
               </Field>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Contraseña (mín. 8)">
+                  <input className="input" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+                </Field>
+                <Field label="Confirmar contraseña">
+                  <input className="input" type="password" required minLength={8} value={password2} onChange={(e) => setPassword2(e.target.value)} />
+                </Field>
+              </div>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
