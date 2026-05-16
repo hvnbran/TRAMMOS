@@ -102,6 +102,110 @@ function ResultadoCredenciales({ email, password, onReset }: { email: string; pa
   );
 }
 
+function InvitacionGenerator({ tipo }: { tipo: "empresa" | "pasajero" }) {
+  const crearInv = useServerFn(crearInvitacionRegistro);
+  const [rol, setRol] = useState<"corona" | "sodimac" | "admin">("corona");
+  const [cliente, setCliente] = useState<"corona" | "sodimac">("corona");
+  const [emailSug, setEmailSug] = useState("");
+  const [horas, setHoras] = useState(72);
+  const [loading, setLoading] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+  const [expira, setExpira] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function generar() {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await crearInv({
+        data: {
+          tipo,
+          rol: tipo === "empresa" ? rol : undefined,
+          cliente: tipo === "pasajero" ? cliente : undefined,
+          email_sugerido: emailSug || undefined,
+          expires_in_hours: horas,
+        },
+      });
+      const url = `${window.location.origin}/registro/${r.token}`;
+      setLink(url);
+      setExpira(r.expiresAt);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Link2 className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Generar enlace de registro (un solo uso)</h3>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Crea un enlace secreto para que {tipo === "empresa" ? "el usuario de la empresa" : "el pasajero"} complete sus propios datos. El enlace deja de funcionar al usarse o al expirar.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {tipo === "empresa" ? (
+          <Field label="Rol">
+            <select className="input" value={rol} onChange={(e) => setRol(e.target.value as typeof rol)}>
+              <option value="corona">Corona</option>
+              <option value="sodimac">Sodimac</option>
+              <option value="admin">Admin TRAMMOS</option>
+            </select>
+          </Field>
+        ) : (
+          <Field label="Cliente">
+            <select className="input" value={cliente} onChange={(e) => setCliente(e.target.value as typeof cliente)}>
+              <option value="corona">Corona</option>
+              <option value="sodimac">Sodimac</option>
+            </select>
+          </Field>
+        )}
+        <Field label="Email sugerido (opcional)">
+          <input className="input" type="email" value={emailSug} onChange={(e) => setEmailSug(e.target.value)} placeholder="usuario@ejemplo.com" />
+        </Field>
+        <Field label="Expira en (horas)">
+          <input className="input" type="number" min={1} max={720} value={horas} onChange={(e) => setHoras(Number(e.target.value))} />
+        </Field>
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <button onClick={generar} disabled={loading} className="btn-primary">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+        Generar enlace
+      </button>
+
+      {link && (
+        <div className="space-y-2 mt-2">
+          <pre className="text-xs font-mono bg-background p-3 rounded border border-border whitespace-pre-wrap break-all">{link}</pre>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(link);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+              className="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-primary-foreground"
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? "Copiado" : "Copiar enlace"}
+            </button>
+            {expira && (
+              <span className="text-[11px] text-muted-foreground">
+                Expira: {new Date(expira).toLocaleString("es-CO")}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Cómpartelo por un canal seguro. Solo se puede abrir y completar una vez.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EmpresaTab() {
   const crear = useServerFn(crearCuentaEmpresa);
   const [email, setEmail] = useState("");
