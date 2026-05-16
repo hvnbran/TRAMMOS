@@ -3,10 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminOnly } from "@/components/layout/AdminOnly";
-import {
-  crearCuentaEmpresa,
-  crearCuentaPasajero,
-} from "@/lib/cuentas/cuentas.functions";
+import { crearCuentaPasajero } from "@/lib/cuentas/cuentas.functions";
 import { crearInvitacionRegistro } from "@/lib/cuentas/invitaciones.functions";
 import { listarEmpresas, crearEmpresa } from "@/lib/empresas/empresas.functions";
 import { supabase } from "@/integrations/supabase/client";
