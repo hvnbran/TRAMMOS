@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import banner from "@/assets/banner-trammos.png";
 import bannerCorona from "@/assets/banner-corona.png";
 import bannerSodimac from "@/assets/banner-sodimac.png";
-import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility, ArrowLeft } from "lucide-react";
+import { LogIn, Loader2, Check, Mail, KeyRound, Briefcase, Accessibility } from "lucide-react";
 import { PolicyAcceptanceCheckbox } from "@/components/legal/PolicyAcceptanceCheckbox";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 
