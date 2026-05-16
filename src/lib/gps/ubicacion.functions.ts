@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const PosicionSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -11,7 +12,7 @@ const PosicionSchema = z.object({
 });
 
 async function getConductorId(
-  supabase: Awaited<ReturnType<typeof requireSupabaseAuth.client>>["context"]["supabase"],
+  supabase: SupabaseClient,
   userId: string,
 ): Promise<string> {
   const { data, error } = await supabase
