@@ -92,7 +92,7 @@ export const crearCuentaPasajero = createServerFn({ method: "POST" })
       if (!data.nuevo) throw new Error("Faltan datos del pasajero");
       const { data: pNew, error: pErr } = await supabaseAdmin
         .from("pasajeros_pcd")
-        .insert({
+        .insert([{
           nombre: data.nuevo.nombre,
           cedula: data.nuevo.cedula ?? null,
           telefono: data.nuevo.telefono ?? null,
