@@ -1,69 +1,74 @@
-# Auto-registro de empresas con link genérico
+# Plan: GPS desde el celular del conductor (tipo Uber)
 
-## Concepto
+## 1. Limpieza de GPSWox
 
-El admin **solo genera un link** (uno o varios, reutilizables o de un solo uso). Lo envía a la empresa. La empresa abre el link y **ella misma** llena:
-- Nombre de la empresa
-- Email + contraseña del admin de esa empresa
+Eliminar por completo:
+- `src/lib/gps/gpswox.server.ts`
+- `src/lib/gps/gpswox.functions.ts`
+- `src/components/vehiculos/GpsManager.tsx` y cualquier referencia en `cuentas.tsx`/vehículos
+- `src/routes/api/public/gps.sync.ts`
+- Imports/secciones en `MonitoreoMap.tsx`, `VehiculosLiveList.tsx`, `VehiculoLiveMiniMap.tsx` que dependan de GPSWox
 
-Al enviar el formulario se crea automáticamente:
-- La empresa en la tabla `empresas`
-- El usuario auth
-- La membresía en `user_empresas` con rol `admin_empresa`
+Migración SQL:
+- Borrar tabla `vehiculos_gps` (no la reutilizamos para no mezclar conceptos).
+- Crear tabla nueva `conductor_ubicaciones`:
+  - `conductor_id uuid PK` (1 fila por conductor, upsert)
+  - `lat double precision`, `lng double precision`
+  - `accuracy`, `speed_kmh`, `heading` (nullables)
+  - `online boolean default false`
+  - `updated_at timestamptz default now()`
+- RLS: el conductor solo puede upsert/leer su propia fila (vía `auth_user_id`); admin lee todo; pasajero lee solo la del conductor de su servicio activo (via función SECURITY DEFINER `get_ubicacion_conductor_servicio(servicio_id)`).
+- Habilitar Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE conductor_ubicaciones`.
 
-Luego aparece en el listado de empresas del admin sin más pasos.
+Secretos a borrar: `GPSWOX_API_BASE`, `GPSWOX_USER_API_HASH` (avisar al usuario para borrarlos manualmente).
 
-## Cambios
+## 2. Lado conductor — botón "Estoy en línea"
 
-### 1. `src/routes/cuentas.tsx` — pestaña "Empresa"
+En `src/routes/conductor.index.tsx`:
+- Botón toggle "Estoy en línea / Desconectarme".
+- Al activar:
+  1. `navigator.geolocation.watchPosition` con `enableHighAccuracy: true`.
+  2. Cada 5 s (throttle) hace `upsertUbicacion({ lat, lng, speed, heading, accuracy, online: true })` vía server fn.
+  3. `wake lock` opcional para que no se duerma la pantalla.
+- Al desactivar / cerrar sesión / cerrar pestaña (`beforeunload`): `clearWatch` + server fn `setOffline()` que pone `online=false`.
+- Indicador visual del estado (verde online / gris offline) y manejo de permiso denegado.
 
-Quitar todo el formulario actual. Dejar solo:
+Server fn nuevo: `src/lib/gps/ubicacion.functions.ts` con `upsertUbicacion` y `setOffline`, ambos con `requireSupabaseAuth` (resuelven `conductor_id` desde `auth_user_id`).
 
-- Botón grande **"Generar link de registro de empresa"**
-- Al hacer clic → llama `crearInvitacionRegistro({ tipo: "empresa" })` (sin empresaId, sin email, sin nombre)
-- Muestra el link generado + botón copiar
-- Debajo: lista de links activos (token corto, fecha creación, estado, link)
+## 3. Lado admin — `/monitoreo`
 
-### 2. `src/lib/cuentas/invitaciones.functions.ts`
+Reescribir `MonitoreoMap.tsx` con **Leaflet + OpenStreetMap** (`react-leaflet` + `leaflet`):
+- Suscripción Realtime a `conductor_ubicaciones` filtrando `online=true`.
+- Un marker por conductor online, con popup: nombre, vehículo asignado actual (si hay servicio activo), velocidad, hace cuánto.
+- Lista lateral `VehiculosLiveList` muestra solo conductores online (no vehículos GPS).
+- Auto-marca `online=false` los registros con `updated_at < now() - 60s` (cliente lo filtra; opcional: cron pg cada minuto).
 
-**`crearInvitacionRegistro`:**
-- Quitar `empresaId` requerido. Para `tipo: "empresa"` el campo es opcional/null.
-- Token corto: 12 caracteres base62 (en vez de 64 hex).
-- Quitar `email_sugerido` y `display_name_sugerido` del flujo (siguen siendo opcionales en DB por compatibilidad).
+## 4. Lado pasajero — mapa tipo Uber
 
-**`consumirInvitacionRegistro`** (caso `tipo: "empresa"`):
-- Aceptar nuevo input: `empresa_nombre` (requerido cuando invitación es de tipo empresa y no tiene `empresa_id`).
-- Crear `empresas` (nombre + slug auto-generado desde nombre).
-- Crear usuario auth.
-- Insertar en `user_empresas` con `rol_empresa: 'admin_empresa'`.
-- Insertar en `profiles`.
-- No asignar rol legacy (corona/sodimac) — eso solo se mantiene si la invitación viene con empresa pre-asignada (compatibilidad).
+En la vista del pasajero (donde ve su solicitud activa), cuando `estado IN ('aceptada','en_camino','a_bordo')`:
+- Mini-mapa Leaflet centrado en el conductor.
+- Suscripción Realtime a `conductor_ubicaciones` del conductor asignado (via función segura `get_ubicacion_conductor_servicio`).
+- Muestra marker del conductor + marker del origen del pasajero + línea recta entre ambos (no routing, para no requerir API).
+- ETA opcional: distancia haversine / velocidad promedio.
 
-### 3. `src/routes/registro.$token.tsx` → renombrar a `src/routes/r.$token.tsx`
+Reescribir `VehiculoLiveMiniMap.tsx` para usar este flujo en vez de GPSWox.
 
-Path corto `/r/:token`. En el form de registro empresa, agregar campo **"Nombre de la empresa"** que se envía a `consumirInvitacionRegistro`.
+## 5. Dependencias
 
-### 4. Migración mínima
+`bun add leaflet react-leaflet` + `bun add -d @types/leaflet`. Importar CSS de Leaflet en `__root.tsx` o en los componentes que lo usan.
 
-`registro_invitaciones.empresa_id` ya es nullable, no requiere cambio de schema. Confirmado en el schema actual.
+## Consideraciones técnicas
 
-## Resultado
+- **Batería/datos**: 5 s es agresivo. Mitigamos enviando solo si la posición cambió > X metros o pasaron > 5 s.
+- **HTTPS obligatorio** para `geolocation` (ya lo es en producción).
+- **iOS Safari** suspende `watchPosition` en background al bloquear el teléfono. Solución: mantener pantalla encendida con Wake Lock API mientras esté "en línea"; advertir al conductor.
+- **Permisos**: si el usuario los niega, mostrar instrucciones para reactivarlos.
+- **No hay routing real** (calles) — solo línea recta. Si más adelante quieres ruta real necesitaríamos Mapbox/Google.
 
-- Link tipo: `https://trammos.online/r/Ab3xK9pQ2mNv` (~40 chars)
-- Admin: 1 clic → copia → envía
-- Empresa: abre link → escribe su nombre + email + clave → listo
-- Aparece en `/empresas` del admin automáticamente
+## Resumen de archivos
 
-## Archivos
+Borrar: `src/lib/gps/gpswox.*`, `src/components/vehiculos/GpsManager.tsx`, `src/routes/api/public/gps.sync.ts`.
+Crear: `src/lib/gps/ubicacion.functions.ts`, migración SQL.
+Modificar: `src/routes/conductor.index.tsx`, `src/routes/monitoreo.tsx`, `src/components/MonitoreoMap.tsx`, `src/components/monitoreo/VehiculosLiveList.tsx`, `src/components/pasajero/VehiculoLiveMiniMap.tsx`, `src/routes/cuentas.tsx` (quitar GpsManager si aparece).
 
-- editar `src/routes/cuentas.tsx`
-- editar `src/lib/cuentas/invitaciones.functions.ts`
-- renombrar `src/routes/registro.$token.tsx` → `src/routes/r.$token.tsx` y ajustar UI
-- buscar referencias a `/registro/` y actualizar a `/r/`
-
-## Fuera de alcance
-
-- Pestaña "Pasajero" sigue con su flujo actual (sí necesita empresa + datos del pasajero).
-- No se borran tokens viejos largos; los nuevos serán cortos.
-
-**¿Aprobamos?**
+¿Apruebas para implementarlo?
