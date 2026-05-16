@@ -63,7 +63,7 @@ const pasajeroSchema = z.object({
       nombre: z.string().trim().min(1).max(255),
       cedula: z.string().trim().max(50).nullable().optional(),
       telefono: z.string().trim().max(50).nullable().optional(),
-      cliente: z.enum(["corona", "sodimac", "admin"]),
+      cliente: z.enum(["corona", "sodimac"]),
       tipo_discapacidad: z.string().max(50).default("ninguna"),
       nivel_asistencia: z.number().int().min(0).max(5).default(0),
     })
