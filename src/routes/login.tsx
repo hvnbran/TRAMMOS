@@ -27,10 +27,10 @@ export const Route = createFileRoute("/login")({
 
 type SeedKey = "corona" | "sodimac" | "admin";
 
-const SEED_USERS: Record<SeedKey, { email: string; password: string; display_name: string; role: "admin" | "corona" | "sodimac" }> = {
-  corona: { email: "corona@trammos.app", password: "CoronaAdmin123", display_name: "Corona", role: "corona" },
-  sodimac: { email: "sodimac@trammos.app", password: "SodimacAdmin123", display_name: "Sodimac", role: "sodimac" },
-  admin: { email: "admin@trammos.app", password: "AdministrativosTrammos123", display_name: "Admin General", role: "admin" },
+const SEED_USERS: Record<SeedKey, { email: string; display_name: string; role: "admin" | "corona" | "sodimac" }> = {
+  corona: { email: "corona@trammos.app", display_name: "Corona", role: "corona" },
+  sodimac: { email: "sodimac@trammos.app", display_name: "Sodimac", role: "sodimac" },
+  admin: { email: "admin@trammos.app", display_name: "Admin General", role: "admin" },
 };
 
 type Tab = "operador" | "pasajero";
@@ -82,19 +82,6 @@ function LoginPage() {
     }
   }, [user, role, loading, showSplash, navigate]);
 
-  async function ensureUserBootstrapped(key: SeedKey, expectedPassword: string) {
-    if (expectedPassword !== SEED_USERS[key].password) return;
-    const u = SEED_USERS[key];
-    const { data: signUp, error: signUpErr } = await supabase.auth.signUp({
-      email: u.email,
-      password: u.password,
-      options: { data: { display_name: u.display_name }, emailRedirectTo: window.location.origin },
-    });
-    if (!signUpErr && signUp.user) {
-      await supabase.from("user_roles").insert({ user_id: signUp.user.id, role: u.role });
-    }
-  }
-
   const startSplashSequence = (
     displayName: string,
     clientKey: "corona" | "sodimac" | "admin" | "pasajero" | null,
@@ -119,24 +106,7 @@ function LoginPage() {
     const preset = SEED_USERS[key];
     const email = preset ? preset.email : username.trim();
 
-    let { error: err } = await signIn(email, password);
-
-    if (err && preset && password === preset.password) {
-      await ensureUserBootstrapped(key, password);
-      const r = await signIn(email, password);
-      err = r.error;
-
-      if (!err) {
-        const { data: s } = await supabase.auth.getUser();
-        if (s.user) {
-          const { data: existingRoles } = await supabase
-            .from("user_roles").select("role").eq("user_id", s.user.id);
-          if (!existingRoles || existingRoles.length === 0) {
-            await supabase.from("user_roles").insert({ user_id: s.user.id, role: preset.role });
-          }
-        }
-      }
-    }
+    const { error: err } = await signIn(email, password);
 
     if (err) {
       setSubmitting(false);

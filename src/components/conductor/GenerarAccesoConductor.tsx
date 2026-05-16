@@ -26,27 +26,11 @@ export function GenerarAccesoConductor({
 
   async function abrir() {
     setOpen(true);
-    setView("loading");
+    setView("edit");
     setError(null);
     setShow(false);
     setCopied(null);
-    const { data, error: err } = await supabase.rpc("get_conductor_password", {
-      _conductor_id: conductorId,
-    });
-    if (err) {
-      setError(err.message);
-      setView("edit");
-      return;
-    }
-    const row = Array.isArray(data) ? data[0] : data;
-    const pwd = row?.password as string | null | undefined;
-    if (pwd) {
-      setCurrentPassword(pwd);
-      setView("view");
-    } else {
-      setCurrentPassword(null);
-      setView("edit");
-    }
+    setCurrentPassword(null);
   }
 
   function generarRandom() {

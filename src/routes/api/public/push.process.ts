@@ -143,17 +143,16 @@ async function processQueue(maxItems = 20) {
 export const Route = createFileRoute("/api/public/push/process")({
   server: {
     handlers: {
-      POST: async () => {
-        try {
-          const result = await processQueue();
-          return Response.json({ ok: true, ...result });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : "unknown";
-          return Response.json({ ok: false, error: msg }, { status: 500 });
+      POST: async ({ request }) => {
+        // Auth: pg_cron / scheduler must include the project apikey header.
+        const apikey = request.headers.get("apikey") || request.headers.get("x-api-key");
+        const expected =
+          process.env.SUPABASE_ANON_KEY ||
+          process.env.SUPABASE_PUBLISHABLE_KEY ||
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        if (!expected || apikey !== expected) {
+          return new Response("Unauthorized", { status: 401 });
         }
-      },
-      GET: async () => {
-        // Permitir trigger por GET para facilitar pruebas y cron simples
         try {
           const result = await processQueue();
           return Response.json({ ok: true, ...result });

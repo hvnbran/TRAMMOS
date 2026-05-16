@@ -26,7 +26,6 @@ export interface PasajeroPCD {
   permite_acompanante: boolean;
   consentimiento_datos: boolean;
   autorizado?: boolean;
-  password_backup?: string | null;
   primer_login_at?: string | null;
   auth_user_id?: string | null;
   created_at: string;

@@ -29,8 +29,6 @@ import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
-import { Route as ApiTestLoginRouteImport } from './routes/api/test-login'
-import { Route as ApiSeedRouteImport } from './routes/api/seed'
 import { Route as ConductorServicioIdRouteImport } from './routes/conductor.servicio.$id'
 import { Route as ApiPublicConductorLoginRouteImport } from './routes/api/public/conductor-login'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -139,16 +137,6 @@ const ConductorLoginRoute = ConductorLoginRouteImport.update({
   path: '/conductor/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTestLoginRoute = ApiTestLoginRouteImport.update({
-  id: '/api/test-login',
-  path: '/api/test-login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSeedRoute = ApiSeedRouteImport.update({
-  id: '/api/seed',
-  path: '/api/seed',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ConductorServicioIdRoute = ConductorServicioIdRouteImport.update({
   id: '/conductor/servicio/$id',
   path: '/conductor/servicio/$id',
@@ -203,8 +191,6 @@ export interface FileRoutesByFullPath {
   '/servicios': typeof ServiciosRoute
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
-  '/api/seed': typeof ApiSeedRoute
-  '/api/test-login': typeof ApiTestLoginRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
@@ -234,8 +220,6 @@ export interface FileRoutesByTo {
   '/servicios': typeof ServiciosRoute
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
-  '/api/seed': typeof ApiSeedRoute
-  '/api/test-login': typeof ApiTestLoginRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
@@ -266,8 +250,6 @@ export interface FileRoutesById {
   '/servicios': typeof ServiciosRoute
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
-  '/api/seed': typeof ApiSeedRoute
-  '/api/test-login': typeof ApiTestLoginRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
@@ -299,8 +281,6 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/tiempos-respuesta'
     | '/vehiculos'
-    | '/api/seed'
-    | '/api/test-login'
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
@@ -330,8 +310,6 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/tiempos-respuesta'
     | '/vehiculos'
-    | '/api/seed'
-    | '/api/test-login'
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
@@ -361,8 +339,6 @@ export interface FileRouteTypes {
     | '/servicios'
     | '/tiempos-respuesta'
     | '/vehiculos'
-    | '/api/seed'
-    | '/api/test-login'
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
@@ -393,8 +369,6 @@ export interface RootRouteChildren {
   ServiciosRoute: typeof ServiciosRoute
   TiemposRespuestaRoute: typeof TiemposRespuestaRoute
   VehiculosRoute: typeof VehiculosRoute
-  ApiSeedRoute: typeof ApiSeedRoute
-  ApiTestLoginRoute: typeof ApiTestLoginRoute
   ConductorLoginRoute: typeof ConductorLoginRoute
   LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   LegalTerminosRoute: typeof LegalTerminosRoute
@@ -550,20 +524,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConductorLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/test-login': {
-      id: '/api/test-login'
-      path: '/api/test-login'
-      fullPath: '/api/test-login'
-      preLoaderRoute: typeof ApiTestLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/seed': {
-      id: '/api/seed'
-      path: '/api/seed'
-      fullPath: '/api/seed'
-      preLoaderRoute: typeof ApiSeedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/conductor/servicio/$id': {
       id: '/conductor/servicio/$id'
       path: '/conductor/servicio/$id'
@@ -633,8 +593,6 @@ const rootRouteChildren: RootRouteChildren = {
   ServiciosRoute: ServiciosRoute,
   TiemposRespuestaRoute: TiemposRespuestaRoute,
   VehiculosRoute: VehiculosRoute,
-  ApiSeedRoute: ApiSeedRoute,
-  ApiTestLoginRoute: ApiTestLoginRoute,
   ConductorLoginRoute: ConductorLoginRoute,
   LegalPrivacidadRoute: LegalPrivacidadRoute,
   LegalTerminosRoute: LegalTerminosRoute,

@@ -456,7 +456,6 @@ function PasajeroCard({ p, onEdit, onDelete, isAdmin, onChange }: { p: PasajeroP
               pasajeroId={p.id}
               email={p.email}
               autorizado={p.autorizado ?? true}
-              passwordBackup={p.password_backup ?? null}
               primerLoginAt={p.primer_login_at ?? null}
               onChange={() => onChange?.()}
             />
