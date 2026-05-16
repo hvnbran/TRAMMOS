@@ -123,8 +123,6 @@ function LoginPage() {
     startSplashSequence(displayName, clientKey, "/");
   };
 
-  const TEST_EMAIL = "trammos@admin.com";
-  const TEST_CODE = "123456";
 
   const handlePasajeroLogin = async (e: FormEvent) => {
     e.preventDefault();
