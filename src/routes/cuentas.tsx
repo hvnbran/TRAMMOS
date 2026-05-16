@@ -248,7 +248,9 @@ function EmpresaTab() {
   }
 
   return (
-    <Card title="Nueva cuenta de empresa (monitoreo)">
+    <div className="space-y-4">
+      <InvitacionGenerator tipo="empresa" />
+      <Card title="Nueva cuenta de empresa (monitoreo)">
       <form onSubmit={submit} className="space-y-3 max-w-xl">
         <Field label="Cliente / Rol">
           <select value={rol} onChange={(e) => setRol(e.target.value as typeof rol)} className="input">
@@ -341,7 +343,9 @@ function PasajeroTab() {
   }
 
   return (
-    <Card title="Nueva cuenta de pasajero PcD">
+    <div className="space-y-4">
+      <InvitacionGenerator tipo="pasajero" />
+      <Card title="Nueva cuenta de pasajero PcD">
       <form onSubmit={submit} className="space-y-3 max-w-2xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Nombre completo">
