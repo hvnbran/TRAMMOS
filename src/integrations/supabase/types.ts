@@ -751,6 +751,54 @@ export type Database = {
         }
         Relationships: []
       }
+      registro_invitaciones: {
+        Row: {
+          cliente: Database["public"]["Enums"]["cliente_tipo"] | null
+          consumed_user_id: string | null
+          created_at: string
+          created_by: string | null
+          datos_sugeridos: Json
+          display_name_sugerido: string | null
+          email_sugerido: string | null
+          expires_at: string
+          id: string
+          rol: Database["public"]["Enums"]["app_role"] | null
+          tipo: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
+          consumed_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          datos_sugeridos?: Json
+          display_name_sugerido?: string | null
+          email_sugerido?: string | null
+          expires_at?: string
+          id?: string
+          rol?: Database["public"]["Enums"]["app_role"] | null
+          tipo: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          cliente?: Database["public"]["Enums"]["cliente_tipo"] | null
+          consumed_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          datos_sugeridos?: Json
+          display_name_sugerido?: string | null
+          email_sugerido?: string | null
+          expires_at?: string
+          id?: string
+          rol?: Database["public"]["Enums"]["app_role"] | null
+          tipo?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       servicios: {
         Row: {
           asignado_at: string | null
