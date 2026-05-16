@@ -24,8 +24,7 @@ function genToken(len = 48) {
 
 const crearSchema = z.object({
   tipo: z.enum(["empresa", "pasajero"]),
-  rol: z.enum(["corona", "sodimac", "admin"]).optional(),
-  cliente: z.enum(["corona", "sodimac"]).optional(),
+  empresaId: z.string().uuid(),
   email_sugerido: z.string().trim().email().max(255).optional().or(z.literal("")),
   display_name_sugerido: z.string().trim().max(255).optional(),
   expires_in_hours: z.number().int().min(1).max(24 * 30).default(72),
@@ -37,11 +36,19 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
-    if (data.tipo === "empresa" && !data.rol) {
-      throw new Error("Para empresa debes indicar el rol (corona, sodimac o admin)");
-    }
-    if (data.tipo === "pasajero" && !data.cliente) {
-      throw new Error("Para pasajero debes indicar el cliente (corona o sodimac)");
+    // Validar empresa y obtener cliente legacy (necesario para inserción en pasajeros_pcd).
+    const { data: empresa, error: eErr } = await supabaseAdmin
+      .from("empresas")
+      .select("id, nombre, cliente_legacy")
+      .eq("id", data.empresaId)
+      .maybeSingle();
+    if (eErr) throw new Error(eErr.message);
+    if (!empresa) throw new Error("La empresa indicada no existe.");
+
+    if (data.tipo === "pasajero" && !empresa.cliente_legacy) {
+      throw new Error(
+        "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
+      );
     }
 
     const token = genToken(32);
@@ -52,8 +59,10 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
       .insert({
         token,
         tipo: data.tipo,
-        rol: data.tipo === "empresa" ? data.rol : null,
-        cliente: data.tipo === "pasajero" ? data.cliente : (data.rol === "corona" || data.rol === "sodimac" ? data.rol : null),
+        // Mantener compatibilidad: si la empresa tiene cliente legacy, lo seteamos también.
+        rol: data.tipo === "empresa" ? (empresa.cliente_legacy ?? null) : null,
+        cliente: empresa.cliente_legacy ?? null,
+        empresa_id: empresa.id,
         email_sugerido: data.email_sugerido || null,
         display_name_sugerido: data.display_name_sugerido || null,
         created_by: context.userId,
@@ -75,7 +84,9 @@ export const validarInvitacionRegistro = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: row, error } = await supabaseAdmin
       .from("registro_invitaciones")
-      .select("id, tipo, rol, cliente, email_sugerido, display_name_sugerido, used_at, expires_at")
+      .select(
+        "id, tipo, rol, cliente, empresa_id, email_sugerido, display_name_sugerido, used_at, expires_at",
+      )
       .eq("token", data.token)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -84,11 +95,24 @@ export const validarInvitacionRegistro = createServerFn({ method: "POST" })
     if (new Date(row.expires_at).getTime() < Date.now()) {
       return { ok: false as const, reason: "expirado" as const };
     }
+
+    let empresaNombre: string | null = null;
+    if (row.empresa_id) {
+      const { data: emp } = await supabaseAdmin
+        .from("empresas")
+        .select("nombre")
+        .eq("id", row.empresa_id)
+        .maybeSingle();
+      empresaNombre = emp?.nombre ?? null;
+    }
+
     return {
       ok: true as const,
       tipo: row.tipo as "empresa" | "pasajero",
       rol: row.rol as "corona" | "sodimac" | "admin" | null,
       cliente: row.cliente as "corona" | "sodimac" | null,
+      empresa_id: row.empresa_id as string | null,
+      empresa_nombre: empresaNombre,
       email_sugerido: row.email_sugerido,
       display_name_sugerido: row.display_name_sugerido,
       expires_at: row.expires_at,
@@ -102,7 +126,6 @@ const consumirSchema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
   display_name: z.string().trim().max(255).optional(),
-  // Datos extra para pasajero
   pasajero: z
     .object({
       nombre: z.string().trim().min(1).max(255),
@@ -117,14 +140,14 @@ const consumirSchema = z.object({
 export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
   .inputValidator((d) => consumirSchema.parse(d))
   .handler(async ({ data }) => {
-    // 1. Atomicamente marcar la invitación como usada (anti race condition / doble uso)
+    // 1. Marcar atómicamente la invitación como usada
     const { data: invRows, error: invErr } = await supabaseAdmin
       .from("registro_invitaciones")
       .update({ used_at: new Date().toISOString() })
       .eq("token", data.token)
       .is("used_at", null)
       .gt("expires_at", new Date().toISOString())
-      .select("id, tipo, rol, cliente")
+      .select("id, tipo, rol, cliente, empresa_id")
       .limit(1);
     if (invErr) throw new Error(invErr.message);
     if (!invRows || invRows.length === 0) {
@@ -132,7 +155,6 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
     }
     const inv = invRows[0];
 
-    // Helper: revertir used_at si todo falla después
     async function rollbackInvitacion() {
       await supabaseAdmin
         .from("registro_invitaciones")
@@ -155,11 +177,24 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
 
     try {
       if (inv.tipo === "empresa") {
-        const rol = inv.rol ?? "corona";
-        const { error: rErr } = await supabaseAdmin
-          .from("user_roles")
-          .insert({ user_id: userId, role: rol });
-        if (rErr) throw new Error(rErr.message);
+        // Rol legacy (corona/sodimac/admin) cuando aplique.
+        const rol = inv.rol;
+        if (rol) {
+          const { error: rErr } = await supabaseAdmin
+            .from("user_roles")
+            .insert({ user_id: userId, role: rol });
+          if (rErr && rErr.code !== "23505") throw new Error(rErr.message);
+        }
+
+        // Membresía empresa
+        if (inv.empresa_id) {
+          await supabaseAdmin
+            .from("user_empresas")
+            .insert({ user_id: userId, empresa_id: inv.empresa_id, rol_empresa: "admin_empresa" })
+            .then((r) => {
+              if (r.error && r.error.code !== "23505") throw new Error(r.error.message);
+            });
+        }
 
         await supabaseAdmin
           .from("profiles")
@@ -170,7 +205,9 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
       } else {
         // pasajero
         if (!data.pasajero) throw new Error("Faltan datos del pasajero");
-        const cliente = inv.cliente ?? "corona";
+        const cliente = inv.cliente;
+        if (!cliente) throw new Error("Esta invitación no tiene cliente válido.");
+
         const { error: pErr } = await supabaseAdmin
           .from("pasajeros_pcd")
           .insert([{
@@ -179,6 +216,7 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
             telefono: data.pasajero.telefono ?? null,
             email: data.email,
             cliente,
+            empresa_id: inv.empresa_id,
             tipo_discapacidad: data.pasajero.tipo_discapacidad,
             nivel_asistencia: data.pasajero.nivel_asistencia,
             autorizado: true,
@@ -190,7 +228,16 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
         const { error: rErr } = await supabaseAdmin
           .from("user_roles")
           .insert({ user_id: userId, role: "pasajero" });
-        if (rErr) throw new Error(rErr.message);
+        if (rErr && rErr.code !== "23505") throw new Error(rErr.message);
+
+        if (inv.empresa_id) {
+          await supabaseAdmin
+            .from("user_empresas")
+            .insert({ user_id: userId, empresa_id: inv.empresa_id, rol_empresa: "pasajero" })
+            .then((r) => {
+              if (r.error && r.error.code !== "23505") throw new Error(r.error.message);
+            });
+        }
       }
 
       // 3. Marcar consumed_user_id
@@ -201,7 +248,6 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
 
       return { ok: true, userId, email: data.email };
     } catch (err) {
-      // Limpiar todo: borrar usuario, revertir invitación
       await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
       await rollbackInvitacion();
       throw err instanceof Error ? err : new Error("Error desconocido");
@@ -216,7 +262,9 @@ export const listarInvitaciones = createServerFn({ method: "GET" })
     await assertAdmin(context.userId);
     const { data, error } = await supabaseAdmin
       .from("registro_invitaciones")
-      .select("id, token, tipo, rol, cliente, email_sugerido, used_at, expires_at, created_at, consumed_user_id")
+      .select(
+        "id, token, tipo, rol, cliente, empresa_id, email_sugerido, used_at, expires_at, created_at, consumed_user_id",
+      )
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw new Error(error.message);
