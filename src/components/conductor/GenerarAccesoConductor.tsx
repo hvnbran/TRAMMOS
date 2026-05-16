@@ -26,11 +26,31 @@ export function GenerarAccesoConductor({
 
   async function abrir() {
     setOpen(true);
-    setView("edit");
+    setView("loading");
     setError(null);
     setShow(false);
     setCopied(null);
     setCurrentPassword(null);
+
+    const { data, error: err } = await supabase
+      .from("conductores")
+      .select("password_plain, password_hash, acceso_habilitado")
+      .eq("id", conductorId)
+      .maybeSingle();
+
+    if (err) {
+      setError(err.message);
+      setView("edit");
+      return;
+    }
+
+    if (data?.password_plain) {
+      setCurrentPassword(data.password_plain);
+      setView("view");
+    } else {
+      // Sin contraseña guardada (o creada antes de habilitar el guardado en claro)
+      setView("edit");
+    }
   }
 
   function generarRandom() {
