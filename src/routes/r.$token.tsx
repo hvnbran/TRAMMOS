@@ -34,6 +34,7 @@ function RegistroPage() {
   // Form state
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [empresaNombre, setEmpresaNombre] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   // Pasajero extra
