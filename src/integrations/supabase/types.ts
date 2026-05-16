@@ -181,6 +181,47 @@ export type Database = {
           },
         ]
       }
+      conductor_ubicaciones: {
+        Row: {
+          accuracy: number | null
+          conductor_id: string
+          heading: number | null
+          lat: number
+          lng: number
+          online: boolean
+          speed_kmh: number | null
+          updated_at: string
+        }
+        Insert: {
+          accuracy?: number | null
+          conductor_id: string
+          heading?: number | null
+          lat: number
+          lng: number
+          online?: boolean
+          speed_kmh?: number | null
+          updated_at?: string
+        }
+        Update: {
+          accuracy?: number | null
+          conductor_id?: string
+          heading?: number | null
+          lat?: number
+          lng?: number
+          online?: boolean
+          speed_kmh?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conductor_ubicaciones_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: true
+            referencedRelation: "conductores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conductores: {
         Row: {
           acceso_habilitado: boolean
@@ -1273,7 +1314,6 @@ export type Database = {
           created_by: string | null
           estado: string
           foto_url: string | null
-          gps_device_id: number | null
           id: string
           linea: string | null
           marca: string | null
@@ -1293,7 +1333,6 @@ export type Database = {
           created_by?: string | null
           estado?: string
           foto_url?: string | null
-          gps_device_id?: number | null
           id?: string
           linea?: string | null
           marca?: string | null
@@ -1313,7 +1352,6 @@ export type Database = {
           created_by?: string | null
           estado?: string
           foto_url?: string | null
-          gps_device_id?: number | null
           id?: string
           linea?: string | null
           marca?: string | null
@@ -1325,110 +1363,6 @@ export type Database = {
           vence_soat?: string | null
         }
         Relationships: []
-      }
-      vehiculos_gps: {
-        Row: {
-          activo: boolean
-          bateria: string | null
-          bateria_gps: number | null
-          bateria_vehiculo: number | null
-          bloqueo: boolean | null
-          created_at: string
-          direccion: string | null
-          estado_desde: string | null
-          gpswox_device_id: number
-          grupo: string | null
-          icon_color: string | null
-          id: string
-          ignicion: boolean | null
-          imei: string | null
-          kilometraje: number | null
-          last_course: number | null
-          last_fix_at: string | null
-          last_lat: number | null
-          last_lon: number | null
-          last_speed_kmh: number | null
-          last_synced_at: string | null
-          nombre_dispositivo: string
-          novedad: string | null
-          online: string | null
-          raw: Json | null
-          satelites: number | null
-          sim_signal: number | null
-          updated_at: string
-          vehiculo_id: string | null
-        }
-        Insert: {
-          activo?: boolean
-          bateria?: string | null
-          bateria_gps?: number | null
-          bateria_vehiculo?: number | null
-          bloqueo?: boolean | null
-          created_at?: string
-          direccion?: string | null
-          estado_desde?: string | null
-          gpswox_device_id: number
-          grupo?: string | null
-          icon_color?: string | null
-          id?: string
-          ignicion?: boolean | null
-          imei?: string | null
-          kilometraje?: number | null
-          last_course?: number | null
-          last_fix_at?: string | null
-          last_lat?: number | null
-          last_lon?: number | null
-          last_speed_kmh?: number | null
-          last_synced_at?: string | null
-          nombre_dispositivo: string
-          novedad?: string | null
-          online?: string | null
-          raw?: Json | null
-          satelites?: number | null
-          sim_signal?: number | null
-          updated_at?: string
-          vehiculo_id?: string | null
-        }
-        Update: {
-          activo?: boolean
-          bateria?: string | null
-          bateria_gps?: number | null
-          bateria_vehiculo?: number | null
-          bloqueo?: boolean | null
-          created_at?: string
-          direccion?: string | null
-          estado_desde?: string | null
-          gpswox_device_id?: number
-          grupo?: string | null
-          icon_color?: string | null
-          id?: string
-          ignicion?: boolean | null
-          imei?: string | null
-          kilometraje?: number | null
-          last_course?: number | null
-          last_fix_at?: string | null
-          last_lat?: number | null
-          last_lon?: number | null
-          last_speed_kmh?: number | null
-          last_synced_at?: string | null
-          nombre_dispositivo?: string
-          novedad?: string | null
-          online?: string | null
-          raw?: Json | null
-          satelites?: number | null
-          sim_signal?: number | null
-          updated_at?: string
-          vehiculo_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vehiculos_gps_vehiculo_id_fkey"
-            columns: ["vehiculo_id"]
-            isOneToOne: false
-            referencedRelation: "vehiculos"
-            referencedColumns: ["id"]
-          },
-        ]
       }
     }
     Views: {
@@ -1466,6 +1400,17 @@ export type Database = {
       get_pasajero_brief_for_conductor: {
         Args: { _servicio_id: string }
         Returns: Json
+      }
+      get_ubicacion_conductor_para_pasajero: {
+        Args: { _nombre_conductor: string }
+        Returns: {
+          heading: number
+          lat: number
+          lng: number
+          online: boolean
+          speed_kmh: number
+          updated_at: string
+        }[]
       }
       get_vehiculo_publico_por_placa: {
         Args: { _placa: string }
