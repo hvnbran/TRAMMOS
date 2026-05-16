@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ShieldCheck, ShieldOff, Mail, KeyRound, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, ShieldOff, Mail, Loader2, CheckCircle2 } from "lucide-react";
 
 interface Props {
   pasajeroId: string;
   email: string | null;
   autorizado: boolean;
-  passwordBackup: string | null;
   primerLoginAt: string | null;
   onChange: () => void;
 }
@@ -15,14 +14,11 @@ interface Props {
  * Panel admin de acceso del pasajero:
  *  - Toggle "Autorizado" para habilitar/inhabilitar el login del pasajero.
  *  - Reenviar código OTP al correo registrado.
- *  - Mostrar contraseña backup ("Nombreapellidotrammos") para que el operador
- *    pueda dictarla cuando el pasajero no acceda a su correo.
  */
 export function AccesoPasajeroPanel({
-  pasajeroId, email, autorizado, passwordBackup, primerLoginAt, onChange,
+  pasajeroId, email, autorizado, primerLoginAt, onChange,
 }: Props) {
   const [busy, setBusy] = useState<null | "toggle" | "otp">(null);
-  const [showPwd, setShowPwd] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -53,16 +49,6 @@ export function AccesoPasajeroPanel({
     setBusy(null);
     if (error) { flash(setErr, error.message); return; }
     flash(setMsg, `Código enviado a ${email}.`);
-  }
-
-  async function copiarPwd() {
-    if (!passwordBackup) return;
-    try {
-      await navigator.clipboard.writeText(passwordBackup);
-      flash(setMsg, "Contraseña copiada al portapapeles.");
-    } catch {
-      flash(setErr, "No se pudo copiar.");
-    }
   }
 
   return (
@@ -128,33 +114,6 @@ export function AccesoPasajeroPanel({
           Reenviar código al correo
         </button>
       </div>
-
-      {passwordBackup && (
-        <div className="mt-2 flex items-center gap-2 rounded-md bg-warning/10 border border-warning/30 px-2 py-1.5">
-          <KeyRound className="h-3.5 w-3.5 text-warning shrink-0" aria-hidden="true" />
-          <div className="text-[11px] text-foreground flex-1 min-w-0">
-            <div className="text-muted-foreground">Contraseña de respaldo (dictar al pasajero)</div>
-            <code className="font-mono text-xs select-all break-all">
-              {showPwd ? passwordBackup : "•".repeat(Math.min(passwordBackup.length, 14))}
-            </code>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowPwd((v) => !v)}
-            className="h-7 w-7 rounded hover:bg-muted flex items-center justify-center"
-            aria-label={showPwd ? "Ocultar contraseña" : "Mostrar contraseña"}
-          >
-            {showPwd ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          </button>
-          <button
-            type="button"
-            onClick={copiarPwd}
-            className="text-[11px] px-2 h-7 rounded border border-border hover:bg-background"
-          >
-            Copiar
-          </button>
-        </div>
-      )}
 
       {primerLoginAt && (
         <div className="mt-2 text-[11px] text-muted-foreground">
