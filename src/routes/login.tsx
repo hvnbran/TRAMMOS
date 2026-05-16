@@ -126,122 +126,32 @@ function LoginPage() {
   const TEST_EMAIL = "trammos@admin.com";
   const TEST_CODE = "123456";
 
-  const handleRequestCode = async (e: FormEvent) => {
+  const handlePasajeroLogin = async (e: FormEvent) => {
     e.preventDefault();
     setPError(null);
-    setPInfo(null);
     setPLoading(true);
     const email = pEmail.trim();
-    if (!email) {
-      setPError("Escribe tu correo.");
+    if (!email || !pPassword) {
+      setPError("Escribe tu correo y contraseña.");
       setPLoading(false);
       return;
     }
 
-    // Testing shortcut: skip Supabase OTP entirely.
-    if (email.toLowerCase() === TEST_EMAIL) {
-      setPInfo(`Modo testing: usa el código ${TEST_CODE} para entrar.`);
-      setPStep("otp");
-      setPLoading(false);
-      return;
-    }
-
-    // 1) Validate authorization
+    // Validar autorización
     const { data: authorized, error: rpcErr } = await supabase.rpc("is_pasajero_email_authorized", { _email: email });
-    if (rpcErr) {
-      setPError("No pudimos verificar tu correo. Intenta de nuevo.");
-      setPLoading(false);
-      return;
-    }
-    if (!authorized) {
+    if (rpcErr || !authorized) {
       setPError("Este correo no está autorizado. Contacta al equipo TRAMMOS.");
       setPLoading(false);
       return;
     }
-    // 2) Send OTP (6-digit code, NO magic link)
-    const { error: otpErr } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    });
-    if (otpErr) {
-      setPError("No pudimos enviar el código. Intenta de nuevo en unos segundos.");
-      setPLoading(false);
-      return;
-    }
-    setPInfo(`Te enviamos un código de 6 dígitos a ${email}. Revisa tu correo.`);
-    setPStep("otp");
-    setPLoading(false);
-  };
 
-  const handleVerifyCode = async (e: FormEvent) => {
-    e.preventDefault();
-    setPError(null);
-    setPLoading(true);
-    const code = pCode.trim();
-    const email = pEmail.trim();
-    if (code.length < 4) {
-      setPError("Ingresa el código que llegó a tu correo.");
+    const { error: sErr } = await supabase.auth.signInWithPassword({ email, password: pPassword });
+    if (sErr) {
+      setPError("Credenciales incorrectas. Verifica tu correo y contraseña.");
       setPLoading(false);
       return;
     }
 
-    // Testing shortcut: validate against the test backend route.
-    if (email.toLowerCase() === TEST_EMAIL) {
-      if (code !== TEST_CODE) {
-        setPError("Código de testing incorrecto. Usa 123456.");
-        setPLoading(false);
-        return;
-      }
-      try {
-        const res = await fetch("/api/test-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, code }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json.token_hash) {
-          setPError(`No pudimos entrar en modo testing (${json.error ?? res.status}).`);
-          setPLoading(false);
-          return;
-        }
-        const { error: vErr } = await supabase.auth.verifyOtp({
-          token_hash: json.token_hash,
-          type: "magiclink",
-        });
-        if (vErr) {
-          setPError(`Verificación fallida: ${vErr.message}`);
-          setPLoading(false);
-          return;
-        }
-        const linkResp = await supabase.rpc("link_pasajero_to_auth");
-        const pasajeroIdT = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
-        void recordAcceptance({
-          types: ["terminos", "privacidad"],
-          contexto: "login_pasajero",
-          email,
-          pasajeroId: pasajeroIdT,
-        });
-        setPLoading(false);
-        startSplashSequence("Pasajero Testing", "pasajero", "/pasajero");
-        return;
-      } catch (err) {
-        setPError("Error de red en modo testing.");
-        setPLoading(false);
-        return;
-      }
-    }
-
-    const { error: vErr } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: "email",
-    });
-    if (vErr) {
-      setPError("Código incorrecto o vencido. Pide uno nuevo.");
-      setPLoading(false);
-      return;
-    }
-    // Link to pasajero profile + assign role
     const linkResp = await supabase.rpc("link_pasajero_to_auth");
     const pasajeroId = (linkResp.data as { pasajero_id?: string } | null)?.pasajero_id ?? null;
     void recordAcceptance({
@@ -251,7 +161,7 @@ function LoginPage() {
       pasajeroId,
     });
     setPLoading(false);
-    startSplashSequence(pEmail.split("@")[0], "pasajero", "/pasajero");
+    startSplashSequence(email.split("@")[0], "pasajero", "/pasajero");
   };
 
   return (
