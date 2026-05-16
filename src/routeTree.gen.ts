@@ -28,6 +28,7 @@ import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as RegistroTokenRouteImport } from './routes/registro.$token'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
@@ -134,6 +135,11 @@ const RegistroTokenRoute = RegistroTokenRouteImport.update({
   path: '/registro/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LegalTerminosRoute = LegalTerminosRouteImport.update({
   id: '/legal/terminos',
   path: '/legal/terminos',
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/r/$token': typeof RTokenRoute
   '/registro/$token': typeof RegistroTokenRoute
   '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/r/$token': typeof RTokenRoute
   '/registro/$token': typeof RegistroTokenRoute
   '/conductor': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
@@ -270,6 +278,7 @@ export interface FileRoutesById {
   '/conductor/login': typeof ConductorLoginRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
+  '/r/$token': typeof RTokenRoute
   '/registro/$token': typeof RegistroTokenRoute
   '/conductor/': typeof ConductorIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/r/$token'
     | '/registro/$token'
     | '/conductor/'
     | '/api/public/conductor-login'
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/r/$token'
     | '/registro/$token'
     | '/conductor'
     | '/api/public/conductor-login'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/conductor/login'
     | '/legal/privacidad'
     | '/legal/terminos'
+    | '/r/$token'
     | '/registro/$token'
     | '/conductor/'
     | '/api/public/conductor-login'
@@ -397,6 +409,7 @@ export interface RootRouteChildren {
   ConductorLoginRoute: typeof ConductorLoginRoute
   LegalPrivacidadRoute: typeof LegalPrivacidadRoute
   LegalTerminosRoute: typeof LegalTerminosRoute
+  RTokenRoute: typeof RTokenRoute
   RegistroTokenRoute: typeof RegistroTokenRoute
   ConductorIndexRoute: typeof ConductorIndexRoute
   ApiPublicConductorLoginRoute: typeof ApiPublicConductorLoginRoute
@@ -543,6 +556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegistroTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/legal/terminos': {
       id: '/legal/terminos'
       path: '/legal/terminos'
@@ -637,6 +657,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConductorLoginRoute: ConductorLoginRoute,
   LegalPrivacidadRoute: LegalPrivacidadRoute,
   LegalTerminosRoute: LegalTerminosRoute,
+  RTokenRoute: RTokenRoute,
   RegistroTokenRoute: RegistroTokenRoute,
   ConductorIndexRoute: ConductorIndexRoute,
   ApiPublicConductorLoginRoute: ApiPublicConductorLoginRoute,
