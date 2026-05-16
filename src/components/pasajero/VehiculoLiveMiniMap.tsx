@@ -5,17 +5,18 @@ import "leaflet/dist/leaflet.css";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
-  /** Placa del vehículo asignado (se busca en vehiculos_gps por nombre_dispositivo o vehiculo.placa). */
-  placa: string;
+  /** Nombre del conductor asignado (se usa para resolver su ubicación vía función segura). */
+  conductorNombre: string;
   height?: number;
 }
 
 interface LivePos {
   lat: number;
-  lon: number;
-  speed: number | null;
-  fixAt: string | null;
-  online: string | null;
+  lng: number;
+  speed_kmh: number | null;
+  heading: number | null;
+  online: boolean;
+  updated_at: string;
 }
 
 const carIcon = L.divIcon({
@@ -39,91 +40,32 @@ function Recenter({ pos }: { pos: [number, number] | null }) {
   return null;
 }
 
-function norm(s: string) {
-  return s.toUpperCase().replace(/[\s-]/g, "").trim();
-}
-
-export function VehiculoLiveMiniMap({ placa, height = 200 }: Props) {
+export function VehiculoLiveMiniMap({ conductorNombre, height = 200 }: Props) {
   const [pos, setPos] = useState<LivePos | null>(null);
-  const [gpsId, setGpsId] = useState<string | null>(null);
 
-  // Resolver gps_id por placa (match por nombre_dispositivo o por vehiculo vinculado)
+  // Polling de la ubicación vía RPC segura (RLS no permite SELECT directo al pasajero,
+  // así que usamos la función SECURITY DEFINER que valida que tiene un servicio activo).
   useEffect(() => {
     let cancel = false;
-    async function find() {
-      const placaN = norm(placa);
-      // 1) intento directo por nombre_dispositivo
-      const { data: directos } = await supabase
-        .from("vehiculos_gps")
-        .select("id, nombre_dispositivo, last_lat, last_lon, last_speed_kmh, last_fix_at, online, vehiculo_id");
-      if (cancel || !directos) return;
-      const match = directos.find(
-        (g) => norm(g.nombre_dispositivo ?? "") === placaN,
-      );
-      if (match) {
-        setGpsId(match.id);
-        if (match.last_lat != null && match.last_lon != null) {
-          setPos({
-            lat: match.last_lat,
-            lon: match.last_lon,
-            speed: match.last_speed_kmh,
-            fixAt: match.last_fix_at,
-            online: match.online,
-          });
-        }
-        return;
-      }
-      // 2) buscar por vehiculo.placa → vehiculo_id → vehiculos_gps
-      const { data: veh } = await supabase
-        .from("vehiculos")
-        .select("id, placa")
-        .ilike("placa", placa.trim())
-        .maybeSingle();
-      if (cancel || !veh) return;
-      const linked = directos.find((g) => g.vehiculo_id === veh.id);
-      if (linked) {
-        setGpsId(linked.id);
-        if (linked.last_lat != null && linked.last_lon != null) {
-          setPos({
-            lat: linked.last_lat,
-            lon: linked.last_lon,
-            speed: linked.last_speed_kmh,
-            fixAt: linked.last_fix_at,
-            online: linked.online,
-          });
-        }
-      }
+    async function fetchPos() {
+      const { data, error } = await supabase.rpc("get_ubicacion_conductor_para_pasajero", {
+        _nombre_conductor: conductorNombre,
+      });
+      if (cancel || error || !data || data.length === 0) return;
+      const row = data[0] as {
+        lat: number;
+        lng: number;
+        speed_kmh: number | null;
+        heading: number | null;
+        online: boolean;
+        updated_at: string;
+      };
+      setPos(row);
     }
-    void find();
-    return () => { cancel = true; };
-  }, [placa]);
-
-  // Realtime: escuchar updates a esta fila
-  useEffect(() => {
-    if (!gpsId) return;
-    const ch = supabase
-      .channel(`gps-mini-${gpsId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "vehiculos_gps", filter: `id=eq.${gpsId}` },
-        (payload) => {
-          const r = payload.new as Record<string, unknown>;
-          const lat = r.last_lat as number | null;
-          const lon = r.last_lon as number | null;
-          if (lat != null && lon != null) {
-            setPos({
-              lat,
-              lon,
-              speed: (r.last_speed_kmh as number | null) ?? null,
-              fixAt: (r.last_fix_at as string | null) ?? null,
-              online: (r.online as string | null) ?? null,
-            });
-          }
-        },
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [gpsId]);
+    void fetchPos();
+    const i = setInterval(fetchPos, 5_000);
+    return () => { cancel = true; clearInterval(i); };
+  }, [conductorNombre]);
 
   if (!pos) {
     return (
@@ -131,15 +73,17 @@ export function VehiculoLiveMiniMap({ placa, height = 200 }: Props) {
         style={{ height }}
         className="rounded-2xl border-2 border-border bg-muted/40 flex items-center justify-center text-xs text-muted-foreground"
       >
-        Esperando señal GPS del vehículo…
+        Esperando ubicación del conductor…
       </div>
     );
   }
 
+  const stale = Date.now() - new Date(pos.updated_at).getTime() > 60_000;
+
   return (
-    <div className="rounded-2xl overflow-hidden border-2 border-border" style={{ height }}>
+    <div className="rounded-2xl overflow-hidden border-2 border-border relative" style={{ height }}>
       <MapContainer
-        center={[pos.lat, pos.lon]}
+        center={[pos.lat, pos.lng]}
         zoom={15}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
@@ -150,17 +94,22 @@ export function VehiculoLiveMiniMap({ placa, height = 200 }: Props) {
           maxZoom={19}
           attribution='&copy; OpenStreetMap &copy; CARTO'
         />
-        <Marker position={[pos.lat, pos.lon]} icon={carIcon}>
+        <Marker position={[pos.lat, pos.lng]} icon={carIcon}>
           <Popup>
             <div style={{ fontSize: 12 }}>
-              <strong>{placa}</strong>
+              <strong>{conductorNombre}</strong>
               <br />
-              {pos.speed != null ? `${Math.round(pos.speed)} km/h` : "—"}
+              {pos.speed_kmh != null ? `${Math.round(pos.speed_kmh)} km/h` : "—"}
             </div>
           </Popup>
         </Marker>
-        <Recenter pos={[pos.lat, pos.lon]} />
+        <Recenter pos={[pos.lat, pos.lng]} />
       </MapContainer>
+      {(stale || !pos.online) && (
+        <div className="absolute top-2 left-2 z-[1000] text-[11px] px-2 py-1 rounded bg-amber-500/90 text-white font-medium shadow">
+          Conductor sin señal · {new Date(pos.updated_at).toLocaleTimeString("es-CO")}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,23 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { gpsStatus } from "@/components/MonitoreoMap";
-import { Search, Circle, Gauge, Clock, Car } from "lucide-react";
+import { liveStatus } from "@/components/MonitoreoMap";
+import { Search, Circle, Gauge, Clock, User } from "lucide-react";
 
-interface GpsRow {
-  id: string;
-  gpswox_device_id: number;
-  nombre_dispositivo: string;
-  vehiculo_id: string | null;
-  last_lat: number | null;
-  last_lon: number | null;
-  last_speed_kmh: number | null;
-  last_fix_at: string | null;
-  online: string | null;
-  vehiculo?: { placa: string; conductor: string | null; estado: string | null } | null;
+interface Row {
+  conductor_id: string;
+  lat: number;
+  lng: number;
+  speed_kmh: number | null;
+  heading: number | null;
+  online: boolean;
+  updated_at: string;
+  conductor?: { nombre: string; telefono: string | null } | null;
 }
 
-function tiempoDesde(iso: string | null) {
-  if (!iso) return "—";
+function tiempoDesde(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const s = Math.floor(diff / 1000);
   if (s < 60) return `hace ${s}s`;
@@ -34,15 +31,13 @@ interface Props {
 }
 
 export default function VehiculosLiveList({ selectedId, onSelect }: Props) {
-  const [rows, setRows] = useState<GpsRow[]>([]);
+  const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
-  const [onlyOnline, setOnlyOnline] = useState(false);
-  const [onlyEnServicio, setOnlyEnServicio] = useState(false);
+  const [onlyOnline, setOnlyOnline] = useState(true);
   const [, force] = useState(0);
 
-  // Re-render cada 30s para que "hace Xs" se actualice
   useEffect(() => {
-    const i = setInterval(() => force((x) => x + 1), 30_000);
+    const i = setInterval(() => force((x) => x + 1), 15_000);
     return () => clearInterval(i);
   }, []);
 
@@ -50,24 +45,33 @@ export default function VehiculosLiveList({ selectedId, onSelect }: Props) {
     let cancel = false;
     async function load() {
       const { data } = await supabase
-        .from("vehiculos_gps")
-        .select("id, gpswox_device_id, nombre_dispositivo, vehiculo_id, last_lat, last_lon, last_speed_kmh, last_fix_at, online, vehiculo:vehiculos(placa, conductor, estado)");
-      if (!cancel) setRows(((data ?? []) as unknown) as GpsRow[]);
+        .from("conductor_ubicaciones")
+        .select("conductor_id, lat, lng, speed_kmh, heading, online, updated_at, conductor:conductores(nombre, telefono)")
+        .order("updated_at", { ascending: false });
+      if (!cancel) setRows(((data ?? []) as unknown) as Row[]);
     }
     void load();
     const ch = supabase
-      .channel("vehiculos_gps_list")
-      .on("postgres_changes", { event: "*", schema: "public", table: "vehiculos_gps" }, (payload) => {
+      .channel("conductor_ubicaciones_list")
+      .on("postgres_changes", { event: "*", schema: "public", table: "conductor_ubicaciones" }, async (payload) => {
+        if (payload.eventType === "DELETE") {
+          const old = payload.old as { conductor_id: string };
+          setRows((prev) => prev.filter((d) => d.conductor_id !== old.conductor_id));
+          return;
+        }
+        const r = payload.new as { conductor_id: string };
+        const { data } = await supabase
+          .from("conductor_ubicaciones")
+          .select("conductor_id, lat, lng, speed_kmh, heading, online, updated_at, conductor:conductores(nombre, telefono)")
+          .eq("conductor_id", r.conductor_id)
+          .maybeSingle();
+        if (!data) return;
+        const fresh = (data as unknown) as Row;
         setRows((prev) => {
-          if (payload.eventType === "DELETE") {
-            const old = payload.old as { id: string };
-            return prev.filter((d) => d.id !== old.id);
-          }
-          const row = payload.new as GpsRow;
-          const idx = prev.findIndex((d) => d.id === row.id);
-          if (idx === -1) return [...prev, row];
+          const idx = prev.findIndex((d) => d.conductor_id === fresh.conductor_id);
+          if (idx === -1) return [...prev, fresh];
           const copy = [...prev];
-          copy[idx] = { ...copy[idx], ...row };
+          copy[idx] = fresh;
           return copy;
         });
       })
@@ -78,28 +82,22 @@ export default function VehiculosLiveList({ selectedId, onSelect }: Props) {
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     const arr = rows.filter((r) => {
-      const s = gpsStatus(r);
+      const s = liveStatus(r);
       if (onlyOnline && s === "offline") return false;
-      if (onlyEnServicio) {
-        const est = r.vehiculo?.estado ?? "";
-        if (!/servic|ruta|operac/i.test(est)) return false;
-      }
       if (ql) {
-        const hay = `${r.vehiculo?.placa ?? ""} ${r.nombre_dispositivo} ${r.vehiculo?.conductor ?? ""}`.toLowerCase();
+        const hay = `${r.conductor?.nombre ?? ""} ${r.conductor?.telefono ?? ""}`.toLowerCase();
         if (!hay.includes(ql)) return false;
       }
       return true;
     });
     arr.sort((a, b) => {
-      const sa = gpsStatus(a), sb = gpsStatus(b);
+      const sa = liveStatus(a), sb = liveStatus(b);
       const rank = (s: string) => (s === "online" ? 0 : s === "idle" ? 1 : 2);
       if (rank(sa) !== rank(sb)) return rank(sa) - rank(sb);
-      const ta = a.last_fix_at ? new Date(a.last_fix_at).getTime() : 0;
-      const tb = b.last_fix_at ? new Date(b.last_fix_at).getTime() : 0;
-      return tb - ta;
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
     return arr;
-  }, [rows, q, onlyOnline, onlyEnServicio]);
+  }, [rows, q, onlyOnline]);
 
   return (
     <div className="flex flex-col h-full bg-card border border-border rounded-lg overflow-hidden">
@@ -109,7 +107,7 @@ export default function VehiculosLiveList({ selectedId, onSelect }: Props) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar placa, conductor…"
+            placeholder="Buscar conductor…"
             className="w-full pl-8 pr-2 py-1.5 text-sm rounded-md border border-input bg-background"
           />
         </div>
@@ -120,12 +118,6 @@ export default function VehiculosLiveList({ selectedId, onSelect }: Props) {
           >
             Solo en línea
           </button>
-          <button
-            onClick={() => setOnlyEnServicio((v) => !v)}
-            className={`px-2 py-1 rounded-full border ${onlyEnServicio ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}
-          >
-            En servicio
-          </button>
           <span className="ml-auto self-center text-muted-foreground">{filtered.length}/{rows.length}</span>
         </div>
       </div>
@@ -133,47 +125,39 @@ export default function VehiculosLiveList({ selectedId, onSelect }: Props) {
       <div className="flex-1 overflow-y-auto divide-y divide-border">
         {filtered.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
-            {rows.length === 0 ? "Esperando primeros datos GPS…" : "Sin resultados con esos filtros."}
+            {rows.length === 0
+              ? "Ningún conductor ha conectado su ubicación todavía."
+              : "Ningún conductor está en línea ahora mismo."}
           </div>
         ) : (
           filtered.map((r) => {
-            const s = gpsStatus(r);
+            const s = liveStatus(r);
             const color = s === "online" ? "text-emerald-500" : s === "idle" ? "text-amber-500" : "text-gray-400";
-            const placa = r.vehiculo?.placa ?? r.nombre_dispositivo;
-            const enSrv = /servic|ruta|operac/i.test(r.vehiculo?.estado ?? "");
-            const sel = r.id === selectedId;
+            const sel = r.conductor_id === selectedId;
             return (
               <button
-                key={r.id}
-                onClick={() => onSelect(r.id)}
+                key={r.conductor_id}
+                onClick={() => onSelect(r.conductor_id)}
                 className={`w-full text-left p-3 hover:bg-secondary/40 transition-colors ${sel ? "bg-secondary/60" : ""}`}
               >
                 <div className="flex items-center gap-2">
                   <Circle className={`h-2.5 w-2.5 fill-current ${color}`} />
-                  <span className="font-semibold text-sm truncate">{placa}</span>
-                  {enSrv && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">
-                      En servicio
-                    </span>
-                  )}
+                  <span className="font-semibold text-sm truncate flex items-center gap-1">
+                    <User className="h-3 w-3" /> {r.conductor?.nombre ?? "Conductor"}
+                  </span>
                 </div>
-                {r.vehiculo?.placa && (
-                  <div className="text-[11px] text-muted-foreground ml-4 mt-0.5 flex items-center gap-1">
-                    <Car className="h-3 w-3" /> {r.nombre_dispositivo}
-                  </div>
-                )}
                 <div className="flex items-center gap-3 ml-4 mt-1 text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Gauge className="h-3 w-3" />
-                    {s === "offline" ? "—" : r.last_speed_kmh != null && r.last_speed_kmh >= 3 ? `${Math.round(r.last_speed_kmh)} km/h` : "detenido"}
+                    {s === "offline" ? "—" : r.speed_kmh != null && r.speed_kmh >= 3 ? `${Math.round(r.speed_kmh)} km/h` : "detenido"}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {tiempoDesde(r.last_fix_at)}
+                    {tiempoDesde(r.updated_at)}
                   </span>
                 </div>
-                {r.vehiculo?.conductor && (
-                  <div className="text-[11px] text-muted-foreground ml-4 mt-0.5 truncate">{r.vehiculo.conductor}</div>
+                {r.conductor?.telefono && (
+                  <div className="text-[11px] text-muted-foreground ml-4 mt-0.5 truncate">{r.conductor.telefono}</div>
                 )}
               </button>
             );
