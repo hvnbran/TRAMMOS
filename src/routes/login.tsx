@@ -48,11 +48,9 @@ function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [acceptOp, setAcceptOp] = useState(false);
 
-  // Pasajero
-  const [pStep, setPStep] = useState<PasajeroStep>("email");
+  // Pasajero (password-based)
   const [pEmail, setPEmail] = useState("");
-  const [pCode, setPCode] = useState("");
-  const [pInfo, setPInfo] = useState<string | null>(null);
+  const [pPassword, setPPassword] = useState("");
   const [pError, setPError] = useState<string | null>(null);
   const [pLoading, setPLoading] = useState(false);
   const [acceptPas, setAcceptPas] = useState(false);
