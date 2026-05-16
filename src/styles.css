@@ -400,14 +400,14 @@ html.a11y-cb-tritanopia { filter: url(#a11y-tritanopia); }
   height: 2.5rem;
   border-radius: 0.375rem;
   border: 1px solid hsl(var(--input, 0 0% 80%));
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 0 0.75rem;
   font-size: 0.875rem;
   color: hsl(var(--foreground));
 }
 .form-input:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--primary));
+  box-shadow: 0 0 0 2px var(--primary);
 }
 textarea.form-input {
   height: auto;
@@ -460,13 +460,13 @@ html.a11y-picto-mode [role="img"] {
   height: 2.5rem;
   padding: 0 0.75rem;
   border-radius: 0.375rem;
-  border: 1px solid hsl(var(--input));
-  background: hsl(var(--background));
+  border: 1px solid var(--input);
+  background: var(--background);
   font-size: 0.875rem;
 }
 .input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--ring));
+  box-shadow: 0 0 0 2px var(--ring);
 }
 .btn-primary {
   display: inline-flex;
@@ -475,8 +475,8 @@ html.a11y-picto-mode [role="img"] {
   height: 2.5rem;
   padding: 0 1rem;
   border-radius: 0.375rem;
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background: var(--primary);
+  color: var(--primary-foreground);
   font-size: 0.875rem;
   font-weight: 500;
   transition: opacity 0.15s;
