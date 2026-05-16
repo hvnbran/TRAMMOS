@@ -382,27 +382,23 @@ function InvitacionGenerator({
 
 // ============== Tab Empresa ==============
 
-function EmpresaTab({ empresas, openCrearEmpresa }: { empresas: Empresa[]; openCrearEmpresa: () => void }) {
-  const crear = useServerFn(crearCuentaEmpresa);
-  const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [empresaId, setEmpresaId] = useState("");
-  const [password, setPassword] = useState(genPassword());
+function EmpresaTab() {
+  const crearInv = useServerFn(crearInvitacionRegistro);
   const [loading, setLoading] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+  const [expira, setExpira] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!empresaId) {
-      setError("Selecciona una empresa.");
-      return;
-    }
-    setError(null);
+  async function generar() {
     setLoading(true);
+    setError(null);
+    setLink(null);
     try {
-      const r = await crear({ data: { email, password, empresaId, displayName } });
-      setResult({ email: r.email, password: r.password });
+      const r = await crearInv({ data: { tipo: "empresa", expires_in_hours: 168 } });
+      const url = `${window.location.origin}/r/${r.token}`;
+      setLink(url);
+      setExpira(r.expiresAt);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
@@ -410,60 +406,53 @@ function EmpresaTab({ empresas, openCrearEmpresa }: { empresas: Empresa[]; openC
     }
   }
 
-  if (result) {
-    return (
-      <Card title="Cuenta de empresa creada">
-        <ResultadoCredenciales
-          email={result.email}
-          password={result.password}
-          onReset={() => {
-            setResult(null);
-            setEmail("");
-            setDisplayName("");
-            setPassword(genPassword());
-          }}
-        />
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <InvitacionGenerator tipo="empresa" empresas={empresas} openCrearEmpresa={openCrearEmpresa} />
-      <Card title="Nueva cuenta de empresa (monitoreo)">
-        <form onSubmit={submit} className="space-y-3 max-w-xl">
-          <Field label="Rol">
-            <input className="input bg-muted" value="Empresa" readOnly disabled />
-          </Field>
-          <Field label="Empresa">
-            <EmpresaSelector
-              empresas={empresas}
-              value={empresaId}
-              onChange={setEmpresaId}
-              onCreate={openCrearEmpresa}
-            />
-          </Field>
-          <Field label="Nombre visible">
-            <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required placeholder="Ej: Equipo Logística" />
-          </Field>
-          <Field label="Email">
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="usuario@empresa.com" />
-          </Field>
-          <Field label="Contraseña">
-            <div className="flex gap-2">
-              <input className="input flex-1 font-mono" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-              <button type="button" onClick={() => setPassword(genPassword())} className="text-xs px-3 rounded border border-border hover:bg-secondary">
-                Aleatoria
+    <Card title="Enlace de auto-registro de empresa">
+      <div className="space-y-4 max-w-2xl">
+        <p className="text-sm text-muted-foreground">
+          Genera un enlace y envíalo a la empresa. Ellos mismos llenan su nombre,
+          correo y contraseña. Al completar el registro, la empresa aparece automáticamente
+          en el listado de administración.
+        </p>
+
+        <button onClick={generar} disabled={loading} className="btn-primary">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+          Generar enlace de registro
+        </button>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        {link && (
+          <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Comparte este enlace con la empresa. Es de un solo uso.
+            </p>
+            <pre className="text-sm font-mono bg-background p-3 rounded border border-border whitespace-pre-wrap break-all">{link}</pre>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(link);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                }}
+                className="text-sm inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-primary-foreground"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied ? "Copiado" : "Copiar enlace"}
               </button>
+              <button onClick={generar} className="text-sm px-3 py-1.5 rounded border border-border">
+                <Plus className="h-4 w-4 inline mr-1" /> Generar otro
+              </button>
+              {expira && (
+                <span className="text-[11px] text-muted-foreground">
+                  Expira: {new Date(expira).toLocaleString("es-CO")}
+                </span>
+              )}
             </div>
-          </Field>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear cuenta
-          </button>
-        </form>
-      </Card>
-    </div>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 }
 
