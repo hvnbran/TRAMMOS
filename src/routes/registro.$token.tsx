@@ -20,7 +20,7 @@ export const Route = createFileRoute("/registro/$token")({
 type ValidState =
   | { state: "loading" }
   | { state: "invalid"; reason: string }
-  | { state: "valid"; tipo: "empresa" | "pasajero"; cliente: string | null; rol: string | null; email_sugerido: string | null; display_name_sugerido: string | null };
+  | { state: "valid"; tipo: "empresa" | "pasajero"; cliente: string | null; rol: string | null; empresa_nombre: string | null; email_sugerido: string | null; display_name_sugerido: string | null };
 
 function RegistroPage() {
   const { token } = Route.useParams();
@@ -63,6 +63,7 @@ function RegistroPage() {
             tipo: r.tipo,
             cliente: r.cliente,
             rol: r.rol,
+            empresa_nombre: r.empresa_nombre,
             email_sugerido: r.email_sugerido,
             display_name_sugerido: r.display_name_sugerido,
           });
@@ -157,8 +158,7 @@ function RegistroPage() {
           <form onSubmit={submit} className="space-y-3">
             <p className="text-xs text-muted-foreground">
               Tipo de cuenta: <strong>{v.tipo === "empresa" ? "Empresa / Monitoreo" : "Pasajero"}</strong>
-              {v.cliente && <> · Cliente: <strong className="uppercase">{v.cliente}</strong></>}
-              {v.rol && v.tipo === "empresa" && <> · Rol: <strong className="uppercase">{v.rol}</strong></>}
+              {v.empresa_nombre && <> · Empresa: <strong>{v.empresa_nombre}</strong></>}
             </p>
 
             <Field label="Email (será tu usuario)">

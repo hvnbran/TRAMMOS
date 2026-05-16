@@ -192,6 +192,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cumplimiento: number | null
+          empresa_id: string | null
           estado: string
           foto_url: string | null
           id: string
@@ -214,6 +215,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cumplimiento?: number | null
+          empresa_id?: string | null
           estado?: string
           foto_url?: string | null
           id?: string
@@ -236,6 +238,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cumplimiento?: number | null
+          empresa_id?: string | null
           estado?: string
           foto_url?: string | null
           id?: string
@@ -248,7 +251,15 @@ export type Database = {
           updated_at?: string
           vence_licencia?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conductores_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_send_log: {
         Row: {
@@ -334,6 +345,39 @@ export type Database = {
           id?: string
           token?: string
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      empresas: {
+        Row: {
+          activo: boolean
+          cliente_legacy: Database["public"]["Enums"]["cliente_tipo"] | null
+          created_at: string
+          created_by: string | null
+          id: string
+          nombre: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cliente_legacy?: Database["public"]["Enums"]["cliente_tipo"] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nombre: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cliente_legacy?: Database["public"]["Enums"]["cliente_tipo"] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nombre?: string
+          slug?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -530,6 +574,7 @@ export type Database = {
           created_by: string | null
           direccion_habitual: string | null
           email: string | null
+          empresa_id: string | null
           id: string
           medicamentos: string | null
           nivel_asistencia: number
@@ -561,6 +606,7 @@ export type Database = {
           created_by?: string | null
           direccion_habitual?: string | null
           email?: string | null
+          empresa_id?: string | null
           id?: string
           medicamentos?: string | null
           nivel_asistencia?: number
@@ -592,6 +638,7 @@ export type Database = {
           created_by?: string | null
           direccion_habitual?: string | null
           email?: string | null
+          empresa_id?: string | null
           id?: string
           medicamentos?: string | null
           nivel_asistencia?: number
@@ -605,7 +652,15 @@ export type Database = {
           tipo_discapacidad?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pasajeros_pcd_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       policy_acceptances: {
         Row: {
@@ -760,6 +815,7 @@ export type Database = {
           datos_sugeridos: Json
           display_name_sugerido: string | null
           email_sugerido: string | null
+          empresa_id: string | null
           expires_at: string
           id: string
           rol: Database["public"]["Enums"]["app_role"] | null
@@ -775,6 +831,7 @@ export type Database = {
           datos_sugeridos?: Json
           display_name_sugerido?: string | null
           email_sugerido?: string | null
+          empresa_id?: string | null
           expires_at?: string
           id?: string
           rol?: Database["public"]["Enums"]["app_role"] | null
@@ -790,6 +847,7 @@ export type Database = {
           datos_sugeridos?: Json
           display_name_sugerido?: string | null
           email_sugerido?: string | null
+          empresa_id?: string | null
           expires_at?: string
           id?: string
           rol?: Database["public"]["Enums"]["app_role"] | null
@@ -797,7 +855,15 @@ export type Database = {
           token?: string
           used_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "registro_invitaciones_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       servicios: {
         Row: {
@@ -1039,6 +1105,35 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "trami_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_empresas: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          rol_empresa: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          rol_empresa?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          rol_empresa?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_empresas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
             referencedColumns: ["id"]
           },
         ]
@@ -1348,6 +1443,7 @@ export type Database = {
         Args: { _clientes: Database["public"]["Enums"]["cliente_tipo"][] }
         Returns: boolean
       }
+      can_access_empresa: { Args: { _empresa_id: string }; Returns: boolean }
       conductor_set_estado_servicio: {
         Args: { _motivo?: string; _nuevo_estado: string; _servicio_id: string }
         Returns: Json
@@ -1418,6 +1514,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["cliente_tipo"]
       }
+      user_empresa_ids: { Args: { _user: string }; Returns: string[] }
       verify_conductor_password: {
         Args: { _cedula: string; _password: string }
         Returns: {

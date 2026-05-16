@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AdminOnly } from "@/components/layout/AdminOnly";
@@ -8,8 +8,12 @@ import {
   crearCuentaPasajero,
 } from "@/lib/cuentas/cuentas.functions";
 import { crearInvitacionRegistro } from "@/lib/cuentas/invitaciones.functions";
+import { listarEmpresas, crearEmpresa } from "@/lib/empresas/empresas.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, Accessibility, Users, Loader2, Copy, Check, KeyRound, Plus, Link2 } from "lucide-react";
+import {
+  Building2, Accessibility, Users, Loader2, Copy, Check, KeyRound,
+  Plus, Link2, Building,
+} from "lucide-react";
 
 export const Route = createFileRoute("/cuentas")({
   component: () => (
@@ -27,6 +31,14 @@ export const Route = createFileRoute("/cuentas")({
 
 type Tab = "empresa" | "pasajero" | "conductor";
 
+type Empresa = {
+  id: string;
+  nombre: string;
+  slug: string;
+  cliente_legacy: string | null;
+  activo: boolean;
+};
+
 function genPassword(len = 10) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghjkmnpqrstuvwxyz";
   let p = "";
@@ -34,8 +46,156 @@ function genPassword(len = 10) {
   return p;
 }
 
+// ============== Hook: lista de empresas ==============
+
+function useEmpresas() {
+  const listar = useServerFn(listarEmpresas);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const r = await listar({});
+      setEmpresas((r.empresas ?? []) as Empresa[]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { empresas, loading, refresh };
+}
+
+// ============== Selector de empresa con botón "Crear" ==============
+
+function EmpresaSelector({
+  empresas,
+  value,
+  onChange,
+  onCreate,
+  filterOnlyLegacy = false,
+}: {
+  empresas: Empresa[];
+  value: string;
+  onChange: (id: string) => void;
+  onCreate: () => void;
+  filterOnlyLegacy?: boolean;
+}) {
+  const opts = filterOnlyLegacy ? empresas.filter((e) => !!e.cliente_legacy) : empresas;
+  return (
+    <div className="flex gap-2">
+      <select
+        className="input flex-1"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required
+      >
+        <option value="">— Selecciona empresa —</option>
+        {opts.map((e) => (
+          <option key={e.id} value={e.id}>
+            {e.nombre}{e.cliente_legacy ? ` · ${e.cliente_legacy}` : ""}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={onCreate}
+        className="text-xs px-3 rounded border border-border hover:bg-secondary inline-flex items-center gap-1"
+        title="Crear empresa nueva"
+      >
+        <Plus className="h-3.5 w-3.5" /> Nueva
+      </button>
+    </div>
+  );
+}
+
+// ============== Modal: crear empresa ==============
+
+function CrearEmpresaModal({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (e: Empresa) => void;
+}) {
+  const crear = useServerFn(crearEmpresa);
+  const [nombre, setNombre] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setNombre("");
+      setError(null);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await crear({ data: { nombre } });
+      onCreated(r.empresa as Empresa);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-card border border-border shadow-lg p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Building className="h-5 w-5 text-primary" />
+          <h2 className="text-base font-semibold">Crear empresa nueva</h2>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <Field label="Nombre de la empresa">
+            <input
+              className="input"
+              autoFocus
+              required
+              minLength={2}
+              maxLength={120}
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Ej: Bavaria SAS"
+            />
+          </Field>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex gap-2 justify-end pt-2">
+            <button type="button" onClick={onClose} className="text-sm px-3 py-1.5 rounded border border-border">
+              Cancelar
+            </button>
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Crear empresa
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ============== Página principal ==============
+
 function CuentasPage() {
   const [tab, setTab] = useState<Tab>("empresa");
+  const { empresas, refresh } = useEmpresas();
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <AppLayout>
@@ -44,6 +204,7 @@ function CuentasPage() {
           <h1 className="text-2xl font-bold">Creación de cuentas</h1>
           <p className="text-sm text-muted-foreground">
             Crea y administra las credenciales para empresas (monitoreo), pasajeros PcD y conductores.
+            Cada cuenta queda asociada a una empresa específica.
           </p>
         </div>
 
@@ -53,10 +214,20 @@ function CuentasPage() {
           <TabBtn active={tab === "conductor"} onClick={() => setTab("conductor")} icon={<Users className="h-4 w-4" />} label="Conductor" />
         </div>
 
-        {tab === "empresa" && <EmpresaTab />}
-        {tab === "pasajero" && <PasajeroTab />}
+        {tab === "empresa" && (
+          <EmpresaTab empresas={empresas} openCrearEmpresa={() => setModalOpen(true)} />
+        )}
+        {tab === "pasajero" && (
+          <PasajeroTab empresas={empresas} openCrearEmpresa={() => setModalOpen(true)} />
+        )}
         {tab === "conductor" && <ConductorTab />}
       </div>
+
+      <CrearEmpresaModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => refresh()}
+      />
     </AppLayout>
   );
 }
@@ -102,10 +273,19 @@ function ResultadoCredenciales({ email, password, onReset }: { email: string; pa
   );
 }
 
-function InvitacionGenerator({ tipo }: { tipo: "empresa" | "pasajero" }) {
+// ============== Generador de invitaciones ==============
+
+function InvitacionGenerator({
+  tipo,
+  empresas,
+  openCrearEmpresa,
+}: {
+  tipo: "empresa" | "pasajero";
+  empresas: Empresa[];
+  openCrearEmpresa: () => void;
+}) {
   const crearInv = useServerFn(crearInvitacionRegistro);
-  const [rol, setRol] = useState<"corona" | "sodimac" | "admin">("corona");
-  const [cliente, setCliente] = useState<"corona" | "sodimac">("corona");
+  const [empresaId, setEmpresaId] = useState("");
   const [emailSug, setEmailSug] = useState("");
   const [horas, setHoras] = useState(72);
   const [loading, setLoading] = useState(false);
@@ -115,14 +295,17 @@ function InvitacionGenerator({ tipo }: { tipo: "empresa" | "pasajero" }) {
   const [copied, setCopied] = useState(false);
 
   async function generar() {
+    if (!empresaId) {
+      setError("Selecciona una empresa.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const r = await crearInv({
         data: {
           tipo,
-          rol: tipo === "empresa" ? rol : undefined,
-          cliente: tipo === "pasajero" ? cliente : undefined,
+          empresaId,
           email_sugerido: emailSug || undefined,
           expires_in_hours: horas,
         },
@@ -147,22 +330,15 @@ function InvitacionGenerator({ tipo }: { tipo: "empresa" | "pasajero" }) {
         Crea un enlace secreto para que {tipo === "empresa" ? "el usuario de la empresa" : "el pasajero"} complete sus propios datos. El enlace deja de funcionar al usarse o al expirar.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {tipo === "empresa" ? (
-          <Field label="Rol">
-            <select className="input" value={rol} onChange={(e) => setRol(e.target.value as typeof rol)}>
-              <option value="corona">Corona</option>
-              <option value="sodimac">Sodimac</option>
-              <option value="admin">Admin TRAMMOS</option>
-            </select>
-          </Field>
-        ) : (
-          <Field label="Cliente">
-            <select className="input" value={cliente} onChange={(e) => setCliente(e.target.value as typeof cliente)}>
-              <option value="corona">Corona</option>
-              <option value="sodimac">Sodimac</option>
-            </select>
-          </Field>
-        )}
+        <Field label="Empresa">
+          <EmpresaSelector
+            empresas={empresas}
+            value={empresaId}
+            onChange={setEmpresaId}
+            onCreate={openCrearEmpresa}
+            filterOnlyLegacy={tipo === "pasajero"}
+          />
+        </Field>
         <Field label="Email sugerido (opcional)">
           <input className="input" type="email" value={emailSug} onChange={(e) => setEmailSug(e.target.value)} placeholder="usuario@ejemplo.com" />
         </Field>
@@ -198,7 +374,7 @@ function InvitacionGenerator({ tipo }: { tipo: "empresa" | "pasajero" }) {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Cómpartelo por un canal seguro. Solo se puede abrir y completar una vez.
+            Compártelo por un canal seguro. Solo se puede abrir y completar una vez.
           </p>
         </div>
       )}
@@ -206,11 +382,13 @@ function InvitacionGenerator({ tipo }: { tipo: "empresa" | "pasajero" }) {
   );
 }
 
-function EmpresaTab() {
+// ============== Tab Empresa ==============
+
+function EmpresaTab({ empresas, openCrearEmpresa }: { empresas: Empresa[]; openCrearEmpresa: () => void }) {
   const crear = useServerFn(crearCuentaEmpresa);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [rol, setRol] = useState<"corona" | "sodimac" | "admin">("corona");
+  const [empresaId, setEmpresaId] = useState("");
   const [password, setPassword] = useState(genPassword());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -218,10 +396,14 @@ function EmpresaTab() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!empresaId) {
+      setError("Selecciona una empresa.");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
-      const r = await crear({ data: { email, password, rol, displayName } });
+      const r = await crear({ data: { email, password, empresaId, displayName } });
       setResult({ email: r.email, password: r.password });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
@@ -249,47 +431,53 @@ function EmpresaTab() {
 
   return (
     <div className="space-y-4">
-      <InvitacionGenerator tipo="empresa" />
+      <InvitacionGenerator tipo="empresa" empresas={empresas} openCrearEmpresa={openCrearEmpresa} />
       <Card title="Nueva cuenta de empresa (monitoreo)">
-      <form onSubmit={submit} className="space-y-3 max-w-xl">
-        <Field label="Cliente / Rol">
-          <select value={rol} onChange={(e) => setRol(e.target.value as typeof rol)} className="input">
-            <option value="corona">Corona</option>
-            <option value="sodimac">Sodimac</option>
-            <option value="admin">Admin general (TRAMMOS)</option>
-          </select>
-        </Field>
-        <Field label="Nombre visible">
-          <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required placeholder="Ej: Equipo Logística Corona" />
-        </Field>
-        <Field label="Email">
-          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="usuario@empresa.com" />
-        </Field>
-        <Field label="Contraseña">
-          <div className="flex gap-2">
-            <input className="input flex-1 font-mono" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-            <button type="button" onClick={() => setPassword(genPassword())} className="text-xs px-3 rounded border border-border hover:bg-secondary">
-              Aleatoria
-            </button>
-          </div>
-        </Field>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear cuenta
-        </button>
-      </form>
-    </Card>
+        <form onSubmit={submit} className="space-y-3 max-w-xl">
+          <Field label="Rol">
+            <input className="input bg-muted" value="Empresa" readOnly disabled />
+          </Field>
+          <Field label="Empresa">
+            <EmpresaSelector
+              empresas={empresas}
+              value={empresaId}
+              onChange={setEmpresaId}
+              onCreate={openCrearEmpresa}
+            />
+          </Field>
+          <Field label="Nombre visible">
+            <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required placeholder="Ej: Equipo Logística" />
+          </Field>
+          <Field label="Email">
+            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="usuario@empresa.com" />
+          </Field>
+          <Field label="Contraseña">
+            <div className="flex gap-2">
+              <input className="input flex-1 font-mono" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+              <button type="button" onClick={() => setPassword(genPassword())} className="text-xs px-3 rounded border border-border hover:bg-secondary">
+                Aleatoria
+              </button>
+            </div>
+          </Field>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear cuenta
+          </button>
+        </form>
+      </Card>
     </div>
   );
 }
 
-function PasajeroTab() {
+// ============== Tab Pasajero ==============
+
+function PasajeroTab({ empresas, openCrearEmpresa }: { empresas: Empresa[]; openCrearEmpresa: () => void }) {
   const crear = useServerFn(crearCuentaPasajero);
   const [nombre, setNombre] = useState("");
   const [cedula, setCedula] = useState("");
   const [telefono, setTelefono] = useState("");
   const [email, setEmail] = useState("");
-  const [cliente, setCliente] = useState<"corona" | "sodimac">("corona");
+  const [empresaId, setEmpresaId] = useState("");
   const [tipoDisc, setTipoDisc] = useState("ninguna");
   const [nivelAsist, setNivelAsist] = useState(0);
   const [password, setPassword] = useState(genPassword());
@@ -299,6 +487,10 @@ function PasajeroTab() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!empresaId) {
+      setError("Selecciona una empresa.");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -306,11 +498,11 @@ function PasajeroTab() {
         data: {
           email,
           password,
+          empresaId,
           nuevo: {
             nombre,
             cedula: cedula || null,
             telefono: telefono || null,
-            cliente,
             tipo_discapacidad: tipoDisc,
             nivel_asistencia: nivelAsist,
           },
@@ -345,59 +537,64 @@ function PasajeroTab() {
 
   return (
     <div className="space-y-4">
-      <InvitacionGenerator tipo="pasajero" />
+      <InvitacionGenerator tipo="pasajero" empresas={empresas} openCrearEmpresa={openCrearEmpresa} />
       <Card title="Nueva cuenta de pasajero PcD">
-      <form onSubmit={submit} className="space-y-3 max-w-2xl">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Nombre completo">
-            <input className="input" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-          </Field>
-          <Field label="Cliente">
-            <select value={cliente} onChange={(e) => setCliente(e.target.value as typeof cliente)} className="input">
-              <option value="corona">Corona</option>
-              <option value="sodimac">Sodimac</option>
-            </select>
-          </Field>
-          <Field label="Cédula">
-            <input className="input" value={cedula} onChange={(e) => setCedula(e.target.value)} />
-          </Field>
-          <Field label="Teléfono">
-            <input className="input" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
-          </Field>
-          <Field label="Email (login)">
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </Field>
-          <Field label="Contraseña">
-            <div className="flex gap-2">
-              <input className="input flex-1 font-mono" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-              <button type="button" onClick={() => setPassword(genPassword())} className="text-xs px-3 rounded border border-border hover:bg-secondary">
-                Aleatoria
-              </button>
-            </div>
-          </Field>
-          <Field label="Tipo discapacidad">
-            <select value={tipoDisc} onChange={(e) => setTipoDisc(e.target.value)} className="input">
-              <option value="ninguna">Ninguna</option>
-              <option value="visual">Visual</option>
-              <option value="auditiva">Auditiva</option>
-              <option value="motriz">Motriz</option>
-              <option value="cognitiva">Cognitiva</option>
-              <option value="multiple">Múltiple</option>
-            </select>
-          </Field>
-          <Field label="Nivel de asistencia (0-3)">
-            <input className="input" type="number" min={0} max={3} value={nivelAsist} onChange={(e) => setNivelAsist(Number(e.target.value))} />
-          </Field>
-        </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <button type="submit" disabled={loading} className="btn-primary">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear cuenta
-        </button>
-      </form>
-    </Card>
+        <form onSubmit={submit} className="space-y-3 max-w-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Nombre completo">
+              <input className="input" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+            </Field>
+            <Field label="Empresa">
+              <EmpresaSelector
+                empresas={empresas}
+                value={empresaId}
+                onChange={setEmpresaId}
+                onCreate={openCrearEmpresa}
+                filterOnlyLegacy
+              />
+            </Field>
+            <Field label="Cédula">
+              <input className="input" value={cedula} onChange={(e) => setCedula(e.target.value)} />
+            </Field>
+            <Field label="Teléfono">
+              <input className="input" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+            </Field>
+            <Field label="Email (login)">
+              <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </Field>
+            <Field label="Contraseña">
+              <div className="flex gap-2">
+                <input className="input flex-1 font-mono" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+                <button type="button" onClick={() => setPassword(genPassword())} className="text-xs px-3 rounded border border-border hover:bg-secondary">
+                  Aleatoria
+                </button>
+              </div>
+            </Field>
+            <Field label="Tipo discapacidad">
+              <select value={tipoDisc} onChange={(e) => setTipoDisc(e.target.value)} className="input">
+                <option value="ninguna">Ninguna</option>
+                <option value="visual">Visual</option>
+                <option value="auditiva">Auditiva</option>
+                <option value="motriz">Motriz</option>
+                <option value="cognitiva">Cognitiva</option>
+                <option value="multiple">Múltiple</option>
+              </select>
+            </Field>
+            <Field label="Nivel de asistencia (0-3)">
+              <input className="input" type="number" min={0} max={3} value={nivelAsist} onChange={(e) => setNivelAsist(Number(e.target.value))} />
+            </Field>
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Crear cuenta
+          </button>
+        </form>
+      </Card>
     </div>
   );
 }
+
+// ============== Tab Conductor (sin cambios funcionales en esta fase) ==============
 
 function ConductorTab() {
   const [conductores, setConductores] = useState<Array<{ id: string; nombre: string; cedula: string | null; acceso_habilitado: boolean }>>([]);

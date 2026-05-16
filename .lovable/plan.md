@@ -1,106 +1,100 @@
-## Plan 1 — Monitoreo estilo GPSWOX (serverusa.digital)
 
-### Diagnóstico de por qué hoy no aparecen datos
+## Objetivo
 
-El cliente HTTP a GPSWOX ya existe (`src/lib/gps/gpswox.server.ts`) y llama a `https://serverusa.digital/api/get_devices` usando `GPSWOX_USER_API_HASH`. La sincronización corre por:
-- `gpswoxSyncPositions` (server fn, admin) — botón en `GpsManager`.
-- `/api/public/gps.sync` (cron cada 30s).
+Reemplazar el modelo fijo `corona/sodimac` por una **tabla `empresas` dinámica**, para que cualquier empresa nueva pueda darse de alta y sus usuarios (admins de empresa, pasajeros, conductores) solo vean datos de su propia empresa. En esta iteración el alcance se limita a **creación de cuentas e invitaciones** (los filtros del resto del sistema vienen en una segunda fase).
 
-Causas probables de "no veo datos":
-1. El secret `GPSWOX_USER_API_HASH` no está configurado o expiró (la sesión de `serverusa.digital/objects` usa cookies; el API hash se obtiene en *Settings → API* del usuario en GPSWOX, no en cookies).
-2. El cron público nunca se está disparando (no hay job pg_cron creado contra `/api/public/gps.sync`).
-3. La API devuelve `{ status:0, message:"Unauthorized" }` y nuestro código lo trata como respuesta válida (no es `!res.ok`, es 200 con error en el body).
-4. El parser actual asume `Array<{items}>`, pero el endpoint también puede responder con un objeto `{status, items}` o `{ items: [...] }` según la versión — hay que tolerar las dos formas.
+## Alcance de esta iteración
 
-### Qué voy a traer y cómo
+✅ Incluye:
+- Nueva tabla `empresas` + migración de Corona y Sodimac.
+- Pantalla `/cuentas`: rol estático "Empresa" + selector dinámico de empresa + botón "Crear empresa nueva".
+- Invitaciones (empresa, pasajero) atadas a `empresa_id`.
+- Registro por invitación de pasajeros: la empresa queda fijada por el link (el pasajero no la elige).
+- Pertenencia usuario→empresa vía nueva tabla `user_empresas`.
 
-GPSWOX expone una API REST documentada. Para replicar lo de la imagen necesito estos endpoints (todos con `?user_api_hash=…&lang=es`):
+❌ Fuera de alcance (próxima iteración, se avisará):
+- Migrar el filtrado por empresa en Vehículos, Conductores, Pasajeros PcD, Servicios, Solicitudes, Calificaciones, Incidentes, Facturas, Centros de Costo y Monitoreo GPS. Estos seguirán funcionando con el enum `cliente_tipo` actual hasta la fase 2; los nuevos registros creados desde /cuentas se etiquetarán también con el enum legacy para no romper las pantallas existentes.
 
-| Endpoint | Para qué |
-|---|---|
-| `GET /api/get_devices` | Listado de la izquierda + posición actual, velocidad, online, sensores, dirección, batería GPS, batería vehículo, ignición, kilometraje, satélites |
-| `GET /api/get_device_sensors?device_id=` | Detalle de sensores cuando se abre la tarjeta inferior (vibration, energizado, bloqueo, etc.) |
-| `GET /api/get_history?device_id=&from_date=&to_date=` | (Opcional) trazado de recorrido al hacer clic en "ruta" |
-| `GET /api/get_events?device_id=` | (Opcional) eventos/alertas del dispositivo |
+## Modelo de datos
 
-Estrategia:
-- Mantengo **nuestro propio mapa Leaflet** (ya armado) y consumimos GPSWOX como *fuente de verdad* via cron 30s → `vehiculos_gps` → realtime al cliente. No embebemos `serverusa.digital/objects` (requiere su sesión y no es estable).
-- Endurezco `fetchGpswoxDevices` para soportar las dos formas de respuesta y para lanzar error cuando GPSWOX responde 200 con `status:0`.
-- Amplío `normalizeDevice` para extraer: `direccion` (reverse geocode opcional, o `address` si GPSWOX lo trae), `bateria_gps`, `bateria_vehiculo`, `sim_signal`, `satelites`, `kilometraje`, `ignicion`, `bloqueo`, `duracion_estado` (calculado desde `last_fix_at` y el último cambio de estado), `novedad`.
-- Migración: agrego esas columnas a `vehiculos_gps` (todas nullable).
-- UI `/monitoreo` (sólo admin) se rediseña para parecerse a la imagen:
-  - **Sidebar izquierdo** (320px) con búsqueda, grupo "Sin grupo (N)", cada item muestra placa, hora último fix y velocidad + icono wifi de estado (verde/amarillo/gris). Click centra y selecciona.
-  - **Mapa grande** central con marcadores agrupados (cluster con conteo, como los círculos azules de la imagen) — usar `react-leaflet-cluster`.
-  - **Tarjeta inferior** al seleccionar un vehículo, con tres bloques: *Datos* (dirección, hora, duración, conductor), *Sensores* (vehículo on/off, energizado, kilometraje, bloqueo, batería GPS %, 4G SIM, batería vehículo V, satélites), *Novedad/Distancia/Velocidad*, y *Servicios* (acciones contextuales).
-- **Cron real cada 30s**: configuro `pg_cron` + `pg_net` para llamar `https://trammos.lovable.app/api/public/gps.sync` con header `apikey`. Hoy el cron no existe — por eso `last_synced_at` no avanza.
-
-### Acción requerida del usuario
-
-1. Verificar / dar el `GPSWOX_USER_API_HASH` actual (de *Settings → API* en `serverusa.digital`). Si está mal o expiró, no hay nada que traer. Si me confirmas, pido el secret con el formulario seguro.
-2. Confirmar si quieres también ruta histórica y eventos (endpoints 3 y 4) o sólo el live de la imagen.
-
----
-
-## Plan 2 — Apartado admin "Creación de cuentas"
-
-Nuevo módulo unificado, **sólo visible para rol `admin`** (no para `corona`/`sodimac`). Reemplaza los tres flujos dispersos de hoy.
-
-### Ruta y ubicación
-
-- Nueva ruta `src/routes/cuentas.tsx` envuelta en `<AdminOnly>`.
-- Entrada en `Sidebar.tsx` "Creación de cuentas" (icono `UserPlus`), visible sólo si `role === 'admin'`.
-- Las páginas `/conductores` y `/pasajeros-pcd` siguen existiendo para *gestionar* registros; pero los botones de "Generar acceso / contraseña" se redirigen al nuevo módulo o se mantienen como atajo. La creación queda *centralizada* aquí.
-
-### Estructura de la página (tabs)
+Nueva tabla:
 
 ```text
-Creación de cuentas (admin only)
-├── Tab 1: Empresa (monitoreo)    → Corona, Sodimac y futuras
-├── Tab 2: Pasajero PcD           → ahora con contraseña, sin OTP
-└── Tab 3: Conductor              → igual al flujo actual, unificado aquí
+empresas
+  id            uuid PK
+  nombre        text  (único, ej. "Corona", "Sodimac", "Nueva Empresa SAS")
+  slug          text  (único, derivado del nombre)
+  cliente_legacy cliente_tipo  (nullable; solo para Corona/Sodimac durante la migración)
+  activo        boolean
+  created_at / updated_at
 ```
 
-#### Tab 1 — Cuentas de empresa (monitoreo)
-- Formulario: nombre, email corporativo, contraseña (con generador), empresa (`corona | sodimac | otra`).
-- Acción server fn `crearCuentaEmpresa`:
-  1. `supabaseAdmin.auth.admin.createUser({ email, password, email_confirm:true })`.
-  2. Insert en `user_roles` con el rol correspondiente (`corona`/`sodimac`).
-  3. Devuelve credenciales para copiar/mostrar al admin.
-- Lista debajo de cuentas existentes por rol con acción "Restablecer contraseña" y "Revocar".
+Tabla puente para saber a qué empresa pertenece cada admin de empresa:
 
-#### Tab 2 — Pasajeros PcD (cambio importante: contraseña en vez de OTP)
-- Formulario: datos del pasajero (nombre, cédula, teléfono, email, datos PcD ya existentes en `pasajeros_pcd`) + **contraseña** (con generador, mínimo 8).
-- Server fn `crearCuentaPasajero`:
-  1. `supabaseAdmin.auth.admin.createUser({ email, password, email_confirm:true })`.
-  2. Insert/upsert en `pasajeros_pcd` con `autorizado=true` y `auth_user_id` (nueva columna FK a `auth.users`).
-  3. Insert en `user_roles` rol `pasajero`.
-- Cambio en `/login` (flujo pasajero): de `signInWithOtp` → `signInWithPassword`. Quito UI del OTP de 6 dígitos para el rol pasajero (mantengo OTP sólo si quedó otro flujo que lo use; revisaré).
-- `AccesoPasajeroPanel` actual: cambio "Reenviar código OTP" por "Restablecer contraseña" usando `supabaseAdmin.auth.admin.updateUserById`.
+```text
+user_empresas
+  user_id   uuid  (auth.users)
+  empresa_id uuid (empresas)
+  rol_empresa text  ('admin_empresa' por defecto)
+  PK (user_id, empresa_id)
+```
 
-#### Tab 3 — Conductores
-- Reusar el componente `GenerarAccesoConductor` actual, embebido como pestaña con formulario de alta del conductor (placa asignada, cédula, nombre, teléfono) + generación de contraseña.
-- Mantiene RPC `set_conductor_password` existente.
+Cambios a tablas existentes (solo agregar columna, sin romper nada):
+- `registro_invitaciones.empresa_id` (uuid, nullable)
+- `pasajeros_pcd.empresa_id` (uuid, nullable)
+- `conductores.empresa_id` (uuid, nullable)
 
-### Cambios de BD (una sola migración)
+> No se toca el enum `cliente_tipo` ni `app_role` en esta fase. Las RLS actuales siguen vigentes. Los nuevos registros se crean con **ambos**: `empresa_id` (nuevo) y `cliente` (legacy, derivado de `empresas.cliente_legacy` o de un mapeo por defecto).
 
-- `ALTER TABLE pasajeros_pcd ADD COLUMN auth_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL`.
-- RLS: política "pasajero ve su propio registro" basada en `auth.uid() = auth_user_id`.
-- (No se almacenan contraseñas en claro — todo vive en `auth.users` vía Admin API. Seguimos la regla del security memory.)
+## Helpers de seguridad (security definer)
 
-### Server functions nuevas
+- `public.user_empresa_ids(_user uuid)` → uuid[]: empresas a las que pertenece el usuario.
+- `public.can_access_empresa(_empresa_id uuid)` → boolean: admin global o miembro de la empresa.
 
-`src/lib/cuentas/cuentas.functions.ts` con:
-- `crearCuentaEmpresa({ email, password, rol })`
-- `crearCuentaPasajero({ datosPasajero, password })`
-- `crearCuentaConductor({ datosConductor, password })` (envuelve la RPC existente)
-- `resetPasswordCuenta({ userId, newPassword })`
-- Todas con `requireSupabaseAuth` + chequeo explícito `has_role(admin)` server-side.
+Se dejan instalados pero **aún no se usan en RLS** (eso es fase 2). Sirven para que las nuevas vistas de cuentas/invitaciones puedan filtrar correctamente desde el frontend y desde server functions.
 
-### Acción requerida del usuario
+## Migración de Corona y Sodimac
 
-1. Confirmar que el cambio de OTP → contraseña para pasajeros es global (¿borro el flujo OTP del login o lo dejo como respaldo?).
-2. Confirmar que las cuentas de empresa pueden tener el mismo email para distintos roles o no (asumo: email único por cuenta).
+1. Insertar dos filas en `empresas`: `Corona` (cliente_legacy='corona') y `Sodimac` (cliente_legacy='sodimac').
+2. Rellenar `empresa_id` en `pasajeros_pcd`, `conductores` y `registro_invitaciones` mapeando por `cliente`.
+3. Backfill de `user_empresas`: cada usuario con rol `corona` se asocia a la empresa Corona; cada usuario con rol `sodimac`, a Sodimac.
 
----
+## UI: `/cuentas`
 
-¿Apruebo y procedo, o ajustamos algo antes? Si me confirmas el `GPSWOX_USER_API_HASH` arrancamos por el Plan 1.
+Tab **Empresa**:
+- Selector de rol → **fijo en "Empresa"** (ya no Corona/Sodimac/Admin).
+- Selector de empresa (lista de `empresas` activas) + botón "➕ Crear empresa nueva" (abre modal con nombre).
+- Al crear cuenta: se crea el usuario en Auth, se inserta en `user_empresas (user_id, empresa_id)`, y por compatibilidad también se le asigna el rol legacy (`corona`/`sodimac` si la empresa tiene `cliente_legacy`; si es empresa nueva, se omite el rol legacy y queda solo por `user_empresas`).
+- Generador de invitaciones: igual pero pidiendo empresa en vez de cliente.
+
+Tab **Pasajero**:
+- Selector de empresa obligatorio.
+- Generador de invitación: la empresa queda guardada en `registro_invitaciones.empresa_id` y `datos_sugeridos`. El formulario de `/registro/$token` ya no muestra selector de cliente para el pasajero (solo lo informa visualmente).
+
+Tab **Conductor**:
+- Se añade selector de empresa al crear conductor (se guarda en `conductores.empresa_id`, y en `clientes[]` legacy si la empresa tiene `cliente_legacy`).
+
+## Server functions a tocar
+
+- `src/lib/cuentas/cuentas.functions.ts`: aceptar `empresa_id` en vez de (o además de) `cliente`, escribir `user_empresas`, mapear a legacy cuando aplique.
+- `src/lib/cuentas/invitaciones.functions.ts`: aceptar `empresa_id`, guardarlo, y al consumir el token sembrar `empresa_id` + `user_empresas` + rol legacy compatible.
+- Nuevo `src/lib/empresas/empresas.functions.ts`: `listEmpresas`, `createEmpresa` (admin-only).
+
+## Frontend nuevo/editado
+
+- `src/routes/cuentas.tsx`: rediseño de los 3 tabs con selector de empresa + modal "Crear empresa".
+- `src/routes/registro.$token.tsx`: muestra la empresa asignada (read-only), elimina pregunta de cliente para pasajeros.
+- Componente `EmpresaSelector` reutilizable.
+
+## Detalles técnicos
+
+- RLS de `empresas`: lectura para `authenticated`, escritura solo admin.
+- RLS de `user_empresas`: cada usuario ve sus propias filas; admin gestiona todas.
+- La migración se ejecuta en una sola transacción con `INSERT … ON CONFLICT DO NOTHING` para que sea idempotente.
+- No se eliminan políticas ni funciones existentes — el sistema sigue corriendo en paralelo con el enum hasta la fase 2.
+
+## Resultado esperado
+
+- Un admin puede crear "Empresa X" desde /cuentas, generarle un link de invitación y, cuando esa empresa registre pasajeros, esos pasajeros quedan ligados solo a "Empresa X" en la nueva tabla `user_empresas` + `pasajeros_pcd.empresa_id`.
+- Corona y Sodimac siguen funcionando exactamente igual que hoy en el resto de la app.
+- Queda preparada la base (`empresa_id` + helpers + `user_empresas`) para que la fase 2 reemplace `can_access_cliente` por `can_access_empresa` en todas las tablas.
