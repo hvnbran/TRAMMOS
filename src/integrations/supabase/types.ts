@@ -1187,13 +1187,19 @@ export type Database = {
         Row: {
           activo: boolean
           bateria: string | null
+          bateria_gps: number | null
+          bateria_vehiculo: number | null
+          bloqueo: boolean | null
           created_at: string
+          direccion: string | null
+          estado_desde: string | null
           gpswox_device_id: number
           grupo: string | null
           icon_color: string | null
           id: string
           ignicion: boolean | null
           imei: string | null
+          kilometraje: number | null
           last_course: number | null
           last_fix_at: string | null
           last_lat: number | null
@@ -1201,21 +1207,30 @@ export type Database = {
           last_speed_kmh: number | null
           last_synced_at: string | null
           nombre_dispositivo: string
+          novedad: string | null
           online: string | null
           raw: Json | null
+          satelites: number | null
+          sim_signal: number | null
           updated_at: string
           vehiculo_id: string | null
         }
         Insert: {
           activo?: boolean
           bateria?: string | null
+          bateria_gps?: number | null
+          bateria_vehiculo?: number | null
+          bloqueo?: boolean | null
           created_at?: string
+          direccion?: string | null
+          estado_desde?: string | null
           gpswox_device_id: number
           grupo?: string | null
           icon_color?: string | null
           id?: string
           ignicion?: boolean | null
           imei?: string | null
+          kilometraje?: number | null
           last_course?: number | null
           last_fix_at?: string | null
           last_lat?: number | null
@@ -1223,21 +1238,30 @@ export type Database = {
           last_speed_kmh?: number | null
           last_synced_at?: string | null
           nombre_dispositivo: string
+          novedad?: string | null
           online?: string | null
           raw?: Json | null
+          satelites?: number | null
+          sim_signal?: number | null
           updated_at?: string
           vehiculo_id?: string | null
         }
         Update: {
           activo?: boolean
           bateria?: string | null
+          bateria_gps?: number | null
+          bateria_vehiculo?: number | null
+          bloqueo?: boolean | null
           created_at?: string
+          direccion?: string | null
+          estado_desde?: string | null
           gpswox_device_id?: number
           grupo?: string | null
           icon_color?: string | null
           id?: string
           ignicion?: boolean | null
           imei?: string | null
+          kilometraje?: number | null
           last_course?: number | null
           last_fix_at?: string | null
           last_lat?: number | null
@@ -1245,8 +1269,11 @@ export type Database = {
           last_speed_kmh?: number | null
           last_synced_at?: string | null
           nombre_dispositivo?: string
+          novedad?: string | null
           online?: string | null
           raw?: Json | null
+          satelites?: number | null
+          sim_signal?: number | null
           updated_at?: string
           vehiculo_id?: string | null
         }
