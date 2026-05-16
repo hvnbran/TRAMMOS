@@ -90,7 +90,7 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
 
 // ===== Validar invitación (público, sin auth) =====
 
-const validarSchema = z.object({ token: z.string().min(10).max(128) });
+const validarSchema = z.object({ token: z.string().min(8).max(128) });
 
 export const validarInvitacionRegistro = createServerFn({ method: "POST" })
   .inputValidator((d) => validarSchema.parse(d))
