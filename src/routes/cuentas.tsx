@@ -430,6 +430,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
-
-// Hook unused but kept for future password reset
-export { resetPasswordCuenta };
