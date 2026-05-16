@@ -391,3 +391,17 @@ export const revocarInvitacion = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ===== Listar empresas elegibles (público, para auto-registro pasajero) =====
+
+export const listarEmpresasParaRegistro = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { data, error } = await supabaseAdmin
+      .from("empresas")
+      .select("id, nombre, cliente_legacy")
+      .eq("activo", true)
+      .not("cliente_legacy", "is", null)
+      .order("nombre", { ascending: true });
+    if (error) throw new Error(error.message);
+    return { empresas: (data ?? []) as Array<{ id: string; nombre: string; cliente_legacy: string | null }> };
+  });
