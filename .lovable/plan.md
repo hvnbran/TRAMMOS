@@ -1,74 +1,53 @@
-# Plan: GPS desde el celular del conductor (tipo Uber)
+## Por qué aparece "No estás vinculado como conductor"
 
-## 1. Limpieza de GPSWox
+Anderson (cédula 1001808785) **sí está vinculado** en la base de datos: su fila en `conductores` tiene `auth_user_id` asignado al usuario auth que entró por la app.
 
-Eliminar por completo:
-- `src/lib/gps/gpswox.server.ts`
-- `src/lib/gps/gpswox.functions.ts`
-- `src/components/vehiculos/GpsManager.tsx` y cualquier referencia en `cuentas.tsx`/vehículos
-- `src/routes/api/public/gps.sync.ts`
-- Imports/secciones en `MonitoreoMap.tsx`, `VehiculosLiveList.tsx`, `VehiculoLiveMiniMap.tsx` que dependan de GPSWox
+El problema está en las políticas RLS de la tabla `conductores`. Las políticas actuales para SELECT son:
 
-Migración SQL:
-- Borrar tabla `vehiculos_gps` (no la reutilizamos para no mezclar conceptos).
-- Crear tabla nueva `conductor_ubicaciones`:
-  - `conductor_id uuid PK` (1 fila por conductor, upsert)
-  - `lat double precision`, `lng double precision`
-  - `accuracy`, `speed_kmh`, `heading` (nullables)
-  - `online boolean default false`
-  - `updated_at timestamptz default now()`
-- RLS: el conductor solo puede upsert/leer su propia fila (vía `auth_user_id`); admin lee todo; pasajero lee solo la del conductor de su servicio activo (via función SECURITY DEFINER `get_ubicacion_conductor_servicio(servicio_id)`).
-- Habilitar Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE conductor_ubicaciones`.
+- `admin_view_all_conductores` → solo admins
+- `view_conductores` → `can_access_clientes(clientes)` → requiere rol `corona`, `sodimac` o `admin`
 
-Secretos a borrar: `GPSWOX_API_BASE`, `GPSWOX_USER_API_HASH` (avisar al usuario para borrarlos manualmente).
+El conductor logueado **solo tiene el rol `conductor`**, así que cuando la server function `upsertUbicacion` hace:
 
-## 2. Lado conductor — botón "Estoy en línea"
+```ts
+supabase.from("conductores").select("id").eq("auth_user_id", userId)
+```
 
-En `src/routes/conductor.index.tsx`:
-- Botón toggle "Estoy en línea / Desconectarme".
-- Al activar:
-  1. `navigator.geolocation.watchPosition` con `enableHighAccuracy: true`.
-  2. Cada 5 s (throttle) hace `upsertUbicacion({ lat, lng, speed, heading, accuracy, online: true })` vía server fn.
-  3. `wake lock` opcional para que no se duerma la pantalla.
-- Al desactivar / cerrar sesión / cerrar pestaña (`beforeunload`): `clearWatch` + server fn `setOffline()` que pone `online=false`.
-- Indicador visual del estado (verde online / gris offline) y manejo de permiso denegado.
+RLS bloquea la lectura → devuelve 0 filas → el código lanza "No estás vinculado como conductor", aunque en realidad sí lo está.
 
-Server fn nuevo: `src/lib/gps/ubicacion.functions.ts` con `upsertUbicacion` y `setOffline`, ambos con `requireSupabaseAuth` (resuelven `conductor_id` desde `auth_user_id`).
+## Solución
 
-## 3. Lado admin — `/monitoreo`
+Agregar una política SELECT que permita al conductor leer **su propia fila** usando `auth_user_id = auth.uid()`. Lo mismo en UPDATE por si en el futuro el conductor edita su perfil.
 
-Reescribir `MonitoreoMap.tsx` con **Leaflet + OpenStreetMap** (`react-leaflet` + `leaflet`):
-- Suscripción Realtime a `conductor_ubicaciones` filtrando `online=true`.
-- Un marker por conductor online, con popup: nombre, vehículo asignado actual (si hay servicio activo), velocidad, hace cuánto.
-- Lista lateral `VehiculosLiveList` muestra solo conductores online (no vehículos GPS).
-- Auto-marca `online=false` los registros con `updated_at < now() - 60s` (cliente lo filtra; opcional: cron pg cada minuto).
+### Migración (1 sola)
 
-## 4. Lado pasajero — mapa tipo Uber
+```sql
+-- Conductor puede leer su propia fila
+CREATE POLICY "conductor_select_own_row"
+  ON public.conductores
+  FOR SELECT
+  TO authenticated
+  USING (auth_user_id = auth.uid());
 
-En la vista del pasajero (donde ve su solicitud activa), cuando `estado IN ('aceptada','en_camino','a_bordo')`:
-- Mini-mapa Leaflet centrado en el conductor.
-- Suscripción Realtime a `conductor_ubicaciones` del conductor asignado (via función segura `get_ubicacion_conductor_servicio`).
-- Muestra marker del conductor + marker del origen del pasajero + línea recta entre ambos (no routing, para no requerir API).
-- ETA opcional: distancia haversine / velocidad promedio.
+-- Conductor puede actualizar campos básicos de su fila (foto, teléfono, etc.)
+CREATE POLICY "conductor_update_own_row"
+  ON public.conductores
+  FOR UPDATE
+  TO authenticated
+  USING (auth_user_id = auth.uid())
+  WITH CHECK (auth_user_id = auth.uid());
+```
 
-Reescribir `VehiculoLiveMiniMap.tsx` para usar este flujo en vez de GPSWox.
+No expone datos sensibles a otros usuarios: cada conductor solo ve la fila cuyo `auth_user_id` coincide con su sesión.
 
-## 5. Dependencias
+## Resultado
 
-`bun add leaflet react-leaflet` + `bun add -d @types/leaflet`. Importar CSS de Leaflet en `__root.tsx` o en los componentes que lo usan.
+- Conductor toca "Estoy en línea" → `getConductorId` encuentra la fila → upsert en `conductor_ubicaciones` funciona (esa tabla ya tiene RLS correcta basada en `auth_user_id`).
+- Admin y monitoreo siguen viendo todos los conductores como antes (políticas existentes intactas).
+- Pasajero sigue viendo la ubicación vía la función `get_ubicacion_conductor_para_pasajero` (SECURITY DEFINER, no depende de RLS de `conductores`).
 
-## Consideraciones técnicas
+## Archivos a modificar
 
-- **Batería/datos**: 5 s es agresivo. Mitigamos enviando solo si la posición cambió > X metros o pasaron > 5 s.
-- **HTTPS obligatorio** para `geolocation` (ya lo es en producción).
-- **iOS Safari** suspende `watchPosition` en background al bloquear el teléfono. Solución: mantener pantalla encendida con Wake Lock API mientras esté "en línea"; advertir al conductor.
-- **Permisos**: si el usuario los niega, mostrar instrucciones para reactivarlos.
-- **No hay routing real** (calles) — solo línea recta. Si más adelante quieres ruta real necesitaríamos Mapbox/Google.
+Solo una migración SQL. No hay cambios de código frontend ni server functions.
 
-## Resumen de archivos
-
-Borrar: `src/lib/gps/gpswox.*`, `src/components/vehiculos/GpsManager.tsx`, `src/routes/api/public/gps.sync.ts`.
-Crear: `src/lib/gps/ubicacion.functions.ts`, migración SQL.
-Modificar: `src/routes/conductor.index.tsx`, `src/routes/monitoreo.tsx`, `src/components/MonitoreoMap.tsx`, `src/components/monitoreo/VehiculosLiveList.tsx`, `src/components/pasajero/VehiculoLiveMiniMap.tsx`, `src/routes/cuentas.tsx` (quitar GpsManager si aparece).
-
-¿Apruebas para implementarlo?
+¿Apruebas para aplicar la migración?
