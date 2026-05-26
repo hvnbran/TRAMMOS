@@ -19,6 +19,7 @@ interface SearchResult {
   title: string;
   subtitle: string;
   to: string;
+  search?: Record<string, string>;
 }
 
 const KIND_META: Record<ResultKind, { label: string; icon: typeof Users; color: string }> = {
@@ -115,6 +116,7 @@ export function GlobalSearch() {
             title: v.placa,
             subtitle: [v.marca, v.linea, v.modelo].filter(Boolean).join(" "),
             to: "/vehiculos",
+            search: { open: v.id },
           }))
         ),
         // Servicios
@@ -247,7 +249,7 @@ export function GlobalSearch() {
   function handleSelect(r: SearchResult) {
     setOpen(false);
     setQuery("");
-    navigate({ to: r.to });
+    navigate({ to: r.to, search: (r.search ?? {}) as never });
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {

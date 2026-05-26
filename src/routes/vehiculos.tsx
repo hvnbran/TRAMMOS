@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2, UserPlus } from "lucide-react";
+import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2, UserPlus, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -8,10 +8,17 @@ import { DocumentManager, TIPOS_VEHICULO } from "@/components/DocumentManager";
 import { VehiculoConductores } from "@/components/VehiculoConductores";
 import { ChecklistANS } from "@/components/ChecklistANS";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 
 
 export const Route = createFileRoute("/vehiculos")({
   component: Vehiculos,
+  validateSearch: zodValidator(
+    z.object({
+      open: fallback(z.string().optional(), undefined),
+    })
+  ),
   head: () => ({
     meta: [
       { title: "Vehículos - TRAMMOS" },
@@ -19,6 +26,8 @@ export const Route = createFileRoute("/vehiculos")({
     ],
   }),
 });
+
+
 
 interface VehiculoRow {
   id: string;
@@ -85,9 +94,27 @@ function Vehiculos() {
   const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
   const [nuevoConductor, setNuevoConductor] = useState(false);
   const [asignacionesPorVehiculo, setAsignacionesPorVehiculo] = useState<Record<string, number>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const { open: openFromUrl } = Route.useSearch();
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) { load(); loadConductores(); } /* eslint-disable-next-line */ }, [role]);
+
+  // Abrir vehículo directamente desde la búsqueda global
+  useEffect(() => {
+    if (!openFromUrl || items.length === 0) return;
+    const target = items.find((v) => v.id === openFromUrl);
+    if (!target) return;
+    setFiltroCliente("todos");
+    setSearchTerm("");
+    setExpanded(openFromUrl);
+    setTimeout(() => {
+      document.getElementById(`vehiculo-card-${openFromUrl}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 150);
+  }, [openFromUrl, items]);
 
   async function loadConductores() {
     const { data } = await supabase.from("conductores").select("id, nombre, cedula").order("nombre");
@@ -199,9 +226,13 @@ function Vehiculos() {
 
   const itemsFiltrados = items.filter((v) => {
     const cs = (v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : []);
-    if (filtroCliente === "todos") return true;
-    if (filtroCliente === "sin_asignar") return cs.length === 0;
-    return cs.includes(filtroCliente);
+    if (filtroCliente === "sin_asignar" && cs.length !== 0) return false;
+    if (filtroCliente !== "todos" && filtroCliente !== "sin_asignar" && !cs.includes(filtroCliente)) return false;
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+    const hay = [v.placa, v.marca, v.linea, v.color, v.num_interno, v.conductor, String(v.modelo ?? "")]
+      .filter(Boolean).join(" ").toLowerCase();
+    return hay.includes(q);
   });
 
   return (
@@ -217,7 +248,26 @@ function Vehiculos() {
           </button>
         </div>
 
-        
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por placa, marca, línea, color, conductor o N° interno..."
+            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-9 text-sm outline-none focus:ring-1 focus:ring-ring"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Filtrar:</span>
@@ -325,9 +375,11 @@ function Vehiculos() {
               return (
                 <div
                   key={v.id}
-                  className={`stagger-item rounded-lg border bg-card overflow-hidden flex flex-col ${vencido ? "border-destructive/40" : "border-border"}`}
+                  id={`vehiculo-card-${v.id}`}
+                  className={`stagger-item rounded-lg border bg-card overflow-hidden flex flex-col ${vencido ? "border-destructive/40" : "border-border"} ${openFromUrl === v.id ? "ring-2 ring-primary" : ""}`}
                   style={{ ["--i" as string]: i } as React.CSSProperties}
                 >
+
                   {/* Foto del vehículo - aspect ratio fijo para homogeneidad */}
                   <div className="relative aspect-[16/9] bg-secondary/40 group">
                     {v.foto_url ? (
