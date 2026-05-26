@@ -226,9 +226,13 @@ function Vehiculos() {
 
   const itemsFiltrados = items.filter((v) => {
     const cs = (v.clientes && v.clientes.length > 0) ? v.clientes : (v.cliente ? [v.cliente] : []);
-    if (filtroCliente === "todos") return true;
-    if (filtroCliente === "sin_asignar") return cs.length === 0;
-    return cs.includes(filtroCliente);
+    if (filtroCliente === "sin_asignar" && cs.length !== 0) return false;
+    if (filtroCliente !== "todos" && filtroCliente !== "sin_asignar" && !cs.includes(filtroCliente)) return false;
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+    const hay = [v.placa, v.marca, v.linea, v.color, v.num_interno, v.conductor, String(v.modelo ?? "")]
+      .filter(Boolean).join(" ").toLowerCase();
+    return hay.includes(q);
   });
 
   return (
