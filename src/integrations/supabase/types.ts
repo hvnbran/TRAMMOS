@@ -1606,6 +1606,7 @@ export type Database = {
           marca: string
         }[]
       }
+      has_crm_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
