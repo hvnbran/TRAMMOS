@@ -2,11 +2,12 @@ import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { AccessibilityPanel } from "./AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { SiteFooter } from "./SiteFooter";
 import { TRAMI_ENABLED } from "@/lib/feature-flags";
+import { Briefcase } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
