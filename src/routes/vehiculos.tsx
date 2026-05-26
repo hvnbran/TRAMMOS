@@ -25,6 +25,9 @@ export const Route = createFileRoute("/vehiculos")({
       { name: "description", content: "Administración de flota vehicular" },
     ],
   }),
+});
+
+
 
 interface VehiculoRow {
   id: string;
