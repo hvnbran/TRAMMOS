@@ -33,6 +33,7 @@ import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
 import { Route as CrmConcesionariosRouteImport } from './routes/crm.concesionarios'
+import { Route as CrmAsesoresRouteImport } from './routes/crm.asesores'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
 import { Route as ConductorServicioIdRouteImport } from './routes/conductor.servicio.$id'
 import { Route as ApiPublicConductorLoginRouteImport } from './routes/api/public/conductor-login'
@@ -161,6 +162,11 @@ const CrmConcesionariosRoute = CrmConcesionariosRouteImport.update({
   path: '/concesionarios',
   getParentRoute: () => CrmRoute,
 } as any)
+const CrmAsesoresRoute = CrmAsesoresRouteImport.update({
+  id: '/asesores',
+  path: '/asesores',
+  getParentRoute: () => CrmRoute,
+} as any)
 const ConductorLoginRoute = ConductorLoginRouteImport.update({
   id: '/conductor/login',
   path: '/conductor/login',
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/asesores': typeof CrmAsesoresRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/asesores': typeof CrmAsesoresRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/asesores': typeof CrmAsesoresRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/asesores'
     | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/asesores'
     | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/asesores'
     | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
@@ -600,6 +612,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CrmConcesionariosRouteImport
       parentRoute: typeof CrmRoute
     }
+    '/crm/asesores': {
+      id: '/crm/asesores'
+      path: '/asesores'
+      fullPath: '/crm/asesores'
+      preLoaderRoute: typeof CrmAsesoresRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/conductor/login': {
       id: '/conductor/login'
       path: '/conductor/login'
@@ -653,11 +672,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface CrmRouteChildren {
+  CrmAsesoresRoute: typeof CrmAsesoresRoute
   CrmConcesionariosRoute: typeof CrmConcesionariosRoute
   CrmIndexRoute: typeof CrmIndexRoute
 }
 
 const CrmRouteChildren: CrmRouteChildren = {
+  CrmAsesoresRoute: CrmAsesoresRoute,
   CrmConcesionariosRoute: CrmConcesionariosRoute,
   CrmIndexRoute: CrmIndexRoute,
 }
@@ -698,3 +719,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
