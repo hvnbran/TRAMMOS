@@ -11,24 +11,24 @@ export const Route = createFileRoute("/crm/concesionarios")({
 type Concesionario = {
   id: string;
   nombre: string;
+  empresa: string | null;
+  nit: string | null;
   ciudad: string | null;
   direccion: string | null;
   telefono: string | null;
   email: string | null;
-  lat: number | null;
-  lng: number | null;
   activo: boolean;
   notas: string | null;
 };
 
 const EMPTY = {
   nombre: "",
+  empresa: "",
+  nit: "",
   ciudad: "",
   direccion: "",
   telefono: "",
   email: "",
-  lat: "",
-  lng: "",
   activo: true,
   notas: "",
 };
@@ -76,12 +76,12 @@ function ConcesionariosPage() {
     setEditingId(c.id);
     setForm({
       nombre: c.nombre,
+      empresa: c.empresa ?? "",
+      nit: c.nit ?? "",
       ciudad: c.ciudad ?? "",
       direccion: c.direccion ?? "",
       telefono: c.telefono ?? "",
       email: c.email ?? "",
-      lat: c.lat?.toString() ?? "",
-      lng: c.lng?.toString() ?? "",
       activo: c.activo,
       notas: c.notas ?? "",
     });
@@ -96,12 +96,12 @@ function ConcesionariosPage() {
     setSaving(true);
     const payload = {
       nombre: form.nombre.trim(),
+      empresa: form.empresa.trim() || null,
+      nit: form.nit.trim() || null,
       ciudad: form.ciudad.trim() || null,
       direccion: form.direccion.trim() || null,
       telefono: form.telefono.trim() || null,
       email: form.email.trim() || null,
-      lat: form.lat ? Number(form.lat) : null,
-      lng: form.lng ? Number(form.lng) : null,
       activo: form.activo,
       notas: form.notas.trim() || null,
     };
@@ -260,20 +260,18 @@ function ConcesionariosPage() {
                   className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </Field>
-              <Field label="Latitud">
+              <Field label="Empresa">
                 <input
-                  value={form.lat}
-                  onChange={(e) => setForm({ ...form, lat: e.target.value })}
+                  value={form.empresa}
+                  onChange={(e) => setForm({ ...form, empresa: e.target.value })}
                   className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
-                  inputMode="decimal"
                 />
               </Field>
-              <Field label="Longitud">
+              <Field label="NIT">
                 <input
-                  value={form.lng}
-                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                  value={form.nit}
+                  onChange={(e) => setForm({ ...form, nit: e.target.value })}
                   className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
-                  inputMode="decimal"
                 />
               </Field>
               <Field label="Notas" className="sm:col-span-2">

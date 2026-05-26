@@ -1,0 +1,1 @@
+ALTER TABLE public.crm_concesionarios ADD COLUMN IF NOT EXISTS empresa text, ADD COLUMN IF NOT EXISTS nit text;
