@@ -32,6 +32,7 @@ import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
+import { Route as CrmConcesionariosRouteImport } from './routes/crm.concesionarios'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
 import { Route as ConductorServicioIdRouteImport } from './routes/conductor.servicio.$id'
 import { Route as ApiPublicConductorLoginRouteImport } from './routes/api/public/conductor-login'
@@ -155,6 +156,11 @@ const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
   path: '/legal/privacidad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrmConcesionariosRoute = CrmConcesionariosRouteImport.update({
+  id: '/concesionarios',
+  path: '/concesionarios',
+  getParentRoute: () => CrmRoute,
+} as any)
 const ConductorLoginRoute = ConductorLoginRouteImport.update({
   id: '/conductor/login',
   path: '/conductor/login',
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -581,6 +593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalPrivacidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm/concesionarios': {
+      id: '/crm/concesionarios'
+      path: '/concesionarios'
+      fullPath: '/crm/concesionarios'
+      preLoaderRoute: typeof CrmConcesionariosRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/conductor/login': {
       id: '/conductor/login'
       path: '/conductor/login'
@@ -634,10 +653,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface CrmRouteChildren {
+  CrmConcesionariosRoute: typeof CrmConcesionariosRoute
   CrmIndexRoute: typeof CrmIndexRoute
 }
 
 const CrmRouteChildren: CrmRouteChildren = {
+  CrmConcesionariosRoute: CrmConcesionariosRoute,
   CrmIndexRoute: CrmIndexRoute,
 }
 
