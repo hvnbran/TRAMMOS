@@ -25,14 +25,6 @@ export const Route = createFileRoute("/vehiculos")({
       { name: "description", content: "Administración de flota vehicular" },
     ],
   }),
-});
-  head: () => ({
-    meta: [
-      { title: "Vehículos - TRAMMOS" },
-      { name: "description", content: "Administración de flota vehicular" },
-    ],
-  }),
-});
 
 interface VehiculoRow {
   id: string;
