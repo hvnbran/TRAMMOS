@@ -18,6 +18,7 @@ import {
   LogOut,
   Accessibility,
   UserCog,
+  Briefcase,
 } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/logo-trammos.png";
