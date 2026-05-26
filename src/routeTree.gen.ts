@@ -23,13 +23,18 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FacturacionRouteImport } from './routes/facturacion'
 import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as CuentasRouteImport } from './routes/cuentas'
+import { Route as CrmRouteImport } from './routes/crm'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CrmIndexRouteImport } from './routes/crm.index'
 import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
+import { Route as CrmConcesionariosRouteImport } from './routes/crm.concesionarios'
+import { Route as CrmClientesRouteImport } from './routes/crm.clientes'
+import { Route as CrmAsesoresRouteImport } from './routes/crm.asesores'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
 import { Route as ConductorServicioIdRouteImport } from './routes/conductor.servicio.$id'
 import { Route as ApiPublicConductorLoginRouteImport } from './routes/api/public/conductor-login'
@@ -108,6 +113,11 @@ const CuentasRoute = CuentasRouteImport.update({
   path: '/cuentas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrmRoute = CrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConductoresRoute = ConductoresRouteImport.update({
   id: '/conductores',
   path: '/conductores',
@@ -122,6 +132,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CrmIndexRoute = CrmIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CrmRoute,
 } as any)
 const ConductorIndexRoute = ConductorIndexRouteImport.update({
   id: '/conductor/',
@@ -142,6 +157,21 @@ const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
   id: '/legal/privacidad',
   path: '/legal/privacidad',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CrmConcesionariosRoute = CrmConcesionariosRouteImport.update({
+  id: '/concesionarios',
+  path: '/concesionarios',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmClientesRoute = CrmClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmAsesoresRoute = CrmAsesoresRouteImport.update({
+  id: '/asesores',
+  path: '/asesores',
+  getParentRoute: () => CrmRoute,
 } as any)
 const ConductorLoginRoute = ConductorLoginRouteImport.update({
   id: '/conductor/login',
@@ -184,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/conductores': typeof ConductoresRoute
+  '/crm': typeof CrmRouteWithChildren
   '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
@@ -199,10 +230,14 @@ export interface FileRoutesByFullPath {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/clientes': typeof CrmClientesRoute
+  '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
   '/conductor/': typeof ConductorIndexRoute
+  '/crm/': typeof CrmIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
@@ -229,10 +264,14 @@ export interface FileRoutesByTo {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/clientes': typeof CrmClientesRoute
+  '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
   '/conductor': typeof ConductorIndexRoute
+  '/crm': typeof CrmIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
@@ -245,6 +284,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/conductores': typeof ConductoresRoute
+  '/crm': typeof CrmRouteWithChildren
   '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
@@ -260,10 +300,14 @@ export interface FileRoutesById {
   '/tiempos-respuesta': typeof TiemposRespuestaRoute
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
+  '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/clientes': typeof CrmClientesRoute
+  '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
   '/conductor/': typeof ConductorIndexRoute
+  '/crm/': typeof CrmIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
@@ -277,6 +321,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/conductores'
+    | '/crm'
     | '/cuentas'
     | '/cumplimiento'
     | '/facturacion'
@@ -292,10 +337,14 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/asesores'
+    | '/crm/clientes'
+    | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
     | '/conductor/'
+    | '/crm/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
     | '/api/public/push/process'
@@ -322,10 +371,14 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/asesores'
+    | '/crm/clientes'
+    | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
     | '/conductor'
+    | '/crm'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
     | '/api/public/push/process'
@@ -337,6 +390,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/conductores'
+    | '/crm'
     | '/cuentas'
     | '/cumplimiento'
     | '/facturacion'
@@ -352,10 +406,14 @@ export interface FileRouteTypes {
     | '/tiempos-respuesta'
     | '/vehiculos'
     | '/conductor/login'
+    | '/crm/asesores'
+    | '/crm/clientes'
+    | '/crm/concesionarios'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
     | '/conductor/'
+    | '/crm/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
     | '/api/public/push/process'
@@ -368,6 +426,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertasRoute: typeof AlertasRoute
   ConductoresRoute: typeof ConductoresRoute
+  CrmRoute: typeof CrmRouteWithChildren
   CuentasRoute: typeof CuentasRoute
   CumplimientoRoute: typeof CumplimientoRoute
   FacturacionRoute: typeof FacturacionRoute
@@ -495,6 +554,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CuentasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm': {
+      id: '/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/conductores': {
       id: '/conductores'
       path: '/conductores'
@@ -515,6 +581,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/crm/': {
+      id: '/crm/'
+      path: '/'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof CrmIndexRouteImport
+      parentRoute: typeof CrmRoute
     }
     '/conductor/': {
       id: '/conductor/'
@@ -543,6 +616,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/privacidad'
       preLoaderRoute: typeof LegalPrivacidadRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/crm/concesionarios': {
+      id: '/crm/concesionarios'
+      path: '/concesionarios'
+      fullPath: '/crm/concesionarios'
+      preLoaderRoute: typeof CrmConcesionariosRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/clientes': {
+      id: '/crm/clientes'
+      path: '/clientes'
+      fullPath: '/crm/clientes'
+      preLoaderRoute: typeof CrmClientesRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/asesores': {
+      id: '/crm/asesores'
+      path: '/asesores'
+      fullPath: '/crm/asesores'
+      preLoaderRoute: typeof CrmAsesoresRouteImport
+      parentRoute: typeof CrmRoute
     }
     '/conductor/login': {
       id: '/conductor/login'
@@ -596,10 +690,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CrmRouteChildren {
+  CrmAsesoresRoute: typeof CrmAsesoresRoute
+  CrmClientesRoute: typeof CrmClientesRoute
+  CrmConcesionariosRoute: typeof CrmConcesionariosRoute
+  CrmIndexRoute: typeof CrmIndexRoute
+}
+
+const CrmRouteChildren: CrmRouteChildren = {
+  CrmAsesoresRoute: CrmAsesoresRoute,
+  CrmClientesRoute: CrmClientesRoute,
+  CrmConcesionariosRoute: CrmConcesionariosRoute,
+  CrmIndexRoute: CrmIndexRoute,
+}
+
+const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertasRoute: AlertasRoute,
   ConductoresRoute: ConductoresRoute,
+  CrmRoute: CrmRouteWithChildren,
   CuentasRoute: CuentasRoute,
   CumplimientoRoute: CumplimientoRoute,
   FacturacionRoute: FacturacionRoute,
