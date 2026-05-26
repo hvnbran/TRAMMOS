@@ -248,7 +248,26 @@ function Vehiculos() {
           </button>
         </div>
 
-        
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por placa, marca, línea, color, conductor o N° interno..."
+            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-9 text-sm outline-none focus:ring-1 focus:ring-ring"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Filtrar:</span>
