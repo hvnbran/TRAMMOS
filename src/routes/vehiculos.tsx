@@ -375,9 +375,11 @@ function Vehiculos() {
               return (
                 <div
                   key={v.id}
-                  className={`stagger-item rounded-lg border bg-card overflow-hidden flex flex-col ${vencido ? "border-destructive/40" : "border-border"}`}
+                  id={`vehiculo-card-${v.id}`}
+                  className={`stagger-item rounded-lg border bg-card overflow-hidden flex flex-col ${vencido ? "border-destructive/40" : "border-border"} ${openFromUrl === v.id ? "ring-2 ring-primary" : ""}`}
                   style={{ ["--i" as string]: i } as React.CSSProperties}
                 >
+
                   {/* Foto del vehículo - aspect ratio fijo para homogeneidad */}
                   <div className="relative aspect-[16/9] bg-secondary/40 group">
                     {v.foto_url ? (
