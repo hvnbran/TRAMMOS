@@ -1,53 +1,17 @@
-## Por qué aparece "No estás vinculado como conductor"
+## Cambios
 
-Anderson (cédula 1001808785) **sí está vinculado** en la base de datos: su fila en `conductores` tiene `auth_user_id` asignado al usuario auth que entró por la app.
+### 1. Buscador en página de Vehículos
+Añadir un campo de búsqueda en `src/routes/vehiculos.tsx` (encima de los filtros de cliente) que filtre la lista por: placa, marca, línea, color, número interno o nombre del conductor. Búsqueda en vivo, case-insensitive, combinada con el filtro de cliente actual.
 
-El problema está en las políticas RLS de la tabla `conductores`. Las políticas actuales para SELECT son:
+### 2. Apertura directa desde búsqueda global
+- En `src/components/GlobalSearch.tsx`: cuando el resultado es un vehículo, navegar con un query param `?open=<id>` (en lugar de solo `/vehiculos`).
+- En `src/routes/vehiculos.tsx`: leer `open` desde la URL al cargar; cuando coincide con un vehículo, expandir su panel (`setExpanded(id)`) y hacer scroll suave hacia la tarjeta.
 
-- `admin_view_all_conductores` → solo admins
-- `view_conductores` → `can_access_clientes(clientes)` → requiere rol `corona`, `sodimac` o `admin`
+### Detalles técnicos
+- Filtro local sobre el array `items` ya cargado (no nueva query a Supabase).
+- `useSearch` de TanStack Router para leer `?open=<uuid>` con `validateSearch`.
+- Si el id no está en la lista filtrada actual, limpiar el filtro automáticamente para que la tarjeta sea visible.
 
-El conductor logueado **solo tiene el rol `conductor`**, así que cuando la server function `upsertUbicacion` hace:
-
-```ts
-supabase.from("conductores").select("id").eq("auth_user_id", userId)
-```
-
-RLS bloquea la lectura → devuelve 0 filas → el código lanza "No estás vinculado como conductor", aunque en realidad sí lo está.
-
-## Solución
-
-Agregar una política SELECT que permita al conductor leer **su propia fila** usando `auth_user_id = auth.uid()`. Lo mismo en UPDATE por si en el futuro el conductor edita su perfil.
-
-### Migración (1 sola)
-
-```sql
--- Conductor puede leer su propia fila
-CREATE POLICY "conductor_select_own_row"
-  ON public.conductores
-  FOR SELECT
-  TO authenticated
-  USING (auth_user_id = auth.uid());
-
--- Conductor puede actualizar campos básicos de su fila (foto, teléfono, etc.)
-CREATE POLICY "conductor_update_own_row"
-  ON public.conductores
-  FOR UPDATE
-  TO authenticated
-  USING (auth_user_id = auth.uid())
-  WITH CHECK (auth_user_id = auth.uid());
-```
-
-No expone datos sensibles a otros usuarios: cada conductor solo ve la fila cuyo `auth_user_id` coincide con su sesión.
-
-## Resultado
-
-- Conductor toca "Estoy en línea" → `getConductorId` encuentra la fila → upsert en `conductor_ubicaciones` funciona (esa tabla ya tiene RLS correcta basada en `auth_user_id`).
-- Admin y monitoreo siguen viendo todos los conductores como antes (políticas existentes intactas).
-- Pasajero sigue viendo la ubicación vía la función `get_ubicacion_conductor_para_pasajero` (SECURITY DEFINER, no depende de RLS de `conductores`).
-
-## Archivos a modificar
-
-Solo una migración SQL. No hay cambios de código frontend ni server functions.
-
-¿Apruebas para aplicar la migración?
+### Archivos
+- `src/routes/vehiculos.tsx` (editar)
+- `src/components/GlobalSearch.tsx` (editar — cambiar `to: "/vehiculos"` por incluir search param para vehículos)
