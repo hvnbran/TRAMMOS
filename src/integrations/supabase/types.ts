@@ -447,9 +447,11 @@ export type Database = {
           created_by: string | null
           direccion: string | null
           email: string | null
+          empresa: string | null
           id: string
           lat: number | null
           lng: number | null
+          nit: string | null
           nombre: string
           notas: string | null
           telefono: string | null
@@ -462,9 +464,11 @@ export type Database = {
           created_by?: string | null
           direccion?: string | null
           email?: string | null
+          empresa?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          nit?: string | null
           nombre: string
           notas?: string | null
           telefono?: string | null
@@ -477,9 +481,11 @@ export type Database = {
           created_by?: string | null
           direccion?: string | null
           email?: string | null
+          empresa?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          nit?: string | null
           nombre?: string
           notas?: string | null
           telefono?: string | null
