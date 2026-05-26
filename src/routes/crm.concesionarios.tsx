@@ -76,12 +76,12 @@ function ConcesionariosPage() {
     setEditingId(c.id);
     setForm({
       nombre: c.nombre,
+      empresa: c.empresa ?? "",
+      nit: c.nit ?? "",
       ciudad: c.ciudad ?? "",
       direccion: c.direccion ?? "",
       telefono: c.telefono ?? "",
       email: c.email ?? "",
-      lat: c.lat?.toString() ?? "",
-      lng: c.lng?.toString() ?? "",
       activo: c.activo,
       notas: c.notas ?? "",
     });
