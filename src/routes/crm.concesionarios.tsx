@@ -228,28 +228,28 @@ function ConcesionariosPage() {
                 <input
                   value={form.nombre}
                   onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                  className="form-input"
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </Field>
               <Field label="Ciudad">
                 <input
                   value={form.ciudad}
                   onChange={(e) => setForm({ ...form, ciudad: e.target.value })}
-                  className="form-input"
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </Field>
               <Field label="Teléfono">
                 <input
                   value={form.telefono}
                   onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-                  className="form-input"
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </Field>
               <Field label="Dirección" className="sm:col-span-2">
                 <input
                   value={form.direccion}
                   onChange={(e) => setForm({ ...form, direccion: e.target.value })}
-                  className="form-input"
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </Field>
               <Field label="Email" className="sm:col-span-2">
@@ -257,14 +257,14 @@ function ConcesionariosPage() {
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="form-input"
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </Field>
               <Field label="Latitud">
                 <input
                   value={form.lat}
                   onChange={(e) => setForm({ ...form, lat: e.target.value })}
-                  className="form-input"
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                   inputMode="decimal"
                 />
               </Field>
@@ -272,7 +272,7 @@ function ConcesionariosPage() {
                 <input
                   value={form.lng}
                   onChange={(e) => setForm({ ...form, lng: e.target.value })}
-                  className="form-input"
+                  className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                   inputMode="decimal"
                 />
               </Field>
@@ -280,7 +280,7 @@ function ConcesionariosPage() {
                 <textarea
                   value={form.notas}
                   onChange={(e) => setForm({ ...form, notas: e.target.value })}
-                  className="form-input min-h-[80px]"
+                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm min-h-[80px]"
                 />
               </Field>
               <label className="sm:col-span-2 flex items-center gap-2 text-sm">
