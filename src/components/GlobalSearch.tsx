@@ -115,7 +115,8 @@ export function GlobalSearch() {
             id: v.id,
             title: v.placa,
             subtitle: [v.marca, v.linea, v.modelo].filter(Boolean).join(" "),
-            to: `/vehiculos?open=${v.id}`,
+            to: "/vehiculos",
+            search: { open: v.id },
           }))
         ),
         // Servicios
