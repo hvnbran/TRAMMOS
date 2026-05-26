@@ -96,12 +96,12 @@ function ConcesionariosPage() {
     setSaving(true);
     const payload = {
       nombre: form.nombre.trim(),
+      empresa: form.empresa.trim() || null,
+      nit: form.nit.trim() || null,
       ciudad: form.ciudad.trim() || null,
       direccion: form.direccion.trim() || null,
       telefono: form.telefono.trim() || null,
       email: form.email.trim() || null,
-      lat: form.lat ? Number(form.lat) : null,
-      lng: form.lng ? Number(form.lng) : null,
       activo: form.activo,
       notas: form.notas.trim() || null,
     };
