@@ -2,11 +2,12 @@ import { Sidebar } from "./Sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { GlobalSearch } from "@/components/GlobalSearch";
-import { useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { AccessibilityPanel } from "./AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { SiteFooter } from "./SiteFooter";
 import { TRAMI_ENABLED } from "@/lib/feature-flags";
+import { Briefcase } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
@@ -36,6 +37,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <GlobalSearch />
           </div>
           <div className="flex items-center gap-4">
+            {role === "admin" && (
+              <Link
+                to="/crm"
+                preload="intent"
+                className="hidden sm:inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+                aria-label="Abrir CRM Comercial"
+              >
+                <Briefcase className="h-4 w-4" aria-hidden="true" />
+                CRM
+              </Link>
+            )}
             <NotificationsBell />
             <div className="flex items-center gap-2" aria-label={`Sesión de ${displayName || "usuario"}`}>
               <div
