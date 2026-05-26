@@ -23,9 +23,11 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FacturacionRouteImport } from './routes/facturacion'
 import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as CuentasRouteImport } from './routes/cuentas'
+import { Route as CrmRouteImport } from './routes/crm'
 import { Route as ConductoresRouteImport } from './routes/conductores'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CrmIndexRouteImport } from './routes/crm.index'
 import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
@@ -108,6 +110,11 @@ const CuentasRoute = CuentasRouteImport.update({
   path: '/cuentas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrmRoute = CrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConductoresRoute = ConductoresRouteImport.update({
   id: '/conductores',
   path: '/conductores',
@@ -122,6 +129,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CrmIndexRoute = CrmIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CrmRoute,
 } as any)
 const ConductorIndexRoute = ConductorIndexRouteImport.update({
   id: '/conductor/',
@@ -184,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/conductores': typeof ConductoresRoute
+  '/crm': typeof CrmRouteWithChildren
   '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
@@ -203,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
   '/conductor/': typeof ConductorIndexRoute
+  '/crm/': typeof CrmIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
@@ -233,6 +247,7 @@ export interface FileRoutesByTo {
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
   '/conductor': typeof ConductorIndexRoute
+  '/crm': typeof CrmIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
@@ -245,6 +260,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
   '/conductores': typeof ConductoresRoute
+  '/crm': typeof CrmRouteWithChildren
   '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
   '/facturacion': typeof FacturacionRoute
@@ -264,6 +280,7 @@ export interface FileRoutesById {
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
   '/conductor/': typeof ConductorIndexRoute
+  '/crm/': typeof CrmIndexRoute
   '/api/public/conductor-login': typeof ApiPublicConductorLoginRoute
   '/conductor/servicio/$id': typeof ConductorServicioIdRoute
   '/api/public/push/process': typeof ApiPublicPushProcessRoute
@@ -277,6 +294,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/conductores'
+    | '/crm'
     | '/cuentas'
     | '/cumplimiento'
     | '/facturacion'
@@ -296,6 +314,7 @@ export interface FileRouteTypes {
     | '/legal/terminos'
     | '/r/$token'
     | '/conductor/'
+    | '/crm/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
     | '/api/public/push/process'
@@ -326,6 +345,7 @@ export interface FileRouteTypes {
     | '/legal/terminos'
     | '/r/$token'
     | '/conductor'
+    | '/crm'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
     | '/api/public/push/process'
@@ -337,6 +357,7 @@ export interface FileRouteTypes {
     | '/'
     | '/alertas'
     | '/conductores'
+    | '/crm'
     | '/cuentas'
     | '/cumplimiento'
     | '/facturacion'
@@ -356,6 +377,7 @@ export interface FileRouteTypes {
     | '/legal/terminos'
     | '/r/$token'
     | '/conductor/'
+    | '/crm/'
     | '/api/public/conductor-login'
     | '/conductor/servicio/$id'
     | '/api/public/push/process'
@@ -368,6 +390,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertasRoute: typeof AlertasRoute
   ConductoresRoute: typeof ConductoresRoute
+  CrmRoute: typeof CrmRouteWithChildren
   CuentasRoute: typeof CuentasRoute
   CumplimientoRoute: typeof CumplimientoRoute
   FacturacionRoute: typeof FacturacionRoute
@@ -495,6 +518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CuentasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm': {
+      id: '/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/conductores': {
       id: '/conductores'
       path: '/conductores'
@@ -515,6 +545,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/crm/': {
+      id: '/crm/'
+      path: '/'
+      fullPath: '/crm/'
+      preLoaderRoute: typeof CrmIndexRouteImport
+      parentRoute: typeof CrmRoute
     }
     '/conductor/': {
       id: '/conductor/'
@@ -596,10 +633,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CrmRouteChildren {
+  CrmIndexRoute: typeof CrmIndexRoute
+}
+
+const CrmRouteChildren: CrmRouteChildren = {
+  CrmIndexRoute: CrmIndexRoute,
+}
+
+const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertasRoute: AlertasRoute,
   ConductoresRoute: ConductoresRoute,
+  CrmRoute: CrmRouteWithChildren,
   CuentasRoute: CuentasRoute,
   CumplimientoRoute: CumplimientoRoute,
   FacturacionRoute: FacturacionRoute,
@@ -629,3 +677,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
