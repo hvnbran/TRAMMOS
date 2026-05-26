@@ -94,9 +94,27 @@ function Vehiculos() {
   const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
   const [nuevoConductor, setNuevoConductor] = useState(false);
   const [asignacionesPorVehiculo, setAsignacionesPorVehiculo] = useState<Record<string, number>>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const { open: openFromUrl } = Route.useSearch();
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) { load(); loadConductores(); } /* eslint-disable-next-line */ }, [role]);
+
+  // Abrir vehículo directamente desde la búsqueda global
+  useEffect(() => {
+    if (!openFromUrl || items.length === 0) return;
+    const target = items.find((v) => v.id === openFromUrl);
+    if (!target) return;
+    setFiltroCliente("todos");
+    setSearchTerm("");
+    setExpanded(openFromUrl);
+    setTimeout(() => {
+      document.getElementById(`vehiculo-card-${openFromUrl}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 150);
+  }, [openFromUrl, items]);
 
   async function loadConductores() {
     const { data } = await supabase.from("conductores").select("id, nombre, cedula").order("nombre");
