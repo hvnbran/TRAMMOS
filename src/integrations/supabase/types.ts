@@ -305,6 +305,188 @@ export type Database = {
           },
         ]
       }
+      crm_asesores: {
+        Row: {
+          activo: boolean
+          cargo: string | null
+          cedula: string | null
+          concesionario_id: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          fecha_nacimiento: string | null
+          foto_url: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cargo?: string | null
+          cedula?: string | null
+          concesionario_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          fecha_nacimiento?: string | null
+          foto_url?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cargo?: string | null
+          cedula?: string | null
+          concesionario_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          fecha_nacimiento?: string | null
+          foto_url?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_asesores_concesionario_id_fkey"
+            columns: ["concesionario_id"]
+            isOneToOne: false
+            referencedRelation: "crm_concesionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_clientes: {
+        Row: {
+          asesor_id: string | null
+          cedula: string | null
+          ciudad: string | null
+          concesionario_id: string | null
+          created_at: string
+          created_by: string | null
+          direccion: string | null
+          email: string | null
+          fecha_nacimiento: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          origen: string | null
+          telefono: string | null
+          temperatura: Database["public"]["Enums"]["crm_temperatura"]
+          ultima_interaccion: string | null
+          updated_at: string
+        }
+        Insert: {
+          asesor_id?: string | null
+          cedula?: string | null
+          ciudad?: string | null
+          concesionario_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          email?: string | null
+          fecha_nacimiento?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          origen?: string | null
+          telefono?: string | null
+          temperatura?: Database["public"]["Enums"]["crm_temperatura"]
+          ultima_interaccion?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asesor_id?: string | null
+          cedula?: string | null
+          ciudad?: string | null
+          concesionario_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          email?: string | null
+          fecha_nacimiento?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          origen?: string | null
+          telefono?: string | null
+          temperatura?: Database["public"]["Enums"]["crm_temperatura"]
+          ultima_interaccion?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_clientes_asesor_id_fkey"
+            columns: ["asesor_id"]
+            isOneToOne: false
+            referencedRelation: "crm_asesores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_clientes_concesionario_id_fkey"
+            columns: ["concesionario_id"]
+            isOneToOne: false
+            referencedRelation: "crm_concesionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_concesionarios: {
+        Row: {
+          activo: boolean
+          ciudad: string | null
+          created_at: string
+          created_by: string | null
+          direccion: string | null
+          email: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          nombre: string
+          notas: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          ciudad?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nombre: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          ciudad?: string | null
+          created_at?: string
+          created_by?: string | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nombre?: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -1475,6 +1657,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "corona" | "sodimac" | "pasajero" | "conductor"
       cliente_tipo: "corona" | "sodimac"
+      crm_temperatura: "frio" | "tibio" | "caliente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1604,6 +1787,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "corona", "sodimac", "pasajero", "conductor"],
       cliente_tipo: ["corona", "sodimac"],
+      crm_temperatura: ["frio", "tibio", "caliente"],
     },
   },
 } as const
