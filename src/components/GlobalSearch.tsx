@@ -249,7 +249,7 @@ export function GlobalSearch() {
   function handleSelect(r: SearchResult) {
     setOpen(false);
     setQuery("");
-    navigate({ to: r.to });
+    navigate({ to: r.to, search: (r.search ?? {}) as never });
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
