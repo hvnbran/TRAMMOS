@@ -260,20 +260,18 @@ function ConcesionariosPage() {
                   className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
                 />
               </Field>
-              <Field label="Latitud">
+              <Field label="Empresa">
                 <input
-                  value={form.lat}
-                  onChange={(e) => setForm({ ...form, lat: e.target.value })}
+                  value={form.empresa}
+                  onChange={(e) => setForm({ ...form, empresa: e.target.value })}
                   className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
-                  inputMode="decimal"
                 />
               </Field>
-              <Field label="Longitud">
+              <Field label="NIT">
                 <input
-                  value={form.lng}
-                  onChange={(e) => setForm({ ...form, lng: e.target.value })}
+                  value={form.nit}
+                  onChange={(e) => setForm({ ...form, nit: e.target.value })}
                   className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
-                  inputMode="decimal"
                 />
               </Field>
               <Field label="Notas" className="sm:col-span-2">
