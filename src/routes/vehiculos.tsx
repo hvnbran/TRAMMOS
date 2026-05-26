@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2, UserPlus } from "lucide-react";
+import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2, UserPlus, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -8,10 +8,24 @@ import { DocumentManager, TIPOS_VEHICULO } from "@/components/DocumentManager";
 import { VehiculoConductores } from "@/components/VehiculoConductores";
 import { ChecklistANS } from "@/components/ChecklistANS";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 
 
 export const Route = createFileRoute("/vehiculos")({
   component: Vehiculos,
+  validateSearch: zodValidator(
+    z.object({
+      open: fallback(z.string().optional(), undefined),
+    })
+  ),
+  head: () => ({
+    meta: [
+      { title: "Vehículos - TRAMMOS" },
+      { name: "description", content: "Administración de flota vehicular" },
+    ],
+  }),
+});
   head: () => ({
     meta: [
       { title: "Vehículos - TRAMMOS" },
