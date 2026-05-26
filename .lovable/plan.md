@@ -1,75 +1,93 @@
+## Portal CRM independiente
 
-## Módulo CRM (nueva sección)
+El CRM deja de vivir dentro del panel de administración. Pasa a ser un **portal aparte** (como `/conductor` y `/pasajero`), con su propio login, su propio layout, su propio dashboard. El botón "CRM" del header de admin lleva ahí. Solo lo ven los admins.
 
-Se crea como **módulo aparte** accesible desde el sidebar (`/crm`), no dentro del panel actual de operación. Solo visible para admin.
-
-### Estructura de navegación
+### Cómo se ve el flujo
 
 ```
-Sidebar
-└── CRM (nuevo grupo)
-    ├── Clientes        /crm/clientes
-    ├── Asesores        /crm/asesores
-    └── Concesionarios  /crm/concesionarios
+Panel admin (/) ──[botón CRM en header, solo admins]──▶ /crm/login
+                                                            │
+                                                            ▼
+                                                  Portal CRM aislado
+                                                  ┌────────────────────────┐
+                                                  │ Sidebar CRM propia     │
+                                                  │ • Dashboard            │
+                                                  │ • Clientes (leads)     │
+                                                  │ • Asesores             │
+                                                  │ • Concesionarios       │
+                                                  │ • Equipo CRM (usuarios)│
+                                                  └────────────────────────┘
 ```
 
-Cada pantalla: listado con buscador + filtros + botón "Nuevo" que abre un modal con formulario.
+- El portal CRM **no muestra** la sidebar de TRAMMOS (servicios, vehículos, etc.).
+- El panel admin **no muestra** secciones CRM en su sidebar (ya está limpio).
+- Corona, Sodimac, pasajeros y conductores nunca ven el botón ni pueden entrar a `/crm/*`.
 
-### Entidades (base de datos)
+### Acceso (admins + usuarios CRM dedicados)
 
-**`crm_concesionarios`**
-- nombre, ciudad, dirección, telefono, email
-- ubicación (lat/lng opcional)
-- activo
+- **Admins de TRAMMOS**: entran al CRM automáticamente con su misma cuenta.
+- **Usuarios CRM dedicados**: rol nuevo `crm` (ej. gerente comercial). Pueden entrar al CRM pero NO al panel admin. Los crea un admin desde `/crm/equipo`.
+- Login en `/crm/login` con email + contraseña. Si el usuario no tiene rol `admin` ni `crm`, se le rechaza con mensaje claro.
 
-**`crm_asesores`**
-- nombre, cédula, teléfono, email, fecha_nacimiento
-- concesionario_id (FK)
-- cargo (ej: "Asesor comercial", "Jefe de ventas")
-- activo, foto_url
+### Identidad visual
 
-**`crm_clientes`** (leads)
-- nombre, cédula, teléfono, email, fecha_nacimiento
-- direccion, ciudad
-- **temperatura**: `frio` | `tibio` | `caliente`
-- asesor_id (FK, opcional) — quién lo atiende
-- concesionario_id (FK, opcional) — dónde se atendió
-- origen (cómo llegó: referido, web, visita, etc.)
-- notas (texto libre)
-- ultima_interaccion (fecha)
+Mismo lenguaje TRAMMOS (cyan / lime / gris, mismo logo, misma tipografía). Lo que cambia es el **chrome**: sidebar propia con secciones del CRM y un header sencillo con el usuario y "Salir del CRM" (que regresa al panel admin si era admin, o a login si era usuario CRM).
 
-Las 3 tablas con RLS: solo `admin` puede ver/editar (`has_role(auth.uid(), 'admin')`).
+### Pantallas del portal CRM
 
-### Pantallas
+1. **`/crm/login`** — pantalla pública, formulario email + password. Si ya estás logueado y tienes acceso, redirige a `/crm`.
+2. **`/crm`** — Dashboard: totales por temperatura (fríos/tibios/calientes), próximos cumpleaños (7 días), conteos por concesionario, últimas interacciones.
+3. **`/crm/clientes`** — Tabla de leads con filtros (temperatura, asesor, concesionario), buscador, formulario alta/edición, cambio rápido de temperatura.
+4. **`/crm/asesores`** — Tabla de asesores con su concesionario, # clientes asignados, cumpleaños.
+5. **`/crm/concesionarios`** — Tabla/cards de concesionarios con # asesores y # clientes.
+6. **`/crm/equipo`** — (solo admin) Gestión de usuarios con rol `crm`: invitar, listar, revocar.
 
-1. **`/crm`** (índice) — Dashboard rápido: total clientes por temperatura, próximos cumpleaños (7 días), conteos por concesionario.
-2. **`/crm/clientes`** — Tabla con: nombre, temperatura (badge color), asesor, concesionario, teléfono, cumpleaños. Filtros: temperatura, concesionario, asesor. Buscador por nombre/cédula/teléfono. Click → modal de detalle/edición.
-3. **`/crm/asesores`** — Tabla con: nombre, cargo, concesionario, teléfono, cumpleaños, # clientes asignados.
-4. **`/crm/concesionarios`** — Tarjetas o tabla con: nombre, ciudad, dirección, # asesores, # clientes.
+Las pantallas 2-5 ya existen como contenido; se mueven al nuevo layout y se sigue usando la misma data (`crm_clientes`, `crm_asesores`, `crm_concesionarios`). No se pierde nada.
 
-### Detalles UI
+---
 
-- **Temperatura**: badge con color — frío (azul), tibio (ámbar), caliente (rojo/lime). Editable inline desde la fila.
-- **Cumpleaños**: indicador visual si el cumple cae en los próximos 7 días.
-- **Formularios**: validación con `zod` (igual que el resto del proyecto).
-- Reutiliza componentes existentes: `Card`, `Table`, `Dialog`, `Badge`, `Input`, `Select`.
+### Detalles técnicos
 
-### Archivos a crear
+**1. Rol nuevo y permisos**
+- Migration: añadir valor `'crm'` al enum `app_role`.
+- Actualizar las políticas RLS de `crm_clientes`, `crm_asesores`, `crm_concesionarios` para permitir acceso a `admin` **o** `crm`:
+  ```sql
+  USING (public.has_role(auth.uid(),'admin') OR public.has_role(auth.uid(),'crm'))
+  ```
+- Helper `has_crm_access(uid)` (security definer) para reutilizar en server functions.
 
-- `supabase/migrations/<timestamp>_crm.sql` — 3 tablas + GRANTs + RLS admin-only + índices.
-- `src/routes/crm.tsx` — layout con `<Outlet />` + tabs/sub-nav del módulo.
-- `src/routes/crm.index.tsx` — dashboard.
-- `src/routes/crm.clientes.tsx`, `src/routes/crm.asesores.tsx`, `src/routes/crm.concesionarios.tsx`.
-- `src/components/crm/ClienteForm.tsx`, `AsesorForm.tsx`, `ConcesionarioForm.tsx` — modales de alta/edición.
-- `src/components/crm/TemperaturaBadge.tsx`.
-- `src/lib/crm/crm.functions.ts` — server functions con `requireSupabaseAuth` para CRUD (admin-only validado en server).
-- Editar `src/components/layout/Sidebar.tsx` — añadir grupo "CRM" visible solo para admin.
+**2. Estructura de rutas (TanStack)**
+- `src/routes/crm.login.tsx` — pública, formulario login. Si ya hay sesión válida con acceso, redirige a `/crm`.
+- `src/routes/crm.tsx` — layout del portal: renderiza `<CrmLayout>` (sidebar CRM + header CRM + `<Outlet/>`). Hace `beforeLoad` que valida sesión + rol `admin|crm`; si no, `redirect({ to: '/crm/login' })`.
+- `src/routes/crm.index.tsx` — dashboard (ya existe, se reusa).
+- `src/routes/crm.clientes.tsx`, `crm.asesores.tsx`, `crm.concesionarios.tsx` — ya existen, se reusan (solo cambia el layout padre).
+- `src/routes/crm.equipo.tsx` — nuevo, solo admin (validado en `beforeLoad`).
+- `src/components/crm/CrmLayout.tsx` — nuevo, sidebar propia + header propio + botón "Salir del CRM".
+- `src/components/crm/CrmSidebar.tsx` — nuevo, navegación interna del CRM.
 
-### Lo que NO se incluye en esta primera versión
+**3. Header del panel admin**
+- En `AppLayout.tsx` el botón "CRM" ya existe y solo se muestra a admins. Cambia su `to` para que apunte a `/crm` (ya lo hace) y se asegura `preload="intent"`. No requiere más cambios aquí.
+- `AdminOnly` sigue protegiendo el panel admin como hasta ahora.
 
-- Importar Excel/CSV (puede añadirse luego con el mismo patrón que `ImportarExcelModal`).
-- Historial de interacciones / pipeline (se puede añadir como tabla `crm_interacciones` después).
-- Notificaciones automáticas de cumpleaños (se reaprovecharía `push_notifications_queue` cuando se quiera).
-- Rol "asesor" con login propio.
+**4. Login del CRM**
+- Formulario reutiliza shadcn `Input`/`Button`. Llama a `supabase.auth.signInWithPassword`.
+- Tras login, server function `verify_crm_access` (con `requireSupabaseAuth`) confirma que el usuario tiene rol `admin` o `crm`. Si no, `signOut()` y mensaje "No tienes acceso al CRM".
+- Login mediante Google también disponible vía broker Lovable (consistente con el resto del proyecto) — solo se acepta si el correo ya tiene rol `admin` o `crm`.
 
-¿Lo construyo así?
+**5. Gestión de equipo CRM (`/crm/equipo`, solo admin)**
+- Listado de usuarios con rol `crm` (join `user_roles` + `profiles`).
+- "Invitar usuario CRM": server function admin que envía invitación por email (reutilizando el patrón ya existente del proyecto si lo hay, o creando uno con `supabaseAdmin.auth.admin.inviteUserByEmail`) y al aceptar le asigna rol `crm` automáticamente.
+- "Revocar acceso": elimina la fila `user_roles` con rol `crm` para ese user.
+
+**6. Cosas que NO cambian**
+- `AppLayout`, `Sidebar` del panel principal: igual (ya están limpios).
+- Datos existentes en `crm_*`: intactos.
+- Roles `corona`, `sodimac`, `pasajero`, `conductor`: intactos, sin acceso al CRM.
+
+### Lo que NO incluye esta v1
+- Pipeline / historial de interacciones (tabla `crm_interacciones` futura).
+- Importar leads desde Excel/CSV.
+- Notificaciones automáticas de cumpleaños.
+- Métricas avanzadas en el dashboard (conversión, embudo). Se puede añadir después.
+
+¿Procedo así?

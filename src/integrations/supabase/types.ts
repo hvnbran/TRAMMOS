@@ -1606,6 +1606,7 @@ export type Database = {
           marca: string
         }[]
       }
+      has_crm_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1655,7 +1656,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "corona" | "sodimac" | "pasajero" | "conductor"
+      app_role:
+        | "admin"
+        | "corona"
+        | "sodimac"
+        | "pasajero"
+        | "conductor"
+        | "crm"
       cliente_tipo: "corona" | "sodimac"
       crm_temperatura: "frio" | "tibio" | "caliente"
     }
@@ -1785,7 +1792,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "corona", "sodimac", "pasajero", "conductor"],
+      app_role: ["admin", "corona", "sodimac", "pasajero", "conductor", "crm"],
       cliente_tipo: ["corona", "sodimac"],
       crm_temperatura: ["frio", "tibio", "caliente"],
     },
