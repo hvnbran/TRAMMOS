@@ -19,6 +19,7 @@ interface SearchResult {
   title: string;
   subtitle: string;
   to: string;
+  search?: Record<string, string>;
 }
 
 const KIND_META: Record<ResultKind, { label: string; icon: typeof Users; color: string }> = {
