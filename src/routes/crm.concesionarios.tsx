@@ -11,24 +11,24 @@ export const Route = createFileRoute("/crm/concesionarios")({
 type Concesionario = {
   id: string;
   nombre: string;
+  empresa: string | null;
+  nit: string | null;
   ciudad: string | null;
   direccion: string | null;
   telefono: string | null;
   email: string | null;
-  lat: number | null;
-  lng: number | null;
   activo: boolean;
   notas: string | null;
 };
 
 const EMPTY = {
   nombre: "",
+  empresa: "",
+  nit: "",
   ciudad: "",
   direccion: "",
   telefono: "",
   email: "",
-  lat: "",
-  lng: "",
   activo: true,
   notas: "",
 };
