@@ -1,58 +1,49 @@
-## Tanda 1 — Chrome del panel admin responsive
+# Acceso CRM con contraseña + revisión del botón en la cabecera
 
-Hacer que `Sidebar` + `AppLayout` funcionen bien en celular (vertical y horizontal) sin perder funcionalidad. El portal CRM ya quedó responsive en la tanda anterior.
+## Contexto
 
-## Cambios
+- En **CrmLayout.tsx** ya existe la lógica correcta: si el rol es `admin` aparece el botón "Panel admin" (volver al panel principal), y si el rol es `crm` aparece el botón "Salir" (cerrar sesión). **No requiere cambios.**
+- Lo que falta es la creación de la cuenta CRM **con contraseña directa** desde el formulario de admin. Hoy `grantCrmAccess` solo manda invitación por email (passwordless), así que el usuario no puede entrar al instante.
 
-### 1. `Sidebar.tsx` — dos modos según viewport
+## Cambio 1 — `src/lib/crm/crm-access.functions.ts`
 
-- **`≥ md` (desktop/tablet horizontal):** comportamiento actual. Sidebar fija a la izquierda, expandible/colapsable entre 240px y 68px. Sin cambios funcionales.
-- **`< md` (móvil):** se convierte en **drawer overlay**.
-  - Oculta de la fila normal (`hidden md:flex`).
-  - Se renderiza como `<aside fixed inset-y-0 left-0 z-50 w-[260px]>` que entra desde la izquierda con `translate-x` animado.
-  - Backdrop oscuro semitransparente (`bg-black/50`) que cierra al hacer clic.
-  - Cierre automático al cambiar de ruta (`useEffect` sobre `location.pathname`).
-  - Cierre al presionar `Escape`.
-  - Bloquea el scroll del `body` mientras está abierto.
-- Estado `mobileOpen` se eleva: la sidebar recibe `mobileOpen` y `onClose` por props desde `AppLayout` (necesario para que el botón hamburguesa del header lo controle).
+Modificar `grantCrmAccess` para aceptar contraseña opcional:
 
-### 2. `AppLayout.tsx` — header compacto + hamburguesa
+- Ampliar `inviteSchema`:
+  - `email` (igual)
+  - `displayName` (opcional, igual)
+  - `password` (opcional, `z.string().min(8).max(72)`)
+- Lógica nueva en el handler:
+  1. Si el email **ya existe** en `profiles` → solo asignar rol `crm` (igual que ahora). Si además se envió `password`, actualizar la contraseña con `supabaseAdmin.auth.admin.updateUserById(userId, { password })`.
+  2. Si **no existe** y se envió `password` → crear cuenta con `supabaseAdmin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { display_name } })`. El usuario puede entrar al CRM al instante con email + contraseña.
+  3. Si **no existe** y **no** se envió contraseña → mantener el flujo actual: `inviteUserByEmail` (invitación por correo).
+- Asignar el rol `crm` en `user_roles` en los tres casos (igual que hoy, vía `upsert` con `onConflict`).
+- Devolver `{ ok, invited, created, userId }` para que la UI muestre el toast correcto.
 
-- Estado local `mobileNavOpen` que controla el drawer.
-- **Hamburguesa** (icono `Menu` de lucide) visible solo en `< md`, a la izquierda del header. Pulsa → `setMobileNavOpen(true)`.
-- Header: padding pasa de `px-6` a `px-3 md:px-6`. Altura se mantiene.
-- `GlobalSearch`: en `< md` se colapsa a un **botón-icono lupa** que abre la búsqueda en overlay (si el componente ya soporta apertura programática, lo controlamos por estado; si no, lo envolvemos en un `Sheet`-like simple).
-- Botón "CRM" (admin): ya tiene `hidden sm:inline-flex`, lo dejamos así. **Además** lo añadimos como ítem dentro del drawer móvil para que admins lo encuentren ahí (sólo si `role === 'admin'`).
-- Avatar: en `< md` mostramos solo iniciales (ya está así).
-- `<main>`: padding pasa de `p-6` a `p-3 sm:p-4 md:p-6`.
+## Cambio 2 — `src/routes/crm.equipo.tsx`
 
-### 3. `SiteFooter` — compacto en móvil
+Agregar el campo contraseña al formulario "Otorgar acceso CRM":
 
-- Revisar variantes existentes; si el `full` queda muy alto en móvil, reducir a columnas únicas + tipografías más pequeñas. (Cambios mínimos, solo clases responsivas.)
+- Nuevo estado `password` (string).
+- Input `type="password"` con `minLength={8}`, placeholder "Contraseña (mínimo 8 caracteres)", **opcional**.
+- Texto de ayuda actualizado:
+  - "Si **defines una contraseña**, el usuario podrá entrar al CRM al instante con su correo y esa contraseña."
+  - "Si **dejas la contraseña en blanco** y el correo no existe, se enviará una invitación por email."
+- Mensajes toast:
+  - `created` → "Cuenta CRM creada. El usuario ya puede iniciar sesión."
+  - `invited` → "Invitación enviada por correo y acceso CRM otorgado."
+  - resto → "Acceso CRM otorgado."
+- Limpiar `password` después de enviar.
+- Grilla del formulario: pasar de `md:grid-cols-3` a `md:grid-cols-4` para acomodar el nuevo campo.
 
-## Archivos
+## Fuera de alcance (intencionalmente)
 
-**Editar:**
-- `src/components/layout/Sidebar.tsx` — agregar modo drawer móvil, props `mobileOpen` + `onClose`.
-- `src/components/layout/AppLayout.tsx` — agregar hamburguesa, gestionar estado, colapsar GlobalSearch.
-- `src/components/layout/SiteFooter.tsx` — pequeños ajustes responsivos si es necesario.
-
-**Sin tocar:**
-- Lógica de navegación, ítems del menú, auth, roles.
-- Componente CRM (ya hecho).
-- Páginas internas (vienen en tanda 2).
-
-## Detalles técnicos
-
-- Breakpoint: `md` (768px). En tablet horizontal (≥768px) ya hay espacio para sidebar fija.
-- Animación: `transition-transform duration-300 ease-out`.
-- Accesibilidad: el drawer usa `role="dialog"`, `aria-modal="true"`, `aria-label="Navegación principal"`. Hamburguesa con `aria-expanded` y `aria-controls`.
-- Sin dependencias nuevas; usar `useState` + `useEffect` + Tailwind. No requiere `Sheet` de shadcn (más simple así).
+- **CrmLayout.tsx**: ya implementa correctamente el botón "Salir" para usuarios con rol `crm` puro y oculta "Panel admin". No se toca.
+- **Cambio de contraseña por el propio usuario CRM**: no se incluye ahora; se puede agregar después si lo necesitas.
+- **Validación de fuerza de contraseña adicional** (HIBP): no se activa en este paso.
 
 ## Validación
 
-- En 360–414px: la sidebar aparece como drawer al pulsar hamburguesa, se cierra al elegir un ítem o tocar el backdrop.
-- En ≥768px: sidebar visible siempre, hamburguesa oculta, comportamiento idéntico al actual.
-- Header no se desborda en ninguna anchura.
-- El contenido no queda tapado por la sidebar fija en móvil.
-- Atajo `Escape` cierra el drawer.
+- Admin crea cuenta CRM nueva con contraseña → puede iniciar sesión en `/crm/login` inmediatamente y ve el CRM con botón "Salir" (no "Panel admin").
+- Admin otorga acceso a un email existente con contraseña → se actualiza la contraseña y se le añade el rol.
+- Admin otorga acceso sin contraseña a un email nuevo → llega correo de invitación (flujo actual).

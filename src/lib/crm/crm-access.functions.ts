@@ -60,12 +60,14 @@ export const listCrmUsers = createServerFn({ method: "GET" })
 const inviteSchema = z.object({
   email: z.string().trim().email().max(255),
   displayName: z.string().trim().max(255).optional(),
+  password: z.string().min(8).max(72).optional(),
 });
 
 /**
- * Invita o asigna rol 'crm' a un usuario.
- * Si el email ya existe → solo añade el rol.
- * Si no existe → envía invitación y asigna el rol al user_id creado.
+ * Otorga rol 'crm' a un usuario.
+ * - Si el email existe y se envía password → actualiza la contraseña.
+ * - Si el email no existe y se envía password → crea cuenta lista para login.
+ * - Si el email no existe y NO hay password → envía invitación por correo.
  */
 export const grantCrmAccess = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -73,6 +75,7 @@ export const grantCrmAccess = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const email = data.email.toLowerCase();
+    const password = data.password?.trim() || undefined;
 
     // ¿Ya existe ese email en profiles?
     const { data: existing, error: pErr } = await supabaseAdmin
@@ -84,11 +87,30 @@ export const grantCrmAccess = createServerFn({ method: "POST" })
 
     let userId: string;
     let invited = false;
+    let created = false;
 
     if (existing?.user_id) {
       userId = existing.user_id;
+      if (password) {
+        const { error: uErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+          password,
+        });
+        if (uErr) throw new Error(uErr.message);
+      }
+    } else if (password) {
+      // Crear cuenta directa con contraseña — entra al instante
+      const { data: createResp, error: cErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: data.displayName ? { display_name: data.displayName } : undefined,
+      });
+      if (cErr) throw new Error(cErr.message);
+      if (!createResp?.user) throw new Error("No se pudo crear la cuenta");
+      userId = createResp.user.id;
+      created = true;
     } else {
-      // Invitar (crea auth user pendiente y envía email)
+      // Invitación por correo (flujo passwordless)
       const { data: invite, error: iErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         data: data.displayName ? { display_name: data.displayName } : undefined,
       });
