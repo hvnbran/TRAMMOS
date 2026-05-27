@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
+import { CrmIntro } from "./CrmIntro";
+
 
 type NavItem = {
   to: string;
@@ -43,7 +45,9 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <header role="banner" className="bg-card border-b border-border">
+      <CrmIntro />
+      <header role="banner" className="bg-card border-b border-border crm-intro-content">
+
         {/* Fila 1 — branding + sesión */}
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
