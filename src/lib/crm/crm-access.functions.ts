@@ -126,7 +126,7 @@ export const grantCrmAccess = createServerFn({ method: "POST" })
       .upsert({ user_id: userId, role: "crm" as never }, { onConflict: "user_id,role" });
     if (rErr) throw new Error(rErr.message);
 
-    return { ok: true, invited, userId };
+    return { ok: true, invited, created, userId };
   });
 
 const revokeSchema = z.object({ userId: z.string().uuid() });
