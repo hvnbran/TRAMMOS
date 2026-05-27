@@ -116,7 +116,7 @@ function EquipoCrmPage() {
           <UserPlus className="h-4 w-4 text-primary" />
           Otorgar acceso CRM
         </h2>
-        <form onSubmit={handleGrant} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+        <form onSubmit={handleGrant} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
           <div className="md:col-span-1">
             <label className="text-xs text-muted-foreground">Correo</label>
             <input
@@ -138,6 +138,19 @@ function EquipoCrmPage() {
               className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
             />
           </div>
+          <div className="md:col-span-1">
+            <label className="text-xs text-muted-foreground">Contraseña (opcional)</label>
+            <input
+              type="password"
+              minLength={8}
+              maxLength={72}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mínimo 8 caracteres"
+              autoComplete="new-password"
+              className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
+            />
+          </div>
           <button
             type="submit"
             disabled={busy || !email}
@@ -148,7 +161,7 @@ function EquipoCrmPage() {
           </button>
         </form>
         <p className="text-[11px] text-muted-foreground mt-2">
-          Si el correo no existe aún, se enviará una invitación por email para crear la cuenta.
+          Si <strong>defines una contraseña</strong>, el usuario podrá entrar al CRM al instante con su correo y esa contraseña. Si la dejas en blanco y el correo no existe, se enviará una invitación por email.
         </p>
       </section>
 
