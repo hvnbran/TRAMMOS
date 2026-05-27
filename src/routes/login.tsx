@@ -74,6 +74,8 @@ function LoginPage() {
     if (loading || showSplash || !user) return;
     if (role === "pasajero") {
       navigate({ to: "/pasajero" });
+    } else if (role === "crm") {
+      navigate({ to: "/crm" });
     } else if (role) {
       navigate({ to: "/" });
     }
