@@ -217,12 +217,13 @@ function LoginPage() {
           {tab === "operador" ? (
             <form onSubmit={handleSubmitOperador} className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Usuario</label>
+                <label className="text-xs font-medium text-muted-foreground">Usuario o correo</label>
                 <input
                   type="text"
                   autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin, corona, sodimac o tu@correo.com"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                   required
                   disabled={submitting}
