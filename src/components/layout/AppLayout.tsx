@@ -7,11 +7,14 @@ import { AccessibilityPanel } from "./AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { SiteFooter } from "./SiteFooter";
 import { TRAMI_ENABLED } from "@/lib/feature-flags";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Menu } from "lucide-react";
+import { useState } from "react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   const initials = (displayName || "U")
     .split(" ")
     .map((w) => w[0])
@@ -27,16 +30,31 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
       </a>
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
+
+      <Sidebar mobileOpen={mobileNavOpen} onMobileClose={() => setMobileNavOpen(false)} />
+
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <header
           role="banner"
-          className="flex h-14 items-center justify-between border-b border-border bg-card px-6"
+          className="flex h-14 items-center justify-between border-b border-border bg-card px-3 md:px-6 gap-2"
         >
-          <div className="flex items-center gap-3 flex-1">
-            <GlobalSearch />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Hamburguesa sólo en móvil */}
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Abrir menú de navegación"
+              aria-expanded={mobileNavOpen}
+              className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded-md border border-border text-foreground hover:bg-muted shrink-0"
+            >
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <GlobalSearch />
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
             {role === "admin" && (
               <Link
                 to="/crm"
@@ -63,17 +81,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
+
         <main
           id="main-content"
           role="main"
           tabIndex={-1}
           key={location.pathname}
-          className="page-transition flex-1 overflow-y-auto p-6 focus:outline-none"
+          className="page-transition flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 focus:outline-none"
         >
           {children}
           <SiteFooter variant="full" />
         </main>
       </div>
+
       <AccessibilityPanel />
       {TRAMI_ENABLED && <TramiAssistant />}
     </div>
