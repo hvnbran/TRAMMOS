@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
+import { CrmIntro } from "./CrmIntro";
+
 
 type NavItem = {
   to: string;
