@@ -130,7 +130,10 @@ function LoginPage() {
 
     const displayName = preset ? preset.display_name : email.split("@")[0];
     const clientKey = preset ? preset.role : null;
-    startSplashSequence(displayName, clientKey, "/");
+    // Si no es un seed user (admin/corona/sodimac), no sabemos aún el destino:
+    // dejamos que el useEffect redirija según el rol (incluye CRM → /crm).
+    const target = preset ? "/" : null;
+    startSplashSequence(displayName, clientKey, target);
   };
 
 
