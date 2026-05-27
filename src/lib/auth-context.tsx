@@ -59,7 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles").select("display_name,email").eq("user_id", userId).maybeSingle(),
     ]);
 
-    let r = (roles?.[0]?.role ?? null) as AppRole | null;
+    const allRoles = (roles ?? []).map((rr) => rr.role as AppRole);
+
+    // Prefer non-pasajero roles when multiple exist.
+    const priority: AppRole[] = ["admin", "crm", "corona", "sodimac", "conductor", "pasajero"];
+    let r: AppRole | null = priority.find((p) => allRoles.includes(p)) ?? null;
 
     // If user has no role yet, try to link as pasajero (auto-bootstrap on first login via OTP)
     if (!r) {
