@@ -74,6 +74,8 @@ function LoginPage() {
     if (loading || showSplash || !user) return;
     if (role === "pasajero") {
       navigate({ to: "/pasajero" });
+    } else if (role === "crm") {
+      navigate({ to: "/crm" });
     } else if (role) {
       navigate({ to: "/" });
     }
@@ -82,7 +84,7 @@ function LoginPage() {
   const startSplashSequence = (
     displayName: string,
     clientKey: "corona" | "sodimac" | "admin" | "pasajero" | null,
-    target: "/" | "/pasajero",
+    target: "/" | "/pasajero" | "/crm" | null,
   ) => {
     setSplashName(displayName);
     setSplashClient(clientKey);
@@ -92,7 +94,15 @@ function LoginPage() {
     if (clientKey === "pasajero") return;
     timersRef.current.push(setTimeout(() => setProgress(100), 200));
     timersRef.current.push(setTimeout(() => setSplashFadeOut(true), 1800));
-    timersRef.current.push(setTimeout(() => navigate({ to: target }), 2050));
+    timersRef.current.push(setTimeout(() => {
+      if (target) {
+        navigate({ to: target });
+      } else {
+        // Sin target conocido: ocultamos splash y dejamos que el useEffect
+        // redirija según el rol cuando termine de cargar.
+        setShowSplash(false);
+      }
+    }, 2050));
   };
 
   const handleSubmitOperador = async (e: FormEvent) => {
@@ -120,7 +130,10 @@ function LoginPage() {
 
     const displayName = preset ? preset.display_name : email.split("@")[0];
     const clientKey = preset ? preset.role : null;
-    startSplashSequence(displayName, clientKey, "/");
+    // Si no es un seed user (admin/corona/sodimac), no sabemos aún el destino:
+    // dejamos que el useEffect redirija según el rol (incluye CRM → /crm).
+    const target = preset ? "/" : null;
+    startSplashSequence(displayName, clientKey, target);
   };
 
 
@@ -204,12 +217,13 @@ function LoginPage() {
           {tab === "operador" ? (
             <form onSubmit={handleSubmitOperador} className="rounded-lg border border-border bg-card p-6 space-y-4 shadow-sm">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">Usuario</label>
+                <label className="text-xs font-medium text-muted-foreground">Usuario o correo</label>
                 <input
                   type="text"
                   autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin, corona, sodimac o tu@correo.com"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                   required
                   disabled={submitting}

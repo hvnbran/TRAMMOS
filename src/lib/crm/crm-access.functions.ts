@@ -98,17 +98,47 @@ export const grantCrmAccess = createServerFn({ method: "POST" })
         if (uErr) throw new Error(uErr.message);
       }
     } else if (password) {
-      // Crear cuenta directa con contraseña — entra al instante
+      // Crear cuenta directa con contraseña — entra al instante.
       const { data: createResp, error: cErr } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
         user_metadata: data.displayName ? { display_name: data.displayName } : undefined,
       });
-      if (cErr) throw new Error(cErr.message);
-      if (!createResp?.user) throw new Error("No se pudo crear la cuenta");
-      userId = createResp.user.id;
-      created = true;
+      if (cErr) {
+        // Si ya existe en auth.users (sin profile), busca por email y actualiza pwd.
+        const msg = cErr.message?.toLowerCase() ?? "";
+        const alreadyExists =
+          msg.includes("already") || msg.includes("registered") || msg.includes("exists");
+        if (!alreadyExists) throw new Error(cErr.message);
+
+        let foundId: string | null = null;
+        let page = 1;
+        while (page <= 10 && !foundId) {
+          const { data: list, error: lErr } = await supabaseAdmin.auth.admin.listUsers({
+            page,
+            perPage: 200,
+          });
+          if (lErr) throw new Error(lErr.message);
+          const match = list.users.find((u) => (u.email ?? "").toLowerCase() === email);
+          if (match) foundId = match.id;
+          if (!list.users.length || list.users.length < 200) break;
+          page++;
+        }
+        if (!foundId) throw new Error("No se encontró el usuario existente para asignar contraseña.");
+        const { error: uErr } = await supabaseAdmin.auth.admin.updateUserById(foundId, {
+          password,
+          email_confirm: true,
+          user_metadata: data.displayName ? { display_name: data.displayName } : undefined,
+        });
+        if (uErr) throw new Error(uErr.message);
+        userId = foundId;
+        created = true;
+      } else {
+        if (!createResp?.user) throw new Error("No se pudo crear la cuenta");
+        userId = createResp.user.id;
+        created = true;
+      }
     } else {
       // Invitación por correo (flujo passwordless)
       const { data: invite, error: iErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
