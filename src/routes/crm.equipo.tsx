@@ -58,11 +58,24 @@ function EquipoCrmPage() {
     setBusy(true);
     try {
       const res = await grantFn({
-        data: { email: email.trim(), displayName: displayName.trim() || undefined },
+        data: {
+          email: email.trim(),
+          displayName: displayName.trim() || undefined,
+          password: password.trim() ? password.trim() : undefined,
+        },
       });
-      toast.success(res.invited ? "Invitación enviada y acceso CRM otorgado" : "Acceso CRM otorgado");
+      toast.success(
+        res.created
+          ? "Cuenta CRM creada. El usuario ya puede iniciar sesión."
+          : res.invited
+            ? "Invitación enviada por correo y acceso CRM otorgado."
+            : password.trim()
+              ? "Acceso CRM otorgado y contraseña actualizada."
+              : "Acceso CRM otorgado.",
+      );
       setEmail("");
       setDisplayName("");
+      setPassword("");
       load();
     } catch (e) {
       toast.error("No se pudo otorgar acceso: " + (e instanceof Error ? e.message : String(e)));
