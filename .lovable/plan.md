@@ -1,50 +1,58 @@
-## Objetivo
+## Tanda 1 — Chrome del panel admin responsive
 
-Eliminar `CrmSidebar` y rediseñar el chrome del portal CRM con un **header de dos filas + pills de navegación** (Opción C), manteniendo paleta TRAMMOS (cyan/lime/gris).
+Hacer que `Sidebar` + `AppLayout` funcionen bien en celular (vertical y horizontal) sin perder funcionalidad. El portal CRM ya quedó responsive en la tanda anterior.
 
-## Estructura visual
+## Cambios
 
-```text
-┌────────────────────────────────────────────────────────────────────┐
-│  [logo]  TRAMMOS CRM Comercial                  [AG]  [Salir CRM] │
-│          Gestión de clientes y asesores                            │
-│                                                                     │
-│   ▰ Dashboard   ◌ Clientes   ◌ Asesores   ◌ Concesionarios   ◌ Eq.│
-├────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│                       <Outlet /> (ancho completo)                  │
-│                                                                     │
-└────────────────────────────────────────────────────────────────────┘
-```
+### 1. `Sidebar.tsx` — dos modos según viewport
 
-- **Fila 1 (branding):** fondo blanco, borde inferior fino. Logo + "TRAMMOS CRM Comercial" como título grande + subtítulo gris pequeño. A la derecha: avatar con iniciales + botón "Salir del CRM".
-- **Fila 2 (navegación):** pills horizontales. Activa rellena con `bg-primary` (cyan) + texto blanco + acento lime sutil (borde inferior o punto). Inactivas: outline gris, hover suave.
-- **Borde divisor inferior** con gradiente cyan→lime (igual al que ya usa el `SiteFooter`) como firma visual del CRM.
-- En móvil (`< md`): las pills se vuelven scroll horizontal con scrollbar oculto.
+- **`≥ md` (desktop/tablet horizontal):** comportamiento actual. Sidebar fija a la izquierda, expandible/colapsable entre 240px y 68px. Sin cambios funcionales.
+- **`< md` (móvil):** se convierte en **drawer overlay**.
+  - Oculta de la fila normal (`hidden md:flex`).
+  - Se renderiza como `<aside fixed inset-y-0 left-0 z-50 w-[260px]>` que entra desde la izquierda con `translate-x` animado.
+  - Backdrop oscuro semitransparente (`bg-black/50`) que cierra al hacer clic.
+  - Cierre automático al cambiar de ruta (`useEffect` sobre `location.pathname`).
+  - Cierre al presionar `Escape`.
+  - Bloquea el scroll del `body` mientras está abierto.
+- Estado `mobileOpen` se eleva: la sidebar recibe `mobileOpen` y `onClose` por props desde `AppLayout` (necesario para que el botón hamburguesa del header lo controle).
+
+### 2. `AppLayout.tsx` — header compacto + hamburguesa
+
+- Estado local `mobileNavOpen` que controla el drawer.
+- **Hamburguesa** (icono `Menu` de lucide) visible solo en `< md`, a la izquierda del header. Pulsa → `setMobileNavOpen(true)`.
+- Header: padding pasa de `px-6` a `px-3 md:px-6`. Altura se mantiene.
+- `GlobalSearch`: en `< md` se colapsa a un **botón-icono lupa** que abre la búsqueda en overlay (si el componente ya soporta apertura programática, lo controlamos por estado; si no, lo envolvemos en un `Sheet`-like simple).
+- Botón "CRM" (admin): ya tiene `hidden sm:inline-flex`, lo dejamos así. **Además** lo añadimos como ítem dentro del drawer móvil para que admins lo encuentren ahí (sólo si `role === 'admin'`).
+- Avatar: en `< md` mostramos solo iniciales (ya está así).
+- `<main>`: padding pasa de `p-6` a `p-3 sm:p-4 md:p-6`.
+
+### 3. `SiteFooter` — compacto en móvil
+
+- Revisar variantes existentes; si el `full` queda muy alto en móvil, reducir a columnas únicas + tipografías más pequeñas. (Cambios mínimos, solo clases responsivas.)
 
 ## Archivos
 
 **Editar:**
-- `src/components/crm/CrmLayout.tsx` — reescribir para usar el nuevo header de dos filas en lugar de incrustar `<CrmSidebar />`. Estructura: `<div className="min-h-screen flex flex-col">` con `<header>` + `<main className="flex-1">{children}</main>` + `<SiteFooter variant="compact" />`.
-
-**Eliminar:**
-- `src/components/crm/CrmSidebar.tsx` — ya no se usa.
+- `src/components/layout/Sidebar.tsx` — agregar modo drawer móvil, props `mobileOpen` + `onClose`.
+- `src/components/layout/AppLayout.tsx` — agregar hamburguesa, gestionar estado, colapsar GlobalSearch.
+- `src/components/layout/SiteFooter.tsx` — pequeños ajustes responsivos si es necesario.
 
 **Sin tocar:**
-- `src/routes/crm.tsx` y rutas hijas — siguen funcionando con el mismo `<Outlet />`.
-- `AppLayout` del panel admin — no cambia (mantiene su sidebar oscuro).
-- Lógica de auth (`verifyCrmAccess`, `beforeLoad`) — intacta.
+- Lógica de navegación, ítems del menú, auth, roles.
+- Componente CRM (ya hecho).
+- Páginas internas (vienen en tanda 2).
 
 ## Detalles técnicos
 
-- Pills: componente local `<NavPill to label icon active />` que usa `<Link>` de TanStack Router + `useRouterState` para detectar activa.
-- Items: `Dashboard (/crm)`, `Clientes (/crm/clientes)`, `Asesores (/crm/asesores)`, `Concesionarios (/crm/concesionarios)`, `Equipo (/crm/equipo)` — el de Equipo sólo se muestra si `role === 'admin'`.
-- "Salir del CRM" hace `navigate({ to: '/' })` (vuelve al panel admin) si el usuario tiene rol admin; si es CRM-only, hace `signOut()`.
-- Contenedor interno: `max-w-7xl mx-auto px-4 md:px-8 py-6` para que el contenido respire pero use ancho completo cuando hace falta.
+- Breakpoint: `md` (768px). En tablet horizontal (≥768px) ya hay espacio para sidebar fija.
+- Animación: `transition-transform duration-300 ease-out`.
+- Accesibilidad: el drawer usa `role="dialog"`, `aria-modal="true"`, `aria-label="Navegación principal"`. Hamburguesa con `aria-expanded` y `aria-controls`.
+- Sin dependencias nuevas; usar `useState` + `useEffect` + Tailwind. No requiere `Sheet` de shadcn (más simple así).
 
 ## Validación
 
-- Tabs cambian de ruta sin recargar (TanStack `<Link>`).
-- La pill activa se actualiza al navegar.
-- Botón hamburguesa NO se necesita: las pills caben en scroll horizontal incluso en 360px.
-- Build pasa sin warnings (eliminar import de `CrmSidebar`).
+- En 360–414px: la sidebar aparece como drawer al pulsar hamburguesa, se cierra al elegir un ítem o tocar el backdrop.
+- En ≥768px: sidebar visible siempre, hamburguesa oculta, comportamiento idéntico al actual.
+- Header no se desborda en ninguna anchura.
+- El contenido no queda tapado por la sidebar fija en móvil.
+- Atajo `Escape` cierra el drawer.
