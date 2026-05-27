@@ -84,7 +84,7 @@ function LoginPage() {
   const startSplashSequence = (
     displayName: string,
     clientKey: "corona" | "sodimac" | "admin" | "pasajero" | null,
-    target: "/" | "/pasajero",
+    target: "/" | "/pasajero" | "/crm" | null,
   ) => {
     setSplashName(displayName);
     setSplashClient(clientKey);
@@ -94,7 +94,15 @@ function LoginPage() {
     if (clientKey === "pasajero") return;
     timersRef.current.push(setTimeout(() => setProgress(100), 200));
     timersRef.current.push(setTimeout(() => setSplashFadeOut(true), 1800));
-    timersRef.current.push(setTimeout(() => navigate({ to: target }), 2050));
+    timersRef.current.push(setTimeout(() => {
+      if (target) {
+        navigate({ to: target });
+      } else {
+        // Sin target conocido: ocultamos splash y dejamos que el useEffect
+        // redirija según el rol cuando termine de cargar.
+        setShowSplash(false);
+      }
+    }, 2050));
   };
 
   const handleSubmitOperador = async (e: FormEvent) => {
