@@ -206,7 +206,8 @@ function CatalogoPage() {
             </div>
           </div>
         </div>
-      )}
+    </>
+
     </CrmLayout>
   );
 }
