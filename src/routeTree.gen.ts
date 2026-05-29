@@ -32,6 +32,7 @@ import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
+import { Route as CrmPipelineRouteImport } from './routes/crm.pipeline'
 import { Route as CrmLoginRouteImport } from './routes/crm.login'
 import { Route as CrmEquipoRouteImport } from './routes/crm.equipo'
 import { Route as CrmConcesionariosRouteImport } from './routes/crm.concesionarios'
@@ -160,6 +161,11 @@ const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
   path: '/legal/privacidad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrmPipelineRoute = CrmPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => CrmRoute,
+} as any)
 const CrmLoginRoute = CrmLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
+  '/crm/pipeline': typeof CrmPipelineRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -283,6 +290,7 @@ export interface FileRoutesByTo {
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
+  '/crm/pipeline': typeof CrmPipelineRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
+  '/crm/pipeline': typeof CrmPipelineRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -360,6 +369,7 @@ export interface FileRouteTypes {
     | '/crm/concesionarios'
     | '/crm/equipo'
     | '/crm/login'
+    | '/crm/pipeline'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -396,6 +406,7 @@ export interface FileRouteTypes {
     | '/crm/concesionarios'
     | '/crm/equipo'
     | '/crm/login'
+    | '/crm/pipeline'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/crm/concesionarios'
     | '/crm/equipo'
     | '/crm/login'
+    | '/crm/pipeline'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -641,6 +653,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalPrivacidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm/pipeline': {
+      id: '/crm/pipeline'
+      path: '/pipeline'
+      fullPath: '/crm/pipeline'
+      preLoaderRoute: typeof CrmPipelineRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/crm/login': {
       id: '/crm/login'
       path: '/login'
@@ -734,6 +753,7 @@ interface CrmRouteChildren {
   CrmConcesionariosRoute: typeof CrmConcesionariosRoute
   CrmEquipoRoute: typeof CrmEquipoRoute
   CrmLoginRoute: typeof CrmLoginRoute
+  CrmPipelineRoute: typeof CrmPipelineRoute
   CrmIndexRoute: typeof CrmIndexRoute
 }
 
@@ -743,6 +763,7 @@ const CrmRouteChildren: CrmRouteChildren = {
   CrmConcesionariosRoute: CrmConcesionariosRoute,
   CrmEquipoRoute: CrmEquipoRoute,
   CrmLoginRoute: CrmLoginRoute,
+  CrmPipelineRoute: CrmPipelineRoute,
   CrmIndexRoute: CrmIndexRoute,
 }
 
