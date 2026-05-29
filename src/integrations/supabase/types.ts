@@ -493,6 +493,153 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_cotizaciones: {
+        Row: {
+          archivo_url: string | null
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          estado: string
+          id: string
+          monto: number
+          notas: string | null
+          numero: string | null
+          oportunidad_id: string | null
+          updated_at: string
+          vehiculo: string | null
+          vigencia_hasta: string | null
+        }
+        Insert: {
+          archivo_url?: string | null
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          numero?: string | null
+          oportunidad_id?: string | null
+          updated_at?: string
+          vehiculo?: string | null
+          vigencia_hasta?: string | null
+        }
+        Update: {
+          archivo_url?: string | null
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          id?: string
+          monto?: number
+          notas?: string | null
+          numero?: string | null
+          oportunidad_id?: string | null
+          updated_at?: string
+          vehiculo?: string | null
+          vigencia_hasta?: string | null
+        }
+        Relationships: []
+      }
+      crm_interacciones: {
+        Row: {
+          asesor_id: string | null
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          fecha: string
+          id: string
+          nota: string | null
+          oportunidad_id: string | null
+          proximo_seguimiento: string | null
+          tipo: string
+        }
+        Insert: {
+          asesor_id?: string | null
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          fecha?: string
+          id?: string
+          nota?: string | null
+          oportunidad_id?: string | null
+          proximo_seguimiento?: string | null
+          tipo?: string
+        }
+        Update: {
+          asesor_id?: string | null
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          fecha?: string
+          id?: string
+          nota?: string | null
+          oportunidad_id?: string | null
+          proximo_seguimiento?: string | null
+          tipo?: string
+        }
+        Relationships: []
+      }
+      crm_oportunidades: {
+        Row: {
+          asesor_id: string | null
+          cliente_id: string
+          concesionario_id: string | null
+          created_at: string
+          created_by: string | null
+          estado: string
+          fecha_cierre_estimada: string | null
+          fecha_cierre_real: string | null
+          fuente: string | null
+          id: string
+          motivo_perdida: string | null
+          notas: string | null
+          probabilidad: number
+          titulo: string
+          updated_at: string
+          valor_estimado: number
+          vehiculo_interes: string | null
+        }
+        Insert: {
+          asesor_id?: string | null
+          cliente_id: string
+          concesionario_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_cierre_estimada?: string | null
+          fecha_cierre_real?: string | null
+          fuente?: string | null
+          id?: string
+          motivo_perdida?: string | null
+          notas?: string | null
+          probabilidad?: number
+          titulo: string
+          updated_at?: string
+          valor_estimado?: number
+          vehiculo_interes?: string | null
+        }
+        Update: {
+          asesor_id?: string | null
+          cliente_id?: string
+          concesionario_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_cierre_estimada?: string | null
+          fecha_cierre_real?: string | null
+          fuente?: string | null
+          id?: string
+          motivo_perdida?: string | null
+          notas?: string | null
+          probabilidad?: number
+          titulo?: string
+          updated_at?: string
+          valor_estimado?: number
+          vehiculo_interes?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string

@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
+
   LayoutDashboard,
   Users,
   UserCog,
@@ -7,6 +8,7 @@ import {
   ShieldCheck,
   LogOut,
   ArrowLeft,
+  Kanban,
 } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
@@ -23,6 +25,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { to: "/crm", icon: LayoutDashboard, label: "Dashboard", exact: true },
+  { to: "/crm/pipeline", icon: Kanban, label: "Pipeline" },
   { to: "/crm/clientes", icon: Users, label: "Clientes" },
   { to: "/crm/asesores", icon: UserCog, label: "Asesores" },
   { to: "/crm/concesionarios", icon: Building2, label: "Concesionarios" },
