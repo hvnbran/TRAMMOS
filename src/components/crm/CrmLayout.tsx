@@ -11,6 +11,8 @@ import {
   Kanban,
   DollarSign,
   Car,
+  CreditCard,
+  Wallet,
 } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
@@ -30,6 +32,8 @@ const NAV: NavItem[] = [
   { to: "/crm/pipeline", icon: Kanban, label: "Pipeline" },
   { to: "/crm/ventas", icon: DollarSign, label: "Ventas" },
   { to: "/crm/catalogo", icon: Car, label: "Catálogo" },
+  { to: "/crm/creditos", icon: CreditCard, label: "Créditos" },
+  { to: "/crm/capacidades", icon: Wallet, label: "Capacidades" },
   { to: "/crm/clientes", icon: Users, label: "Clientes" },
   { to: "/crm/asesores", icon: UserCog, label: "Asesores" },
   { to: "/crm/concesionarios", icon: Building2, label: "Concesionarios" },
