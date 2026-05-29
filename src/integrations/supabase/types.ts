@@ -364,6 +364,57 @@ export type Database = {
           },
         ]
       }
+      crm_capacidades: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          cupo_asignado: number
+          cupo_total: number
+          documentacion_pendiente: string | null
+          entidad: string
+          estado: string
+          fecha_activacion: string | null
+          fecha_vencimiento: string | null
+          id: string
+          notas: string | null
+          rentabilidad_pct: number | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          cupo_asignado?: number
+          cupo_total?: number
+          documentacion_pendiente?: string | null
+          entidad: string
+          estado?: string
+          fecha_activacion?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          notas?: string | null
+          rentabilidad_pct?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          cupo_asignado?: number
+          cupo_total?: number
+          documentacion_pendiente?: string | null
+          entidad?: string
+          estado?: string
+          fecha_activacion?: string | null
+          fecha_vencimiento?: string | null
+          id?: string
+          notas?: string | null
+          rentabilidad_pct?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_clientes: {
         Row: {
           asesor_id: string | null
@@ -538,6 +589,81 @@ export type Database = {
           updated_at?: string
           vehiculo?: string | null
           vigencia_hasta?: string | null
+        }
+        Relationships: []
+      }
+      crm_creditos: {
+        Row: {
+          asesor_id: string | null
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          cuota_inicial: number
+          cuota_mensual: number | null
+          dias_mora: number
+          entidad: string
+          estado: string
+          fecha_aprobacion: string | null
+          fecha_desembolso: string | null
+          fecha_solicitud: string
+          id: string
+          motivo_rechazo: string | null
+          notas: string | null
+          oportunidad_id: string | null
+          plazo_meses: number | null
+          saldo_pendiente: number | null
+          tasa_mensual: number | null
+          updated_at: string
+          valor_financiado: number
+          venta_id: string | null
+        }
+        Insert: {
+          asesor_id?: string | null
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          cuota_inicial?: number
+          cuota_mensual?: number | null
+          dias_mora?: number
+          entidad: string
+          estado?: string
+          fecha_aprobacion?: string | null
+          fecha_desembolso?: string | null
+          fecha_solicitud?: string
+          id?: string
+          motivo_rechazo?: string | null
+          notas?: string | null
+          oportunidad_id?: string | null
+          plazo_meses?: number | null
+          saldo_pendiente?: number | null
+          tasa_mensual?: number | null
+          updated_at?: string
+          valor_financiado?: number
+          venta_id?: string | null
+        }
+        Update: {
+          asesor_id?: string | null
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          cuota_inicial?: number
+          cuota_mensual?: number | null
+          dias_mora?: number
+          entidad?: string
+          estado?: string
+          fecha_aprobacion?: string | null
+          fecha_desembolso?: string | null
+          fecha_solicitud?: string
+          id?: string
+          motivo_rechazo?: string | null
+          notas?: string | null
+          oportunidad_id?: string | null
+          plazo_meses?: number | null
+          saldo_pendiente?: number | null
+          tasa_mensual?: number | null
+          updated_at?: string
+          valor_financiado?: number
+          venta_id?: string | null
         }
         Relationships: []
       }

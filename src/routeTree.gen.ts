@@ -36,9 +36,11 @@ import { Route as CrmVentasRouteImport } from './routes/crm.ventas'
 import { Route as CrmPipelineRouteImport } from './routes/crm.pipeline'
 import { Route as CrmLoginRouteImport } from './routes/crm.login'
 import { Route as CrmEquipoRouteImport } from './routes/crm.equipo'
+import { Route as CrmCreditosRouteImport } from './routes/crm.creditos'
 import { Route as CrmConcesionariosRouteImport } from './routes/crm.concesionarios'
 import { Route as CrmClientesRouteImport } from './routes/crm.clientes'
 import { Route as CrmCatalogoRouteImport } from './routes/crm.catalogo'
+import { Route as CrmCapacidadesRouteImport } from './routes/crm.capacidades'
 import { Route as CrmAsesoresRouteImport } from './routes/crm.asesores'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
 import { Route as ConductorServicioIdRouteImport } from './routes/conductor.servicio.$id'
@@ -183,6 +185,11 @@ const CrmEquipoRoute = CrmEquipoRouteImport.update({
   path: '/equipo',
   getParentRoute: () => CrmRoute,
 } as any)
+const CrmCreditosRoute = CrmCreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
+  getParentRoute: () => CrmRoute,
+} as any)
 const CrmConcesionariosRoute = CrmConcesionariosRouteImport.update({
   id: '/concesionarios',
   path: '/concesionarios',
@@ -196,6 +203,11 @@ const CrmClientesRoute = CrmClientesRouteImport.update({
 const CrmCatalogoRoute = CrmCatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
+  getParentRoute: () => CrmRoute,
+} as any)
+const CrmCapacidadesRoute = CrmCapacidadesRouteImport.update({
+  id: '/capacidades',
+  path: '/capacidades',
   getParentRoute: () => CrmRoute,
 } as any)
 const CrmAsesoresRoute = CrmAsesoresRouteImport.update({
@@ -261,9 +273,11 @@ export interface FileRoutesByFullPath {
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/capacidades': typeof CrmCapacidadesRoute
   '/crm/catalogo': typeof CrmCatalogoRoute
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
+  '/crm/creditos': typeof CrmCreditosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
@@ -300,9 +314,11 @@ export interface FileRoutesByTo {
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/capacidades': typeof CrmCapacidadesRoute
   '/crm/catalogo': typeof CrmCatalogoRoute
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
+  '/crm/creditos': typeof CrmCreditosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
@@ -341,9 +357,11 @@ export interface FileRoutesById {
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/capacidades': typeof CrmCapacidadesRoute
   '/crm/catalogo': typeof CrmCatalogoRoute
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
+  '/crm/creditos': typeof CrmCreditosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
@@ -383,9 +401,11 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/conductor/login'
     | '/crm/asesores'
+    | '/crm/capacidades'
     | '/crm/catalogo'
     | '/crm/clientes'
     | '/crm/concesionarios'
+    | '/crm/creditos'
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
@@ -422,9 +442,11 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/conductor/login'
     | '/crm/asesores'
+    | '/crm/capacidades'
     | '/crm/catalogo'
     | '/crm/clientes'
     | '/crm/concesionarios'
+    | '/crm/creditos'
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
@@ -462,9 +484,11 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/conductor/login'
     | '/crm/asesores'
+    | '/crm/capacidades'
     | '/crm/catalogo'
     | '/crm/clientes'
     | '/crm/concesionarios'
+    | '/crm/creditos'
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
@@ -705,6 +729,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CrmEquipoRouteImport
       parentRoute: typeof CrmRoute
     }
+    '/crm/creditos': {
+      id: '/crm/creditos'
+      path: '/creditos'
+      fullPath: '/crm/creditos'
+      preLoaderRoute: typeof CrmCreditosRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/crm/concesionarios': {
       id: '/crm/concesionarios'
       path: '/concesionarios'
@@ -724,6 +755,13 @@ declare module '@tanstack/react-router' {
       path: '/catalogo'
       fullPath: '/crm/catalogo'
       preLoaderRoute: typeof CrmCatalogoRouteImport
+      parentRoute: typeof CrmRoute
+    }
+    '/crm/capacidades': {
+      id: '/crm/capacidades'
+      path: '/capacidades'
+      fullPath: '/crm/capacidades'
+      preLoaderRoute: typeof CrmCapacidadesRouteImport
       parentRoute: typeof CrmRoute
     }
     '/crm/asesores': {
@@ -787,9 +825,11 @@ declare module '@tanstack/react-router' {
 
 interface CrmRouteChildren {
   CrmAsesoresRoute: typeof CrmAsesoresRoute
+  CrmCapacidadesRoute: typeof CrmCapacidadesRoute
   CrmCatalogoRoute: typeof CrmCatalogoRoute
   CrmClientesRoute: typeof CrmClientesRoute
   CrmConcesionariosRoute: typeof CrmConcesionariosRoute
+  CrmCreditosRoute: typeof CrmCreditosRoute
   CrmEquipoRoute: typeof CrmEquipoRoute
   CrmLoginRoute: typeof CrmLoginRoute
   CrmPipelineRoute: typeof CrmPipelineRoute
@@ -799,9 +839,11 @@ interface CrmRouteChildren {
 
 const CrmRouteChildren: CrmRouteChildren = {
   CrmAsesoresRoute: CrmAsesoresRoute,
+  CrmCapacidadesRoute: CrmCapacidadesRoute,
   CrmCatalogoRoute: CrmCatalogoRoute,
   CrmClientesRoute: CrmClientesRoute,
   CrmConcesionariosRoute: CrmConcesionariosRoute,
+  CrmCreditosRoute: CrmCreditosRoute,
   CrmEquipoRoute: CrmEquipoRoute,
   CrmLoginRoute: CrmLoginRoute,
   CrmPipelineRoute: CrmPipelineRoute,
