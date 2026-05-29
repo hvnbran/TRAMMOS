@@ -37,6 +37,7 @@ import { Route as CrmLoginRouteImport } from './routes/crm.login'
 import { Route as CrmEquipoRouteImport } from './routes/crm.equipo'
 import { Route as CrmConcesionariosRouteImport } from './routes/crm.concesionarios'
 import { Route as CrmClientesRouteImport } from './routes/crm.clientes'
+import { Route as CrmCatalogoRouteImport } from './routes/crm.catalogo'
 import { Route as CrmAsesoresRouteImport } from './routes/crm.asesores'
 import { Route as ConductorLoginRouteImport } from './routes/conductor.login'
 import { Route as ConductorServicioIdRouteImport } from './routes/conductor.servicio.$id'
@@ -186,6 +187,11 @@ const CrmClientesRoute = CrmClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => CrmRoute,
 } as any)
+const CrmCatalogoRoute = CrmCatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => CrmRoute,
+} as any)
 const CrmAsesoresRoute = CrmAsesoresRouteImport.update({
   id: '/asesores',
   path: '/asesores',
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/catalogo': typeof CrmCatalogoRoute
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/equipo': typeof CrmEquipoRoute
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/catalogo': typeof CrmCatalogoRoute
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/equipo': typeof CrmEquipoRoute
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   '/vehiculos': typeof VehiculosRoute
   '/conductor/login': typeof ConductorLoginRoute
   '/crm/asesores': typeof CrmAsesoresRoute
+  '/crm/catalogo': typeof CrmCatalogoRoute
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/equipo': typeof CrmEquipoRoute
@@ -365,6 +374,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/conductor/login'
     | '/crm/asesores'
+    | '/crm/catalogo'
     | '/crm/clientes'
     | '/crm/concesionarios'
     | '/crm/equipo'
@@ -402,6 +412,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/conductor/login'
     | '/crm/asesores'
+    | '/crm/catalogo'
     | '/crm/clientes'
     | '/crm/concesionarios'
     | '/crm/equipo'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/vehiculos'
     | '/conductor/login'
     | '/crm/asesores'
+    | '/crm/catalogo'
     | '/crm/clientes'
     | '/crm/concesionarios'
     | '/crm/equipo'
@@ -688,6 +700,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CrmClientesRouteImport
       parentRoute: typeof CrmRoute
     }
+    '/crm/catalogo': {
+      id: '/crm/catalogo'
+      path: '/catalogo'
+      fullPath: '/crm/catalogo'
+      preLoaderRoute: typeof CrmCatalogoRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/crm/asesores': {
       id: '/crm/asesores'
       path: '/asesores'
@@ -749,6 +768,7 @@ declare module '@tanstack/react-router' {
 
 interface CrmRouteChildren {
   CrmAsesoresRoute: typeof CrmAsesoresRoute
+  CrmCatalogoRoute: typeof CrmCatalogoRoute
   CrmClientesRoute: typeof CrmClientesRoute
   CrmConcesionariosRoute: typeof CrmConcesionariosRoute
   CrmEquipoRoute: typeof CrmEquipoRoute
@@ -759,6 +779,7 @@ interface CrmRouteChildren {
 
 const CrmRouteChildren: CrmRouteChildren = {
   CrmAsesoresRoute: CrmAsesoresRoute,
+  CrmCatalogoRoute: CrmCatalogoRoute,
   CrmClientesRoute: CrmClientesRoute,
   CrmConcesionariosRoute: CrmConcesionariosRoute,
   CrmEquipoRoute: CrmEquipoRoute,
