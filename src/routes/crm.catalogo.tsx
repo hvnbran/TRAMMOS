@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Pencil, Trash2, X, Car } from "lucide-react";
 import { toast } from "sonner";
 
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/crm/catalogo")({
   component: CatalogoPage,
