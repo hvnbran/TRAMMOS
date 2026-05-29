@@ -97,7 +97,8 @@ function CatalogoPage() {
   }
 
   return (
-    <CrmLayout>
+    <>
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
