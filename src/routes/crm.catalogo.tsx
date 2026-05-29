@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CrmLayout } from "@/components/crm/CrmLayout";
 import { Plus, Pencil, Trash2, X, Car } from "lucide-react";
+import { toast } from "sonner";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/crm/catalogo")({
