@@ -640,6 +640,138 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_vehiculos_catalogo: {
+        Row: {
+          activo: boolean
+          capacidad_pasajeros: number | null
+          costo_referencia: number
+          created_at: string
+          created_by: string | null
+          foto_url: string | null
+          id: string
+          linea: string
+          marca: string
+          modelo: string | null
+          notas: string | null
+          precio_referencia: number
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          activo?: boolean
+          capacidad_pasajeros?: number | null
+          costo_referencia?: number
+          created_at?: string
+          created_by?: string | null
+          foto_url?: string | null
+          id?: string
+          linea: string
+          marca: string
+          modelo?: string | null
+          notas?: string | null
+          precio_referencia?: number
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          activo?: boolean
+          capacidad_pasajeros?: number | null
+          costo_referencia?: number
+          created_at?: string
+          created_by?: string | null
+          foto_url?: string | null
+          id?: string
+          linea?: string
+          marca?: string
+          modelo?: string | null
+          notas?: string | null
+          precio_referencia?: number
+          updated_at?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
+      crm_ventas: {
+        Row: {
+          asesor_id: string | null
+          cliente_id: string
+          comision_asesor: number
+          comision_asesor_pct: number | null
+          comision_trammos: number
+          comision_trammos_pct: number | null
+          concesionario_id: string | null
+          costo: number
+          created_at: string
+          created_by: string | null
+          estado: string
+          fecha_entrega: string | null
+          fecha_venta: string
+          forma_pago: string | null
+          id: string
+          margen: number | null
+          notas: string | null
+          numero: string | null
+          oportunidad_id: string | null
+          placa: string | null
+          precio_cliente: number
+          updated_at: string
+          vehiculo_catalogo_id: string | null
+          vehiculo_descripcion: string
+        }
+        Insert: {
+          asesor_id?: string | null
+          cliente_id: string
+          comision_asesor?: number
+          comision_asesor_pct?: number | null
+          comision_trammos?: number
+          comision_trammos_pct?: number | null
+          concesionario_id?: string | null
+          costo?: number
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_entrega?: string | null
+          fecha_venta?: string
+          forma_pago?: string | null
+          id?: string
+          margen?: number | null
+          notas?: string | null
+          numero?: string | null
+          oportunidad_id?: string | null
+          placa?: string | null
+          precio_cliente?: number
+          updated_at?: string
+          vehiculo_catalogo_id?: string | null
+          vehiculo_descripcion: string
+        }
+        Update: {
+          asesor_id?: string | null
+          cliente_id?: string
+          comision_asesor?: number
+          comision_asesor_pct?: number | null
+          comision_trammos?: number
+          comision_trammos_pct?: number | null
+          concesionario_id?: string | null
+          costo?: number
+          created_at?: string
+          created_by?: string | null
+          estado?: string
+          fecha_entrega?: string | null
+          fecha_venta?: string
+          forma_pago?: string | null
+          id?: string
+          margen?: number | null
+          notas?: string | null
+          numero?: string | null
+          oportunidad_id?: string | null
+          placa?: string | null
+          precio_cliente?: number
+          updated_at?: string
+          vehiculo_catalogo_id?: string | null
+          vehiculo_descripcion?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
