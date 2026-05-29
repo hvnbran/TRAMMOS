@@ -32,6 +32,7 @@ import { Route as ConductorIndexRouteImport } from './routes/conductor.index'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as LegalTerminosRouteImport } from './routes/legal.terminos'
 import { Route as LegalPrivacidadRouteImport } from './routes/legal.privacidad'
+import { Route as CrmVentasRouteImport } from './routes/crm.ventas'
 import { Route as CrmPipelineRouteImport } from './routes/crm.pipeline'
 import { Route as CrmLoginRouteImport } from './routes/crm.login'
 import { Route as CrmEquipoRouteImport } from './routes/crm.equipo'
@@ -162,6 +163,11 @@ const LegalPrivacidadRoute = LegalPrivacidadRouteImport.update({
   path: '/legal/privacidad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrmVentasRoute = CrmVentasRouteImport.update({
+  id: '/ventas',
+  path: '/ventas',
+  getParentRoute: () => CrmRoute,
+} as any)
 const CrmPipelineRoute = CrmPipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
@@ -261,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
+  '/crm/ventas': typeof CrmVentasRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -299,6 +306,7 @@ export interface FileRoutesByTo {
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
+  '/crm/ventas': typeof CrmVentasRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
+  '/crm/ventas': typeof CrmVentasRoute
   '/legal/privacidad': typeof LegalPrivacidadRoute
   '/legal/terminos': typeof LegalTerminosRoute
   '/r/$token': typeof RTokenRoute
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
+    | '/crm/ventas'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
+    | '/crm/ventas'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
+    | '/crm/ventas'
     | '/legal/privacidad'
     | '/legal/terminos'
     | '/r/$token'
@@ -665,6 +677,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalPrivacidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crm/ventas': {
+      id: '/crm/ventas'
+      path: '/ventas'
+      fullPath: '/crm/ventas'
+      preLoaderRoute: typeof CrmVentasRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/crm/pipeline': {
       id: '/crm/pipeline'
       path: '/pipeline'
@@ -774,6 +793,7 @@ interface CrmRouteChildren {
   CrmEquipoRoute: typeof CrmEquipoRoute
   CrmLoginRoute: typeof CrmLoginRoute
   CrmPipelineRoute: typeof CrmPipelineRoute
+  CrmVentasRoute: typeof CrmVentasRoute
   CrmIndexRoute: typeof CrmIndexRoute
 }
 
@@ -785,6 +805,7 @@ const CrmRouteChildren: CrmRouteChildren = {
   CrmEquipoRoute: CrmEquipoRoute,
   CrmLoginRoute: CrmLoginRoute,
   CrmPipelineRoute: CrmPipelineRoute,
+  CrmVentasRoute: CrmVentasRoute,
   CrmIndexRoute: CrmIndexRoute,
 }
 
@@ -824,3 +845,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
