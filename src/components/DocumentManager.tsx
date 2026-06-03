@@ -460,8 +460,8 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
         })}
       </div>
 
-      {/* Lista de documentos */}
-      <div className="rounded-md border border-border">
+      {/* Lista de documentos - tabla horizontal */}
+      <div className="rounded-md border border-border overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -471,74 +471,51 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
             Sin documentos cargados.
           </div>
         ) : (
-          <ul className="divide-y divide-border">
-            {docs.map((d) => {
-              const tipoDef = tipos.find((t) => t.value === d.tipo);
-              const label = tipoDef?.label ?? d.tipo;
-              return (
-                <li key={d.id} className="px-3 py-2 text-xs space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{label}</p>
-                      <p className="text-muted-foreground truncate">
-                        {d.file_name} · {formatSize(d.size_bytes)}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => openViewer(d)}
-                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary"
-                      title="Ver"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDownload(d)}
-                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary"
-                      title="Descargar"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => tryExtractDate(d.id, d.storage_path, d.mime_type ?? "", d.tipo)}
-                      disabled={analyzing === d.id}
-                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-primary disabled:opacity-50"
-                      title="Detectar fecha automáticamente"
-                    >
-                      {analyzing === d.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(d)}
-                      className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-destructive"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex items-center flex-wrap gap-2 pl-6">
-                    {tiposSinVenc.has(d.tipo) ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                        <Calendar className="h-2.5 w-2.5" /> No vence
-                      </span>
-                    ) : (
-                      <VencimientoBadge fecha={d.fecha_vencimiento} />
-                    )}
-                    {d.numero_documento && (
-                      <span className="text-[10px] text-muted-foreground">
-                        N°: {d.numero_documento}
-                      </span>
-                    )}
-                    {d.verificado && (
-                      <span className="text-[10px] text-success inline-flex items-center gap-0.5">
-                        <Sparkles className="h-2.5 w-2.5" /> IA
-                      </span>
-                    )}
-                    {!tiposSinVenc.has(d.tipo) && (
-                      editingDate === d.id ? (
+          <table className="w-full text-xs">
+            <thead className="bg-muted/50 text-muted-foreground">
+              <tr className="text-left">
+                <th className="px-2 py-2 font-medium w-10">#</th>
+                <th className="px-2 py-2 font-medium w-10">Detalle</th>
+                <th className="px-2 py-2 font-medium">Nombre de Documento</th>
+                <th className="px-2 py-2 font-medium whitespace-nowrap">Válido hasta</th>
+                <th className="px-2 py-2 font-medium">Descarga</th>
+                <th className="px-2 py-2 font-medium">Estado</th>
+                <th className="px-2 py-2 font-medium text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {docs.map((d, idx) => {
+                const tipoDef = tipos.find((t) => t.value === d.tipo);
+                const label = tipoDef?.label ?? d.tipo;
+                const sinVenc = tiposSinVenc.has(d.tipo);
+                return (
+                  <tr key={d.id} className="hover:bg-muted/30 align-middle">
+                    <td className="px-2 py-2 text-muted-foreground">{idx + 1}</td>
+                    <td className="px-2 py-2">
+                      <button
+                        onClick={() => openViewer(d)}
+                        className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-primary"
+                        title="Ver"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{label}</p>
+                          <p className="text-muted-foreground truncate text-[10px]">
+                            {d.file_name} · {formatSize(d.size_bytes)}
+                            {d.numero_documento ? ` · N° ${d.numero_documento}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      {sinVenc ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : editingDate === d.id ? (
                         <div className="flex items-center gap-1">
                           <input
                             type="date"
@@ -565,17 +542,67 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
                             setEditingDate(d.id);
                             setDateValue(d.fecha_vencimiento ?? "");
                           }}
-                          className="text-[10px] text-primary hover:underline"
+                          className="text-primary hover:underline"
+                          title="Editar fecha"
                         >
-                          {d.fecha_vencimiento ? "Editar fecha" : "Agregar vencimiento"}
+                          {d.fecha_vencimiento
+                            ? new Date(d.fecha_vencimiento).toLocaleDateString("es-CO")
+                            : "Agregar"}
                         </button>
-                      )
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      )}
+                    </td>
+                    <td className="px-2 py-2">
+                      <button
+                        onClick={() => handleDownload(d)}
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        <Download className="h-3 w-3" /> Descargar
+                      </button>
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center flex-wrap gap-1">
+                        {sinVenc ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            <Calendar className="h-2.5 w-2.5" /> No vence
+                          </span>
+                        ) : (
+                          <VencimientoBadge fecha={d.fecha_vencimiento} />
+                        )}
+                        {d.verificado && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success inline-flex items-center gap-0.5">
+                            <Sparkles className="h-2.5 w-2.5" /> Verificado
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => tryExtractDate(d.id, d.storage_path, d.mime_type ?? "", d.tipo)}
+                          disabled={analyzing === d.id}
+                          className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-primary disabled:opacity-50"
+                          title="Detectar fecha automáticamente"
+                        >
+                          {analyzing === d.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(d)}
+                          className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-destructive"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
