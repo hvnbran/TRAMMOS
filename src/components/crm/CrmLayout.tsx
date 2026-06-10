@@ -13,6 +13,7 @@ import {
   Car,
   CreditCard,
   Wallet,
+  Cake,
 } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
