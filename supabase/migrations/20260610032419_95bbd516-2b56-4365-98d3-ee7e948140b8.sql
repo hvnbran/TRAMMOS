@@ -1,0 +1,1 @@
+CREATE POLICY "crm_view_conductores" ON public.conductores FOR SELECT TO authenticated USING (public.has_crm_access(auth.uid()));
