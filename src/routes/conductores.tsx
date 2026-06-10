@@ -127,6 +127,7 @@ function Conductores() {
       licencia: form.licencia,
       categoria_lic: form.categoria_lic,
       vence_licencia: form.vence_licencia || null,
+      fecha_nacimiento: form.fecha_nacimiento || null,
       estado: isVencido(form.vence_licencia || null) ? "Vencido" : form.estado,
       clientes: form.clientes,
       cliente: form.clientes[0] ?? null,
