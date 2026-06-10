@@ -36,7 +36,7 @@ interface ConductorRow {
 const EMPTY_FORM = {
   clientes: [] as ("corona" | "sodimac")[],
   nombre: "", cedula: "", telefono: "", licencia: "", categoria_lic: "C1",
-  estado: "Activo", vence_licencia: "",
+  estado: "Activo", vence_licencia: "", fecha_nacimiento: "",
 };
 
 function isVencido(fechaISO: string | null): boolean {
@@ -100,6 +100,7 @@ function Conductores() {
       categoria_lic: c.categoria_lic ?? "C1",
       estado: c.estado,
       vence_licencia: c.vence_licencia ?? "",
+      fecha_nacimiento: (c as any).fecha_nacimiento ?? "",
     });
     setShowForm(true);
   }
@@ -126,6 +127,7 @@ function Conductores() {
       licencia: form.licencia,
       categoria_lic: form.categoria_lic,
       vence_licencia: form.vence_licencia || null,
+      fecha_nacimiento: form.fecha_nacimiento || null,
       estado: isVencido(form.vence_licencia || null) ? "Vencido" : form.estado,
       clientes: form.clientes,
       cliente: form.clientes[0] ?? null,
@@ -214,6 +216,7 @@ function Conductores() {
                 </select>
               </div>
               <div><label className="text-xs text-muted-foreground">Vence licencia</label><input type="date" value={form.vence_licencia} onChange={(e) => setForm({ ...form, vence_licencia: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Fecha de nacimiento</label><input type="date" value={form.fecha_nacimiento} onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                   {["Activo", "Suspendido", "Vencido"].map((x) => <option key={x}>{x}</option>)}

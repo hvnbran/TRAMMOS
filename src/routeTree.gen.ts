@@ -36,6 +36,7 @@ import { Route as CrmVentasRouteImport } from './routes/crm.ventas'
 import { Route as CrmPipelineRouteImport } from './routes/crm.pipeline'
 import { Route as CrmLoginRouteImport } from './routes/crm.login'
 import { Route as CrmEquipoRouteImport } from './routes/crm.equipo'
+import { Route as CrmCumpleanosRouteImport } from './routes/crm.cumpleanos'
 import { Route as CrmCreditosRouteImport } from './routes/crm.creditos'
 import { Route as CrmConcesionariosRouteImport } from './routes/crm.concesionarios'
 import { Route as CrmClientesRouteImport } from './routes/crm.clientes'
@@ -185,6 +186,11 @@ const CrmEquipoRoute = CrmEquipoRouteImport.update({
   path: '/equipo',
   getParentRoute: () => CrmRoute,
 } as any)
+const CrmCumpleanosRoute = CrmCumpleanosRouteImport.update({
+  id: '/cumpleanos',
+  path: '/cumpleanos',
+  getParentRoute: () => CrmRoute,
+} as any)
 const CrmCreditosRoute = CrmCreditosRouteImport.update({
   id: '/creditos',
   path: '/creditos',
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/creditos': typeof CrmCreditosRoute
+  '/crm/cumpleanos': typeof CrmCumpleanosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/creditos': typeof CrmCreditosRoute
+  '/crm/cumpleanos': typeof CrmCumpleanosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/crm/clientes': typeof CrmClientesRoute
   '/crm/concesionarios': typeof CrmConcesionariosRoute
   '/crm/creditos': typeof CrmCreditosRoute
+  '/crm/cumpleanos': typeof CrmCumpleanosRoute
   '/crm/equipo': typeof CrmEquipoRoute
   '/crm/login': typeof CrmLoginRoute
   '/crm/pipeline': typeof CrmPipelineRoute
@@ -406,6 +415,7 @@ export interface FileRouteTypes {
     | '/crm/clientes'
     | '/crm/concesionarios'
     | '/crm/creditos'
+    | '/crm/cumpleanos'
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
@@ -447,6 +457,7 @@ export interface FileRouteTypes {
     | '/crm/clientes'
     | '/crm/concesionarios'
     | '/crm/creditos'
+    | '/crm/cumpleanos'
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/crm/clientes'
     | '/crm/concesionarios'
     | '/crm/creditos'
+    | '/crm/cumpleanos'
     | '/crm/equipo'
     | '/crm/login'
     | '/crm/pipeline'
@@ -729,6 +741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CrmEquipoRouteImport
       parentRoute: typeof CrmRoute
     }
+    '/crm/cumpleanos': {
+      id: '/crm/cumpleanos'
+      path: '/cumpleanos'
+      fullPath: '/crm/cumpleanos'
+      preLoaderRoute: typeof CrmCumpleanosRouteImport
+      parentRoute: typeof CrmRoute
+    }
     '/crm/creditos': {
       id: '/crm/creditos'
       path: '/creditos'
@@ -830,6 +849,7 @@ interface CrmRouteChildren {
   CrmClientesRoute: typeof CrmClientesRoute
   CrmConcesionariosRoute: typeof CrmConcesionariosRoute
   CrmCreditosRoute: typeof CrmCreditosRoute
+  CrmCumpleanosRoute: typeof CrmCumpleanosRoute
   CrmEquipoRoute: typeof CrmEquipoRoute
   CrmLoginRoute: typeof CrmLoginRoute
   CrmPipelineRoute: typeof CrmPipelineRoute
@@ -844,6 +864,7 @@ const CrmRouteChildren: CrmRouteChildren = {
   CrmClientesRoute: CrmClientesRoute,
   CrmConcesionariosRoute: CrmConcesionariosRoute,
   CrmCreditosRoute: CrmCreditosRoute,
+  CrmCumpleanosRoute: CrmCumpleanosRoute,
   CrmEquipoRoute: CrmEquipoRoute,
   CrmLoginRoute: CrmLoginRoute,
   CrmPipelineRoute: CrmPipelineRoute,

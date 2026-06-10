@@ -235,6 +235,7 @@ export type Database = {
           cumplimiento: number | null
           empresa_id: string | null
           estado: string
+          fecha_nacimiento: string | null
           foto_url: string | null
           id: string
           licencia: string | null
@@ -259,6 +260,7 @@ export type Database = {
           cumplimiento?: number | null
           empresa_id?: string | null
           estado?: string
+          fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
           licencia?: string | null
@@ -283,6 +285,7 @@ export type Database = {
           cumplimiento?: number | null
           empresa_id?: string | null
           estado?: string
+          fecha_nacimiento?: string | null
           foto_url?: string | null
           id?: string
           licencia?: string | null
