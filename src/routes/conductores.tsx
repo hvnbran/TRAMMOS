@@ -216,6 +216,7 @@ function Conductores() {
                 </select>
               </div>
               <div><label className="text-xs text-muted-foreground">Vence licencia</label><input type="date" value={form.vence_licencia} onChange={(e) => setForm({ ...form, vence_licencia: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs text-muted-foreground">Fecha de nacimiento</label><input type="date" value={form.fecha_nacimiento} onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                   {["Activo", "Suspendido", "Vencido"].map((x) => <option key={x}>{x}</option>)}
