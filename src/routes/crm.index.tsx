@@ -15,6 +15,14 @@ type ClienteLite = {
   telefono: string | null;
 };
 
+type CumpleItem = {
+  id: string;
+  nombre: string;
+  telefono: string | null;
+  dias: number;
+  origen: "cliente" | "conductor";
+};
+
 function diasParaCumple(fecha: string | null): number | null {
   if (!fecha) return null;
   const hoy = new Date();
@@ -27,6 +35,7 @@ function diasParaCumple(fecha: string | null): number | null {
 
 function CrmDashboard() {
   const [clientes, setClientes] = useState<ClienteLite[]>([]);
+  const [conductoresCumple, setConductoresCumple] = useState<CumpleItem[]>([]);
   const [asesoresCount, setAsesoresCount] = useState(0);
   const [concesionariosCount, setConcesionariosCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -34,12 +43,23 @@ function CrmDashboard() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [cli, ase, con] = await Promise.all([
+      const [cli, ase, con, conductores] = await Promise.all([
         supabase.from("crm_clientes").select("id,nombre,temperatura,fecha_nacimiento,telefono"),
         supabase.from("crm_asesores").select("id", { count: "exact", head: true }),
         supabase.from("crm_concesionarios").select("id", { count: "exact", head: true }),
+        supabase.from("conductores").select("id,nombre,fecha_nacimiento,telefono"),
       ]);
       setClientes((cli.data ?? []) as ClienteLite[]);
+      const cd: CumpleItem[] = ((conductores.data ?? []) as any[])
+        .filter((c) => c.fecha_nacimiento)
+        .map((c) => ({
+          id: c.id,
+          nombre: c.nombre,
+          telefono: c.telefono,
+          dias: diasParaCumple(c.fecha_nacimiento) ?? 999,
+          origen: "conductor" as const,
+        }));
+      setConductoresCumple(cd);
       setAsesoresCount(ase.count ?? 0);
       setConcesionariosCount(con.count ?? 0);
       setLoading(false);
