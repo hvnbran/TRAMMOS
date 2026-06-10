@@ -670,6 +670,42 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_cumpleanos_manual: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          fecha_nacimiento: string
+          id: string
+          nombre: string
+          notas: string | null
+          relacion: string | null
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          fecha_nacimiento: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          relacion?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          fecha_nacimiento?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          relacion?: string | null
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_interacciones: {
         Row: {
           asesor_id: string | null
