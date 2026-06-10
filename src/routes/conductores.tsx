@@ -100,6 +100,7 @@ function Conductores() {
       categoria_lic: c.categoria_lic ?? "C1",
       estado: c.estado,
       vence_licencia: c.vence_licencia ?? "",
+      fecha_nacimiento: (c as any).fecha_nacimiento ?? "",
     });
     setShowForm(true);
   }
