@@ -36,7 +36,7 @@ interface ConductorRow {
 const EMPTY_FORM = {
   clientes: [] as ("corona" | "sodimac")[],
   nombre: "", cedula: "", telefono: "", licencia: "", categoria_lic: "C1",
-  estado: "Activo", vence_licencia: "",
+  estado: "Activo", vence_licencia: "", fecha_nacimiento: "",
 };
 
 function isVencido(fechaISO: string | null): boolean {
