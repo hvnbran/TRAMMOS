@@ -36,6 +36,7 @@ const NAV: NavItem[] = [
   { to: "/crm/creditos", icon: CreditCard, label: "Créditos" },
   { to: "/crm/capacidades", icon: Wallet, label: "Capacidades" },
   { to: "/crm/clientes", icon: Users, label: "Clientes" },
+  { to: "/crm/cumpleanos", icon: Cake, label: "Cumpleaños" },
   { to: "/crm/asesores", icon: UserCog, label: "Asesores" },
   { to: "/crm/concesionarios", icon: Building2, label: "Concesionarios" },
   { to: "/crm/equipo", icon: ShieldCheck, label: "Equipo", adminOnly: true },
