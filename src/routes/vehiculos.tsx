@@ -465,16 +465,7 @@ function Vehiculos() {
                     {(asignacionesPorVehiculo[v.id] ?? 0) === 0 && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setExpanded(v.id);
-                          // Scroll suave al panel después de expandir
-                          setTimeout(() => {
-                            document.getElementById(`conductores-${v.id}`)?.scrollIntoView({
-                              behavior: "smooth",
-                              block: "center",
-                            });
-                          }, 100);
-                        }}
+                        onClick={() => setExpanded(v.id)}
                         className="mt-3 w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-warning/40 bg-warning/10 hover:bg-warning/15 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2 min-w-0">
@@ -487,36 +478,59 @@ function Vehiculos() {
                         <UserPlus className="h-3.5 w-3.5 text-warning shrink-0" />
                       </button>
                     )}
-                  <button
-                    onClick={() => setExpanded(expanded === v.id ? null : v.id)}
-                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    Documentos
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === v.id ? "rotate-180" : ""}`} />
-                  </button>
-                  {expanded === v.id && (
-                    <div className="mt-3 pt-3 border-t border-border space-y-4">
-                      <ChecklistANS vehiculoId={v.id} />
-                      <div id={`conductores-${v.id}`} className="pt-3 border-t border-border scroll-mt-20">
-                        <VehiculoConductores vehiculoId={v.id} cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"} />
-                      </div>
-                      <div className="pt-3 border-t border-border">
-                        <DocumentManager
-                          kind="vehiculo"
-                          entityId={v.id}
-                          cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
-                          tipos={TIPOS_VEHICULO}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    <button
+                      onClick={() => setExpanded(v.id)}
+                      className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Ver documentos y conductores
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+
+        <Dialog open={!!expanded} onOpenChange={(o) => !o && setExpanded(null)}>
+          <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
+            {(() => {
+              const v = items.find((x) => x.id === expanded);
+              if (!v) return null;
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Car className="h-5 w-5 text-primary" />
+                      <span className="font-bold">{v.placa}</span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {v.marca} {v.linea} {v.modelo}
+                      </span>
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4 space-y-6">
+                    <ChecklistANS vehiculoId={v.id} />
+                    <div className="pt-4 border-t border-border">
+                      <VehiculoConductores
+                        vehiculoId={v.id}
+                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
+                      />
+                    </div>
+                    <div className="pt-4 border-t border-border">
+                      <DocumentManager
+                        kind="vehiculo"
+                        entityId={v.id}
+                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
+                        tipos={TIPOS_VEHICULO}
+                      />
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AppLayout>
   );
