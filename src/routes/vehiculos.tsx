@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Trash2, Car, FileText, ChevronDown, Pencil, AlertTriangle, Camera, Loader2, UserPlus, Search, X } from "lucide-react";
+import { Plus, Trash2, Car, FileText, Pencil, AlertTriangle, Camera, Loader2, UserPlus, Search, X, Maximize2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -382,20 +383,32 @@ function Vehiculos() {
 
                   {/* Foto del vehículo - aspect ratio fijo para homogeneidad */}
                   <div className="relative aspect-[16/9] bg-secondary/40 group">
-                    {v.foto_url ? (
-                      <img
-                        src={v.foto_url}
-                        alt={`Vehículo ${v.placa}`}
-                        className={`w-full h-full object-cover ${vencido ? "opacity-60 grayscale" : ""}`}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
-                        <Car className="h-12 w-12" />
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(v.id)}
+                      className="absolute inset-0 w-full h-full focus:outline-none focus:ring-2 focus:ring-primary"
+                      title="Ver documentos y conductores"
+                    >
+                      {v.foto_url ? (
+                        <img
+                          src={v.foto_url}
+                          alt={`Vehículo ${v.placa}`}
+                          className={`w-full h-full object-cover ${vencido ? "opacity-60 grayscale" : ""}`}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+                          <Car className="h-12 w-12" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 px-3 py-1.5 rounded-full">
+                          <Maximize2 className="h-3.5 w-3.5" /> Ver detalles
+                        </span>
                       </div>
-                    )}
+                    </button>
                     <label
                       htmlFor={`foto-${v.id}`}
-                      className="absolute bottom-2 right-2 bg-background/90 hover:bg-background border border-border rounded-md px-2 py-1 text-[11px] font-medium flex items-center gap-1 cursor-pointer shadow-sm transition-opacity opacity-0 group-hover:opacity-100"
+                      className="absolute bottom-2 right-2 z-10 bg-background/90 hover:bg-background border border-border rounded-md px-2 py-1 text-[11px] font-medium flex items-center gap-1 cursor-pointer shadow-sm transition-opacity opacity-0 group-hover:opacity-100"
                       title={v.foto_url ? "Cambiar foto" : "Subir foto"}
                     >
                       {uploadingId === v.id ? (
@@ -417,6 +430,7 @@ function Vehiculos() {
                       }}
                     />
                   </div>
+
 
                   <div className="p-4 flex-1 flex flex-col">
                     <div className="flex items-start justify-between">
@@ -451,16 +465,7 @@ function Vehiculos() {
                     {(asignacionesPorVehiculo[v.id] ?? 0) === 0 && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setExpanded(v.id);
-                          // Scroll suave al panel después de expandir
-                          setTimeout(() => {
-                            document.getElementById(`conductores-${v.id}`)?.scrollIntoView({
-                              behavior: "smooth",
-                              block: "center",
-                            });
-                          }, 100);
-                        }}
+                        onClick={() => setExpanded(v.id)}
                         className="mt-3 w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-warning/40 bg-warning/10 hover:bg-warning/15 text-left transition-colors"
                       >
                         <div className="flex items-center gap-2 min-w-0">
@@ -473,36 +478,59 @@ function Vehiculos() {
                         <UserPlus className="h-3.5 w-3.5 text-warning shrink-0" />
                       </button>
                     )}
-                  <button
-                    onClick={() => setExpanded(expanded === v.id ? null : v.id)}
-                    className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    Documentos
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === v.id ? "rotate-180" : ""}`} />
-                  </button>
-                  {expanded === v.id && (
-                    <div className="mt-3 pt-3 border-t border-border space-y-4">
-                      <ChecklistANS vehiculoId={v.id} />
-                      <div id={`conductores-${v.id}`} className="pt-3 border-t border-border scroll-mt-20">
-                        <VehiculoConductores vehiculoId={v.id} cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"} />
-                      </div>
-                      <div className="pt-3 border-t border-border">
-                        <DocumentManager
-                          kind="vehiculo"
-                          entityId={v.id}
-                          cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
-                          tipos={TIPOS_VEHICULO}
-                        />
-                      </div>
-                    </div>
-                  )}
+                    <button
+                      onClick={() => setExpanded(v.id)}
+                      className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Ver documentos y conductores
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+
+        <Dialog open={!!expanded} onOpenChange={(o) => !o && setExpanded(null)}>
+          <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto">
+            {(() => {
+              const v = items.find((x) => x.id === expanded);
+              if (!v) return null;
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Car className="h-5 w-5 text-primary" />
+                      <span className="font-bold">{v.placa}</span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {v.marca} {v.linea} {v.modelo}
+                      </span>
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4 space-y-6">
+                    <ChecklistANS vehiculoId={v.id} />
+                    <div className="pt-4 border-t border-border">
+                      <VehiculoConductores
+                        vehiculoId={v.id}
+                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
+                      />
+                    </div>
+                    <div className="pt-4 border-t border-border">
+                      <DocumentManager
+                        kind="vehiculo"
+                        entityId={v.id}
+                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
+                        tipos={TIPOS_VEHICULO}
+                      />
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AppLayout>
   );
