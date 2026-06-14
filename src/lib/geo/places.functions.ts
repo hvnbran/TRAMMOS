@@ -1,0 +1,126 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
+
+const AutocompleteInput = z.object({
+  input: z.string().min(1).max(200),
+  lat: z.number().optional(),
+  lon: z.number().optional(),
+  sessionToken: z.string().optional(),
+});
+
+const DetailsInput = z.object({
+  placeId: z.string().min(1).max(300),
+  sessionToken: z.string().optional(),
+});
+
+const ReverseInput = z.object({
+  lat: z.number(),
+  lon: z.number(),
+});
+
+export interface PlaceSuggestion {
+  id: string;
+  primary: string;
+  secondary: string;
+}
+
+export interface PlaceDetails {
+  label: string;
+  lat: number;
+  lon: number;
+}
+
+function headers() {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey || !lovableKey) throw new Error("Google Maps connector no disponible");
+  return {
+    Authorization: `Bearer ${lovableKey}`,
+    "X-Connection-Api-Key": apiKey,
+    "Content-Type": "application/json",
+  };
+}
+
+export const placesAutocomplete = createServerFn({ method: "POST" })
+  .inputValidator((data) => AutocompleteInput.parse(data))
+  .handler(async ({ data }): Promise<PlaceSuggestion[]> => {
+    const body: Record<string, unknown> = {
+      input: data.input,
+      includedRegionCodes: ["co"],
+      languageCode: "es",
+      regionCode: "co",
+    };
+    if (typeof data.lat === "number" && typeof data.lon === "number") {
+      body.locationBias = {
+        circle: {
+          center: { latitude: data.lat, longitude: data.lon },
+          radius: 30000,
+        },
+      };
+    }
+    if (data.sessionToken) body.sessionToken = data.sessionToken;
+    const res = await fetch(`${GATEWAY}/places/v1/places:autocomplete`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Places autocomplete ${res.status}: ${text}`);
+    }
+    const json = (await res.json()) as { suggestions?: any[] };
+    const out: PlaceSuggestion[] = [];
+    for (const s of json.suggestions ?? []) {
+      const p = s.placePrediction;
+      if (!p?.placeId) continue;
+      out.push({
+        id: p.placeId,
+        primary: p.structuredFormat?.mainText?.text ?? p.text?.text ?? "",
+        secondary: p.structuredFormat?.secondaryText?.text ?? "",
+      });
+    }
+    return out;
+  });
+
+export const placeDetails = createServerFn({ method: "POST" })
+  .inputValidator((data) => DetailsInput.parse(data))
+  .handler(async ({ data }): Promise<PlaceDetails> => {
+    const url = `${GATEWAY}/places/v1/places/${encodeURIComponent(data.placeId)}${
+      data.sessionToken ? `?sessionToken=${encodeURIComponent(data.sessionToken)}` : ""
+    }`;
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...headers(),
+        "X-Goog-FieldMask": "id,location,formattedAddress,displayName",
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Place details ${res.status}: ${text}`);
+    }
+    const json = (await res.json()) as {
+      location?: { latitude: number; longitude: number };
+      formattedAddress?: string;
+      displayName?: { text?: string };
+    };
+    if (!json.location) throw new Error("Place details: sin ubicación");
+    return {
+      label: json.formattedAddress || json.displayName?.text || "Ubicación",
+      lat: json.location.latitude,
+      lon: json.location.longitude,
+    };
+  });
+
+export const placesReverseGeocode = createServerFn({ method: "POST" })
+  .inputValidator((data) => ReverseInput.parse(data))
+  .handler(async ({ data }): Promise<{ label: string } | null> => {
+    const url = `${GATEWAY}/maps/api/geocode/json?latlng=${data.lat},${data.lon}&language=es&region=co`;
+    const res = await fetch(url, { headers: headers() });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { results?: Array<{ formatted_address?: string }> };
+    const addr = json.results?.[0]?.formatted_address;
+    return addr ? { label: addr } : null;
+  });
