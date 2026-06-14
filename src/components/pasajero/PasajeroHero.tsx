@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import carAsset from "@/assets/pasajero-hero-car.png.asset.json";
 
 interface PasajeroHeroProps {
   nombre: string;
@@ -127,56 +128,15 @@ function PasajeroHeroBase({ nombre }: PasajeroHeroProps) {
           </span>
         </h1>
 
-        {/* Carro animado */}
+        {/* Carro real */}
         <div className="hero-car-wrap mt-4 flex justify-center">
-          <svg
-            width="240"
-            height="120"
-            viewBox="0 0 240 120"
-            aria-hidden="true"
-            style={{ filter: "drop-shadow(0 12px 16px rgba(0,153,204,0.35))" }}
-          >
-            {/* Sombra elíptica */}
-            <ellipse cx="120" cy="108" rx="90" ry="6" fill="#0099CC" opacity="0.18" />
-
-            {/* Cuerpo del carro - blanco como en el afiche */}
-            <path
-              d="M 30,80 L 45,55 Q 55,42 75,40 L 165,40 Q 185,42 195,55 L 215,80 Q 218,90 210,92 L 30,92 Q 22,90 30,80 Z"
-              fill="#ffffff"
-              stroke="#0099CC"
-              strokeWidth="1.5"
-            />
-            {/* Ventanas */}
-            <path
-              d="M 60,55 Q 65,46 78,45 L 118,45 L 118,72 L 55,72 Z"
-              fill="#00CAFF"
-              opacity="0.85"
-            />
-            <path
-              d="M 125,45 L 162,45 Q 178,46 183,55 L 188,72 L 125,72 Z"
-              fill="#00CAFF"
-              opacity="0.85"
-            />
-            {/* Detalle lima TRAMMOS */}
-            <circle cx="155" cy="72" r="9" fill="#C6FF00" stroke="#0099CC" strokeWidth="1" />
-            <text x="155" y="76" textAnchor="middle" fontSize="6" fontWeight="900" fill="#0099CC">T</text>
-
-            {/* Faros */}
-            <rect x="32" y="68" width="10" height="6" rx="2" fill="#FFE066" />
-            <rect x="200" y="68" width="10" height="6" rx="2" fill="#FF6B6B" />
-
-            {/* Ruedas */}
-            <g>
-              <circle cx="70" cy="92" r="14" fill="#1f2937" />
-              <circle cx="70" cy="92" r="6" fill="#9ca3af" />
-              <circle cx="70" cy="92" r="2" fill="#1f2937" />
-            </g>
-            <g>
-              <circle cx="175" cy="92" r="14" fill="#1f2937" />
-              <circle cx="175" cy="92" r="6" fill="#9ca3af" />
-              <circle cx="175" cy="92" r="2" fill="#1f2937" />
-            </g>
-          </svg>
+          <img
+            src={carAsset.url}
+            alt="Camioneta TRAMMOS"
+            className="w-full max-w-[280px] sm:max-w-[320px] h-auto select-none pointer-events-none"
+            draggable={false}
+            style={{ filter: "drop-shadow(0 16px 20px rgba(0,153,204,0.35))" }}
+          />
         </div>
 
         {/* CTA removido: el formulario "Pedir mi carro" aparece justo debajo del hero. */}
