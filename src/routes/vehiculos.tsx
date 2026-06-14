@@ -383,20 +383,32 @@ function Vehiculos() {
 
                   {/* Foto del vehículo - aspect ratio fijo para homogeneidad */}
                   <div className="relative aspect-[16/9] bg-secondary/40 group">
-                    {v.foto_url ? (
-                      <img
-                        src={v.foto_url}
-                        alt={`Vehículo ${v.placa}`}
-                        className={`w-full h-full object-cover ${vencido ? "opacity-60 grayscale" : ""}`}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
-                        <Car className="h-12 w-12" />
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(v.id)}
+                      className="absolute inset-0 w-full h-full focus:outline-none focus:ring-2 focus:ring-primary"
+                      title="Ver documentos y conductores"
+                    >
+                      {v.foto_url ? (
+                        <img
+                          src={v.foto_url}
+                          alt={`Vehículo ${v.placa}`}
+                          className={`w-full h-full object-cover ${vencido ? "opacity-60 grayscale" : ""}`}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/40">
+                          <Car className="h-12 w-12" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-white bg-black/50 px-3 py-1.5 rounded-full">
+                          <Maximize2 className="h-3.5 w-3.5" /> Ver detalles
+                        </span>
                       </div>
-                    )}
+                    </button>
                     <label
                       htmlFor={`foto-${v.id}`}
-                      className="absolute bottom-2 right-2 bg-background/90 hover:bg-background border border-border rounded-md px-2 py-1 text-[11px] font-medium flex items-center gap-1 cursor-pointer shadow-sm transition-opacity opacity-0 group-hover:opacity-100"
+                      className="absolute bottom-2 right-2 z-10 bg-background/90 hover:bg-background border border-border rounded-md px-2 py-1 text-[11px] font-medium flex items-center gap-1 cursor-pointer shadow-sm transition-opacity opacity-0 group-hover:opacity-100"
                       title={v.foto_url ? "Cambiar foto" : "Subir foto"}
                     >
                       {uploadingId === v.id ? (
@@ -418,6 +430,7 @@ function Vehiculos() {
                       }}
                     />
                   </div>
+
 
                   <div className="p-4 flex-1 flex flex-col">
                     <div className="flex items-start justify-between">
