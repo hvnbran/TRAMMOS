@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Pictograma } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { reverseGeocode } from "@/lib/geo/photon";
+import { placesReverseGeocode } from "@/lib/geo/places.functions";
 import { Loader2, MapPin, Send, Clock, Briefcase, Home, Repeat, Navigation } from "lucide-react";
 
 export interface PasajeroPerfil {
@@ -39,16 +41,23 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
   });
   const [error, setError] = useState<string | null>(null);
   const geo = useGeolocation(true);
+  const reverseFn = useServerFn(placesReverseGeocode);
 
-  // Si el GPS otorga permiso y el origen sigue vacío, hacer reverse geocode
+  // Si el GPS otorga permiso y el origen sigue vacío, hacer reverse geocode (Google → Photon)
   useEffect(() => {
     if (geo.status !== "granted" || geo.lat == null || geo.lon == null) return;
     if (origen.trim().length > 0) return;
     let cancel = false;
-    reverseGeocode(geo.lat, geo.lon).then((s) => {
+    (async () => {
+      try {
+        const r = await reverseFn({ data: { lat: geo.lat!, lon: geo.lon! } });
+        if (cancel) return;
+        if (r?.label) { setOrigen(r.label); return; }
+      } catch {}
+      const s = await reverseGeocode(geo.lat!, geo.lon!);
       if (cancel || !s) return;
       setOrigen(s.label);
-    });
+    })();
     return () => { cancel = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geo.status, geo.lat, geo.lon]);
