@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Loader2, MapPin } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { searchAddresses, type AddressSuggestion, type Bbox } from "@/lib/geo/photon";
+import {
+  placesAutocomplete,
+  placeDetails,
+  type PlaceSuggestion,
+} from "@/lib/geo/places.functions";
 import { cn } from "@/lib/utils";
 
 export interface ExtraSuggestion {
@@ -26,8 +32,19 @@ interface Props {
   autoComplete?: string;
 }
 
-function normalize(s: string): string {
-  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+type FlatItem = {
+  kind: "extra" | "google" | "geo";
+  label: string;
+  sublabel?: string;
+  lat?: number;
+  lon?: number;
+  group?: string;
+  placeId?: string;
+};
+
+function newSessionToken() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
 export function AddressAutocomplete({
@@ -37,7 +54,6 @@ export function AddressAutocomplete({
   bias,
   bbox,
   departamento,
-  strictDepartamento = false,
   extraSuggestions = [],
   icon,
   required,
@@ -48,11 +64,16 @@ export function AddressAutocomplete({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<AddressSuggestion[]>([]);
+  const [googleResults, setGoogleResults] = useState<PlaceSuggestion[]>([]);
+  const [photonResults, setPhotonResults] = useState<AddressSuggestion[]>([]);
   const [highlight, setHighlight] = useState(-1);
+  const [resolving, setResolving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const sessionRef = useRef<string>(newSessionToken());
+  const autocompleteFn = useServerFn(placesAutocomplete);
+  const detailsFn = useServerFn(placeDetails);
 
   const filteredExtras = value.trim().length === 0
     ? extraSuggestions.slice(0, 6)
@@ -64,29 +85,55 @@ export function AddressAutocomplete({
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     if (value.trim().length < 2) {
-      setResults([]);
+      setGoogleResults([]);
+      setPhotonResults([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    debounceRef.current = window.setTimeout(() => {
+    debounceRef.current = window.setTimeout(async () => {
       abortRef.current?.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
-      searchAddresses(value, {
-        lat: bias?.lat,
-        lon: bias?.lon,
-        bbox: bbox ?? null,
-        departamento: departamento ?? null,
-        signal: ctrl.signal,
-      })
-        .then((r) => { setResults(r); setLoading(false); })
-        .catch(() => setLoading(false));
-    }, 350);
+      try {
+        const g = await autocompleteFn({
+          data: {
+            input: value,
+            lat: bias?.lat,
+            lon: bias?.lon,
+            sessionToken: sessionRef.current,
+          },
+        });
+        if (ctrl.signal.aborted) return;
+        setGoogleResults(g);
+        setPhotonResults([]);
+        setLoading(false);
+      } catch {
+        // Fallback to Photon
+        try {
+          const r = await searchAddresses(value, {
+            lat: bias?.lat,
+            lon: bias?.lon,
+            bbox: bbox ?? null,
+            departamento: departamento ?? null,
+            signal: ctrl.signal,
+          });
+          if (ctrl.signal.aborted) return;
+          setGoogleResults([]);
+          setPhotonResults(r);
+        } catch {
+          setGoogleResults([]);
+          setPhotonResults([]);
+        } finally {
+          setLoading(false);
+        }
+      }
+    }, 280);
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [value, bias?.lat, bias?.lon, bbox, departamento]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, bias?.lat, bias?.lon]);
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -96,43 +143,50 @@ export function AddressAutocomplete({
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  // Particionar resultados: en departamento del usuario vs otras zonas
-  const dn = departamento ? normalize(departamento) : null;
-  const inDept = dn ? results.filter((r) => r.departamento && normalize(r.departamento) === dn) : results;
-  const otherDept = dn ? results.filter((r) => !r.departamento || normalize(r.departamento) !== dn) : [];
-  const visibleGeo = strictDepartamento && dn && inDept.length > 0 ? inDept : [...inDept, ...otherDept];
-
-  const flat: Array<{
-    kind: "extra" | "geo";
-    label: string;
-    sublabel?: string;
-    lat?: number;
-    lon?: number;
-    group?: string;
-  }> = [
+  const flat: FlatItem[] = [
     ...filteredExtras.map((s) => ({
       kind: "extra" as const,
       label: s.label,
       sublabel: s.sublabel,
       group: s.group ?? "Rutas de Operación",
     })),
-    ...visibleGeo.map((s) => {
-      const sameDept = dn && s.departamento && normalize(s.departamento) === dn;
-      return {
-        kind: "geo" as const,
-        label: s.label,
-        sublabel: s.sublabel,
-        lat: s.lat,
-        lon: s.lon,
-        group: sameDept || !dn ? "Sugerencias cercanas" : "Otras zonas de Colombia",
-      };
-    }),
+    ...googleResults.map((s) => ({
+      kind: "google" as const,
+      label: s.primary,
+      sublabel: s.secondary,
+      placeId: s.id,
+      group: "Sugerencias cercanas",
+    })),
+    ...photonResults.map((s) => ({
+      kind: "geo" as const,
+      label: s.label,
+      sublabel: s.sublabel,
+      lat: s.lat,
+      lon: s.lon,
+      group: "Sugerencias",
+    })),
   ];
 
-  function pick(idx: number) {
+  async function pick(idx: number) {
     const item = flat[idx];
     if (!item) return;
-    onChange(item.label, item.lat !== undefined ? { lat: item.lat, lon: item.lon } : undefined);
+    if (item.kind === "google" && item.placeId) {
+      setResolving(true);
+      try {
+        const det = await detailsFn({
+          data: { placeId: item.placeId, sessionToken: sessionRef.current },
+        });
+        onChange(det.label, { lat: det.lat, lon: det.lon });
+        sessionRef.current = newSessionToken();
+      } catch {
+        const full = item.sublabel ? `${item.label}, ${item.sublabel}` : item.label;
+        onChange(full);
+      } finally {
+        setResolving(false);
+      }
+    } else {
+      onChange(item.label, item.lat !== undefined ? { lat: item.lat, lon: item.lon } : undefined);
+    }
     setOpen(false);
     setHighlight(-1);
   }
@@ -144,7 +198,7 @@ export function AddressAutocomplete({
     }
     if (e.key === "ArrowDown") { e.preventDefault(); setHighlight((h) => Math.min(h + 1, flat.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setHighlight((h) => Math.max(h - 1, 0)); }
-    else if (e.key === "Enter" && highlight >= 0) { e.preventDefault(); pick(highlight); }
+    else if (e.key === "Enter" && highlight >= 0) { e.preventDefault(); void pick(highlight); }
     else if (e.key === "Escape") { setOpen(false); setHighlight(-1); }
   }
 
@@ -153,9 +207,8 @@ export function AddressAutocomplete({
 
   const emptyMessage = (() => {
     if (value.trim().length < 2) return "Escribe al menos 2 letras…";
-    if (!bias) return "Activa la ubicación para ver direcciones cercanas a ti.";
-    if (departamento) return `No encontramos esa dirección en ${departamento}. Prueba con el barrio o el nombre del lugar.`;
-    return "Sin resultados. Intenta escribir el barrio o el municipio.";
+    if (!bias) return "Activa la ubicación para ver lugares cercanos.";
+    return "Sin resultados. Prueba con el nombre del lugar o barrio.";
   })();
 
   return (
@@ -182,7 +235,7 @@ export function AddressAutocomplete({
             inputClassName,
           )}
         />
-        {loading && (
+        {(loading || resolving) && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
         )}
       </div>
@@ -207,7 +260,7 @@ export function AddressAutocomplete({
                 <button
                   type="button"
                   onMouseEnter={() => setHighlight(idx)}
-                  onMouseDown={(e) => { e.preventDefault(); pick(idx); }}
+                  onMouseDown={(e) => { e.preventDefault(); void pick(idx); }}
                   className={cn(
                     "w-full text-left px-3 py-2 text-sm flex items-start gap-2 transition-colors",
                     highlight === idx ? "bg-accent text-accent-foreground" : "hover:bg-muted/50",
