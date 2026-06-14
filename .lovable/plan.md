@@ -1,101 +1,39 @@
+## Qué vamos a cambiar en la pestaña de Pasajero
 
-# Plan CRM Comercial TRAMMOS — Estado actual y roadmap
+### 1. Autocompletado de direcciones tipo Uber/Didi
+Hoy usamos **Photon (OpenStreetMap)**, que en Colombia entiende calles pero falla con lugares populares ("Parque de Belén", "Éxito Poblado", "Clínica El Rosario"). Por eso la ubicación no "sugiere" como Uber.
 
-## 1) Qué ya tenemos hoy en el módulo CRM
+La solución correcta es usar **Google Places API (New)** con sesgo por proximidad (la ubicación GPS del pasajero), igual que Uber/Didi:
 
-Tablas y rutas existentes:
-- `crm_clientes` (nombre, contacto, fecha nacimiento, temperatura frío/tibio/caliente, asesor, concesionario, origen, notas, última interacción) → `/crm/clientes`
-- `crm_asesores` (datos, cargo, concesionario, activo) → `/crm/asesores`
-- `crm_concesionarios` (empresa, NIT, ciudad, contacto, lat/lng) → `/crm/concesionarios`
-- `/crm/equipo` para otorgar acceso CRM con contraseña
-- Dashboard `/crm` con: total clientes, asesores, concesionarios, próximos cumpleaños (7 días) y conteo por temperatura
+- Conectar el conector **Google Maps Platform** (gratis, sin pedirte llave — Lovable lo gestiona).
+- Reemplazar el motor de búsqueda dentro de `AddressAutocomplete`:
+  - Llamar a `places:autocomplete` (Places API New) por el **gateway**, con `locationBias.circle` centrado en `geo.lat/geo.lon` y radio 20 km.
+  - Restringir país a Colombia (`includedRegionCodes: ["co"]`).
+  - Mostrar dos columnas como Uber: nombre del lugar (ej. "Parque de Belén") + dirección/barrio debajo.
+  - Al elegir una sugerencia, hacer `places/{id}` con `fieldMask: location,formattedAddress` para obtener lat/lng exactos.
+  - Mantener fallback a Photon si por alguna razón el gateway falla.
+- El componente sigue siendo el mismo (`AddressAutocomplete`), así también mejora el origen ("Sales de"), el destino ("Vas a"), y todos los demás formularios que ya lo usan (operación, etc.).
+- Reverse geocode inicial (cuando el GPS resuelve y el origen está vacío) pasa también a Google → la dirección detectada será mucho más legible que el "0000" que ves ahora.
 
-Lo que **ya está cubierto** del listado pedido:
-- Prospecto base (cliente + origen + temperatura + asesor + concesionario)
-- Cumpleaños próximos
-- Productividad muy básica (clientes por asesor)
+Nota: como el conector aún no está enlazado, lo primero será conectarlo (es un paso de un clic que abre el diálogo de Lovable). Si decides no conectarlo, puedo mejorar Photon con priorización de POIs pero **no llegará al nivel Uber** — Google Places es la diferencia real.
 
-Todo lo demás (oportunidades, ventas de vehículos, créditos, SOAT, GPS, gas, accesorios, emblemas, uniformes, comisiones, metas, cartera, rentabilidad) **no existe** y hay que construirlo.
+### 2. Reemplazar el carrito SVG por la foto real (Renault Duster blanca)
+- Subir la imagen adjunta como **Lovable Asset** (CDN), nombre `pasajero-hero-car.png`, usando `lovable-assets create` desde `/mnt/user-uploads/image-12.png`.
+- En `PasajeroHero.tsx`, quitar todo el bloque `<svg width="240" ...>` del carrito y reemplazarlo por un `<img>` con la URL del asset:
+  - Tamaño responsive (`max-w-[260px] sm:max-w-[300px]`), centrada.
+  - Mantener la sombra suave (`drop-shadow`) y la animación `hero-car-wrap` (bounce de entrada + flotación) que ya existe en CSS — sólo cambiamos el contenido, no el wrapper.
+  - `alt="Camioneta TRAMMOS"` para accesibilidad.
+- El resto del hero (fondo lima, líneas decorativas, pines, tipografía cyan) se mantiene intacto.
 
-## 2) Estrategia
+### Archivos que se tocan
+- `src/components/AddressAutocomplete.tsx` — nuevo flujo de búsqueda + render de sugerencias estilo Uber.
+- `src/lib/geo/places.ts` (nuevo) — cliente del gateway Google Places (autocomplete + details + reverse).
+- `src/lib/geo/photon.ts` — se mantiene como fallback.
+- `src/components/pasajero/PasajeroHero.tsx` — `<img>` en lugar del SVG del carrito.
+- `src/assets/pasajero-hero-car.png.asset.json` (nuevo) — pointer del asset.
+- Conector Google Maps Platform — enlace de un clic.
 
-El alcance es enorme, así que lo divido en **6 fases entregables**, cada una se aprueba e implementa por separado. Después de esta aprobación general, al inicio de cada fase confirmo modelo de datos y pantallas concretas antes de codificar.
-
-Modelo de datos común a todas las fases:
-- Tabla `crm_oportunidades` como núcleo: una oportunidad por intento de venta (cliente + asesor + concesionario + vehículo deseado + estado + fechas). De ella cuelgan venta, crédito, pólizas, accesorios, GPS, gas, emblemas, uniformes.
-- Cada ítem vendido (vehículo, SOAT, accesorio, GPS, gas, emblemas, uniforme) guarda: `precio_cliente`, `costo_proveedor`, `comision_asesor`, `comision_trammos` → con esto se calculan automáticamente rentabilidad, comisiones y reportes gerenciales.
-- Tabla `crm_metas` (asesor/global, periodo diario/semanal/mensual/anual, valor meta, tipo: ventas/ingresos/conversión).
-- Tabla `crm_interacciones` para registrar seguimiento comercial (llamadas, visitas, cotizaciones, WhatsApp).
-
----
-
-## Fase 1 — Pipeline comercial (prospectos → oportunidades → cierre)
-
-Nuevas tablas: `crm_oportunidades`, `crm_interacciones`, `crm_cotizaciones`.
-
-Funciones:
-- Pipeline visual tipo kanban por estado: Prospecto → Contactado → Cotizado → Negociación → Ganado / Perdido.
-- Registro de interacciones (tipo, fecha, nota, próximo seguimiento + recordatorio).
-- Cotizaciones (monto, vehículo, vigencia, estado).
-- Métricas: nº prospectos, tasa de conversión, tiempo promedio de cierre, motivos de pérdida, fuente del prospecto.
-- En la ficha del cliente: timeline de interacciones y oportunidades.
-
-Pantallas nuevas: `/crm/pipeline`, `/crm/oportunidades/$id`, sección "Seguimiento" dentro de cada cliente.
-
-## Fase 2 — Ventas de vehículos + comisiones
-
-Nuevas tablas: `crm_vehiculos_catalogo` (marca/línea/tipo), `crm_ventas` (oportunidad, vehículo, fecha, precio_cliente, costo, margen, comisión asesor, comisión Trammos, estado entrega, fecha entrega).
-
-Funciones:
-- Registrar venta cerrada y entrega.
-- Ticket promedio, margen de utilidad, vehículo más vendido, ranking de asesores, tiempo de entrega.
-- Cada venta dispara la creación de los servicios derivados (SOAT, GPS, gas, accesorios, emblemas, uniforme) en estado "Pendiente".
-
-## Fase 3 — Financiación, créditos y capacidades
-
-Nuevas tablas: `crm_creditos` (entidad, valor financiado, cuota inicial, estado aprob./rech., fecha solicitud, fecha aprobación, mora), `crm_capacidades` (cupo, asignada/disponible, rentabilidad, documentación pendiente, fecha activación).
-
-Funciones:
-- Indicadores: tasa de aprobación, tiempo promedio de aprobación, mora, entidad más usada, cupos disponibles vs asignados, rentabilidad por capacidad.
-- Checklist de documentación pendiente por habilitación con alertas.
-
-## Fase 4 — Pólizas, GPS, gas, accesorios, emblemas, uniformes
-
-Modelo unificado: tabla `crm_servicios_adicionales` con columna `tipo` (`soat`, `poliza_contrac`, `poliza_extra`, `gps`, `gas`, `accesorio`, `emblema`, `uniforme`) + campos comunes (proveedor, fecha emisión, fecha vencimiento, precio_cliente, costo_proveedor, comision_asesor, comision_trammos, estado instalación, observaciones, archivo adjunto).
-
-Funciones:
-- Vista por vehículo y por cliente con todos sus servicios y vencimientos.
-- Alertas automáticas de SOAT/pólizas/plataforma GPS próximas a vencer (30/15/7 días) integradas con la campana de notificaciones existente.
-- Reportes: valor cobrado vs costo vs margen por tipo de servicio, instalaciones pendientes, renovaciones realizadas, taller aliado más usado.
-
-## Fase 5 — Metas, cartera y tablero gerencial
-
-Nuevas tablas: `crm_metas`, `crm_facturas_crm` (o reutilizar `facturas` con vínculo a venta) para cartera.
-
-Tablero `/crm` ampliado con:
-- Metas diaria/semanal/mensual/anual por asesor y global, con barra de avance en número y porcentaje y semáforo.
-- Ventas del mes, conversión comercial, tiempo promedio de cierre.
-- Cartera vencida, rentabilidad por capacidad/vehículo, costos operativos.
-- Cumplimiento documental (% de vehículos con docs al día).
-- Productividad por asesor (oportunidades creadas, ganadas, ingresos, comisión generada).
-- Análisis automático: "vamos X% por encima/debajo de la meta", tendencia vs mes anterior.
-
-## Fase 6 — Reportes, exportes y permisos finos
-
-- Exportar a Excel/PDF cada vista clave (igual que ya hace `/reportes`).
-- Vista "Mi panel" para asesores: solo sus oportunidades, sus comisiones, sus metas.
-- Refinar RLS para que cada asesor vea solo lo suyo y admin/CRM vean todo.
-- Recordatorios automáticos (cumpleaños, vencimientos, seguimientos pendientes) por correo y push.
-
----
-
-## Detalles técnicos (referencia)
-
-- Base de datos: migraciones Supabase, RLS con `has_crm_access(auth.uid())`; para asesores se añadirá `crm_asesores.auth_user_id` y políticas `asesor_owns_row`.
-- Frontend: TanStack Router + Supabase client + Recharts (ya en uso) para dashboards.
-- Notificaciones de vencimientos: reutilizar `push_notifications_queue` y cron existente.
-- Cada fase incluye: migración SQL, server functions cuando aplique, rutas nuevas, vinculación al menú del `CrmLayout`.
-
-## Cómo procedemos
-
-Confirmás esta hoja de ruta y arrancamos por **Fase 1 (Pipeline comercial)**. Antes de codificar la Fase 1 te muestro el esquema exacto de campos del kanban + interacciones para validación. Si querés reordenar o juntar fases (por ejemplo arrancar por Ventas + Comisiones), avisame y reorganizo.
+### Resultado esperado
+- Escribes "Parque de Belén" → aparece el parque en Medellín con su dirección, además de variantes cercanas.
+- Escribes "Éxito" → ves los Éxito más cercanos a ti primero.
+- El hero muestra la Duster real con su sombra y animación, en vez del dibujito.
