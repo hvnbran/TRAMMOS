@@ -1,39 +1,32 @@
-## Qué vamos a cambiar en la pestaña de Pasajero
+## Nueva animación de entrada al CRM
 
-### 1. Autocompletado de direcciones tipo Uber/Didi
-Hoy usamos **Photon (OpenStreetMap)**, que en Colombia entiende calles pero falla con lugares populares ("Parque de Belén", "Éxito Poblado", "Clínica El Rosario"). Por eso la ubicación no "sugiere" como Uber.
+Sí, se puede implementar. Voy a portar el HTML/JS que enviaste a un componente React que reemplace el `CrmIntro` actual (el velo simple con logo).
 
-La solución correcta es usar **Google Places API (New)** con sesgo por proximidad (la ubicación GPS del pasajero), igual que Uber/Didi:
+### Qué cambia
 
-- Conectar el conector **Google Maps Platform** (gratis, sin pedirte llave — Lovable lo gestiona).
-- Reemplazar el motor de búsqueda dentro de `AddressAutocomplete`:
-  - Llamar a `places:autocomplete` (Places API New) por el **gateway**, con `locationBias.circle` centrado en `geo.lat/geo.lon` y radio 20 km.
-  - Restringir país a Colombia (`includedRegionCodes: ["co"]`).
-  - Mostrar dos columnas como Uber: nombre del lugar (ej. "Parque de Belén") + dirección/barrio debajo.
-  - Al elegir una sugerencia, hacer `places/{id}` con `fieldMask: location,formattedAddress` para obtener lat/lng exactos.
-  - Mantener fallback a Photon si por alguna razón el gateway falla.
-- El componente sigue siendo el mismo (`AddressAutocomplete`), así también mejora el origen ("Sales de"), el destino ("Vas a"), y todos los demás formularios que ya lo usan (operación, etc.).
-- Reverse geocode inicial (cuando el GPS resuelve y el origen está vacío) pasa también a Google → la dirección detectada será mucho más legible que el "0000" que ves ahora.
+**Archivo:** `src/components/crm/CrmIntro.tsx` (reescrito)
 
-Nota: como el conector aún no está enlazado, lo primero será conectarlo (es un paso de un clic que abre el diálogo de Lovable). Si decides no conectarlo, puedo mejorar Photon con priorización de POIs pero **no llegará al nivel Uber** — Google Places es la diferencia real.
+- Fullscreen overlay (`fixed inset-0 z-[100]`) sobre fondo `#06090f`, encima del CRM mientras corre.
+- Canvas con las 120 partículas + 8 hexágonos animados (mismo loop `requestAnimationFrame`).
+- Fase 1 — Logo: isotipo SVG (4 círculos con gradiente lima→cian + rombo central) + wordmark "TRAMMOS / CRM" + tagline "PLATAFORMA INTELIGENTE DE GESTIÓN", con la secuencia escalonada (scale+rotate del iso, slide del wordmark, clip-path reveal del "CRM", fade del tagline).
+- Fase 2 — Grid de módulos: los 11 módulos reales del CRM con sus iconos, marcando ✓ uno a uno con barra de progreso inferior ("INICIANDO" → nombre del módulo → "SISTEMA LISTO ✓").
+- Al terminar (≈6s) hace fade-out y desmonta, dejando ver el CRM. Sin botón replay ni click-to-replay (es intro, no demo).
+- Respeta `prefers-reduced-motion`: salta directo al estado final y cierra en ~600ms.
+- El canvas se redimensiona al viewport (no fijo 680×500) y se centran las dos fases con flex.
+- Cleanup de `cancelAnimationFrame` y timeouts al desmontar para no fugar memoria al navegar.
 
-### 2. Reemplazar el carrito SVG por la foto real (Renault Duster blanca)
-- Subir la imagen adjunta como **Lovable Asset** (CDN), nombre `pasajero-hero-car.png`, usando `lovable-assets create` desde `/mnt/user-uploads/image-12.png`.
-- En `PasajeroHero.tsx`, quitar todo el bloque `<svg width="240" ...>` del carrito y reemplazarlo por un `<img>` con la URL del asset:
-  - Tamaño responsive (`max-w-[260px] sm:max-w-[300px]`), centrada.
-  - Mantener la sombra suave (`drop-shadow`) y la animación `hero-car-wrap` (bounce de entrada + flotación) que ya existe en CSS — sólo cambiamos el contenido, no el wrapper.
-  - `alt="Camioneta TRAMMOS"` para accesibilidad.
-- El resto del hero (fondo lima, líneas decorativas, pines, tipografía cyan) se mantiene intacto.
+### Detalles técnicos
 
-### Archivos que se tocan
-- `src/components/AddressAutocomplete.tsx` — nuevo flujo de búsqueda + render de sugerencias estilo Uber.
-- `src/lib/geo/places.ts` (nuevo) — cliente del gateway Google Places (autocomplete + details + reverse).
-- `src/lib/geo/photon.ts` — se mantiene como fallback.
-- `src/components/pasajero/PasajeroHero.tsx` — `<img>` en lugar del SVG del carrito.
-- `src/assets/pasajero-hero-car.png.asset.json` (nuevo) — pointer del asset.
-- Conector Google Maps Platform — enlace de un clic.
+- Fuente Montserrat: la cargo con `@remotion/google-fonts`? No — es app web, uso `<link>` a Google Fonts inyectado una vez desde el componente (o lo dejo como fallback a la fuente del sistema si prefieres no añadir red). **Pregunta abajo.**
+- Los módulos del grid se toman de una constante local con los items reales del CRM (Dashboard, Pipeline, Ventas, Catálogo, Créditos, Capacidades, Clientes, Cumpleaños, Asesores, Concesionarios, Equipo).
+- `CrmLayout` ya monta `<CrmIntro />` una sola vez al entrar — no se toca esa integración.
+- Duración total ~5.5–6s. Si te resulta largo, lo bajo recortando el delay entre módulos.
 
-### Resultado esperado
-- Escribes "Parque de Belén" → aparece el parque en Medellín con su dirección, además de variantes cercanas.
-- Escribes "Éxito" → ves los Éxito más cercanos a ti primero.
-- El hero muestra la Duster real con su sombra y animación, en vez del dibujito.
+### Lo que NO cambio
+
+- `CrmLayout`, rutas del CRM, lógica de auth, ni el splash de login (que es otro componente).
+
+### Pregunta
+
+1. ¿Quieres que cargue la fuente **Montserrat** desde Google Fonts (añade 1 request) o uso la tipografía del sistema ya configurada en el proyecto?
+2. ¿La animación debe correr **solo la primera vez por sesión** (no molesta al navegar entre pestañas del CRM) o **cada vez que entras a `/crm`**? Hoy corre cada montaje del layout.
