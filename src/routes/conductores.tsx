@@ -220,7 +220,7 @@ function Conductores() {
                   {["C1", "C2", "C3", "B1", "B2"].map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
-              <div><label className="text-xs text-muted-foreground">Vence licencia</label><input type="date" value={form.vence_licencia} onChange={(e) => setForm({ ...form, vence_licencia: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div className="md:col-span-2 text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">La fecha de vencimiento de la licencia se toma automáticamente del documento "Licencia de conductor" cargado en el perfil.</div>
               <div><label className="text-xs text-muted-foreground">Fecha de nacimiento</label><input type="date" value={form.fecha_nacimiento} onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
