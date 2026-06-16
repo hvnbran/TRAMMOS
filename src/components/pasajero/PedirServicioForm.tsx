@@ -130,22 +130,87 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
         <SpeakButton text={narracion} size="md" label="Escuchar instrucciones" />
       </header>
 
-      {/* Atajos rápidos */}
-      {atajos.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {atajos.map((a) => (
-            <button
-              key={a.label}
-              type="button"
-              onClick={() => setDestino(a.destino)}
-              className="inline-flex items-center gap-2 px-3 h-10 rounded-full bg-muted/50 border border-border text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
-            >
-              <a.icon className="h-4 w-4 text-primary" />
-              {a.label}
-            </button>
-          ))}
+      {/* Destinos favoritos del pasajero */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Mis destinos favoritos
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowAddFav((v) => !v)}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {showAddFav ? "Cancelar" : "Nuevo"}
+          </button>
         </div>
-      )}
+
+        {favoritos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {favoritos.map((f) => (
+              <div
+                key={f.id}
+                className="group inline-flex items-center gap-1 pl-3 pr-1 h-10 rounded-full bg-muted/50 border border-border text-sm font-medium text-foreground"
+              >
+                <button
+                  type="button"
+                  onClick={() => setDestino(f.direccion)}
+                  className="inline-flex items-center gap-2 hover:text-primary transition-colors"
+                  title={f.direccion}
+                >
+                  <Star className="h-4 w-4 text-primary" />
+                  {f.nombre}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFavorito(f.id)}
+                  className="ml-1 h-7 w-7 inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`Eliminar favorito ${f.nombre}`}
+                  title="Eliminar"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {favoritos.length === 0 && !showAddFav && (
+          <p className="text-xs text-muted-foreground">
+            Aún no tienes destinos guardados. Toca <strong>Nuevo</strong> para agregar uno.
+          </p>
+        )}
+
+        {showAddFav && (
+          <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-3 space-y-2">
+            <input
+              type="text"
+              value={favNombre}
+              onChange={(e) => setFavNombre(e.target.value)}
+              placeholder="Nombre (ej: Casa, Oficina, Mamá)"
+              className="w-full h-11 rounded-lg border-2 border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+              maxLength={40}
+            />
+            <input
+              type="text"
+              value={favDireccion}
+              onChange={(e) => setFavDireccion(e.target.value)}
+              placeholder="Dirección completa"
+              className="w-full h-11 rounded-lg border-2 border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+              maxLength={200}
+            />
+            <button
+              type="button"
+              onClick={handleAddFavorito}
+              disabled={!favNombre.trim() || !favDireccion.trim()}
+              className="w-full h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+            >
+              Guardar favorito
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-3">
         <div className="space-y-2">
