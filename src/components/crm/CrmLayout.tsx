@@ -63,6 +63,8 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = scrollerRef.current;
     if (!el) return;
+    // Solo botón izquierdo
+    if (e.button !== 0) return;
     dragRef.current = {
       active: true,
       startX: e.clientX,
@@ -70,8 +72,6 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
       moved: false,
       pointerId: e.pointerId,
     };
-    el.setPointerCapture(e.pointerId);
-    el.style.cursor = "grabbing";
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -79,21 +79,35 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
     const el = scrollerRef.current;
     if (!d.active || !el) return;
     const dx = e.clientX - d.startX;
-    if (Math.abs(dx) > 4) d.moved = true;
-    el.scrollLeft = d.startScroll - dx;
+    if (!d.moved && Math.abs(dx) > 5) {
+      d.moved = true;
+      // Capturamos el puntero recién al detectar arrastre real,
+      // así los clicks simples siguen llegando a los Link.
+      try {
+        el.setPointerCapture(d.pointerId);
+      } catch {
+        // ignore
+      }
+      el.style.cursor = "grabbing";
+    }
+    if (d.moved) {
+      el.scrollLeft = d.startScroll - dx;
+    }
   };
 
   const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
     const el = scrollerRef.current;
     if (!d.active) return;
-    if (el && el.hasPointerCapture(d.pointerId)) el.releasePointerCapture(d.pointerId);
-    if (el) el.style.cursor = "grab";
+    if (el) {
+      if (el.hasPointerCapture(d.pointerId)) el.releasePointerCapture(d.pointerId);
+      el.style.cursor = "grab";
+    }
     if (d.moved) {
       suppressClickRef.current = true;
-      setTimeout(() => (suppressClickRef.current = false), 0);
+      window.setTimeout(() => (suppressClickRef.current = false), 50);
     }
-    dragRef.current = { ...d, active: false, moved: false };
+    dragRef.current = { ...d, active: false };
     void e;
   };
 
