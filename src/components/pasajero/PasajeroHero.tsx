@@ -134,7 +134,6 @@ function PasajeroHeroBase({ nombre }: PasajeroHeroProps) {
             alt="Camioneta TRAMMOS"
             className="w-full max-w-[280px] sm:max-w-[320px] h-auto select-none pointer-events-none"
             draggable={false}
-            style={{ filter: "drop-shadow(0 16px 20px rgba(0,153,204,0.35))" }}
           />
         </div>
 
