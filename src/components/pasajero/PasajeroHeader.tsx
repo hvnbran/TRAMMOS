@@ -1,14 +1,17 @@
 import { LogOut } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
+import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
 
 interface Props {
   nombre: string;
   onSignOut: () => void;
+  pasajeroId?: string | null;
+  fotoUrl?: string | null;
+  onFotoChange?: (url: string) => void;
 }
 
-export function PasajeroHeader({ nombre, onSignOut }: Props) {
-  const inicial = (nombre || "P").trim().charAt(0).toUpperCase();
-
+export function PasajeroHeader({ nombre, onSignOut, pasajeroId, fotoUrl, onFotoChange }: Props) {
   return (
     <header
       role="banner"
@@ -23,12 +26,21 @@ export function PasajeroHeader({ nombre, onSignOut }: Props) {
           </div>
         </div>
 
-        <div
-          className="h-9 w-9 rounded-full bg-muted text-foreground text-sm font-bold flex items-center justify-center border border-border"
-          aria-hidden="true"
-        >
-          {inicial}
-        </div>
+        {pasajeroId ? (
+          <div className="scale-90 -my-2">
+            <ProfilePhotoUploader
+              entity="pasajero"
+              rowId={pasajeroId}
+              nombre={nombre}
+              fotoUrl={fotoUrl ?? null}
+              size="md"
+              label=""
+              onChange={onFotoChange}
+            />
+          </div>
+        ) : (
+          <PersonaAvatar nombre={nombre} size="sm" />
+        )}
 
         <button
           type="button"
