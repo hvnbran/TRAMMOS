@@ -1,0 +1,1 @@
+ALTER TABLE public.pasajeros_pcd ADD COLUMN IF NOT EXISTS foto_url text;
