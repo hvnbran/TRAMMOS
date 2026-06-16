@@ -58,6 +58,72 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
   const badge = role === "admin" ? "Administrador" : role === "crm" ? "Equipo CRM" : "";
   const items = NAV.filter((i) => !i.adminOnly || role === "admin");
 
+  // ---- Drag-to-scroll en la barra de pills ----
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{
+    active: boolean;
+    moved: boolean;
+    startX: number;
+    startScroll: number;
+  }>({ active: false, moved: false, startX: 0, startScroll: 0 });
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    // No interferir con clics sobre links: solo iniciamos drag con botón principal
+    if (e.button !== 0) return;
+    dragRef.current = {
+      active: true,
+      moved: false,
+      startX: e.clientX,
+      startScroll: el.scrollLeft,
+    };
+    el.setPointerCapture(e.pointerId);
+    el.style.cursor = "grabbing";
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = scrollerRef.current;
+    const d = dragRef.current;
+    if (!el || !d.active) return;
+    const dx = e.clientX - d.startX;
+    if (Math.abs(dx) > 4) d.moved = true;
+    el.scrollLeft = d.startScroll - dx;
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = scrollerRef.current;
+    const d = dragRef.current;
+    if (!el || !d.active) return;
+    d.active = false;
+    el.releasePointerCapture?.(e.pointerId);
+    el.style.cursor = "grab";
+    // Si se movió, suprime el click siguiente para que no navegue por accidente
+    if (d.moved) {
+      const block = (ev: MouseEvent) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        document.removeEventListener("click", block, true);
+      };
+      document.addEventListener("click", block, true);
+    }
+  };
+
+  // ---- Atajos de teclado: Alt + 1..9 para saltar de pestaña ----
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const n = Number(e.key);
+      if (!Number.isInteger(n) || n < 1 || n > 9) return;
+      const target = items[n - 1];
+      if (!target) return;
+      e.preventDefault();
+      navigate({ to: target.to });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [items, navigate]);
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <CrmIntro />
