@@ -4,7 +4,7 @@ import { Plus, Trash2, Users, Pencil, AlertTriangle, FileText } from "lucide-rea
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { TIPOS_CONDUCTOR } from "@/components/DocumentManager";
+
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { GenerarAccesoConductor } from "@/components/conductor/GenerarAccesoConductor";
 import { ConductorProfileModal } from "@/components/ConductorProfileModal";
