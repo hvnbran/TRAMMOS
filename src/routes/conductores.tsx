@@ -251,18 +251,39 @@ function Conductores() {
                   className={`stagger-item rounded-lg border bg-card p-4 ${vencido ? "border-destructive/40" : "border-border"}`}
                   style={{ ["--i" as string]: i } as React.CSSProperties}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className={vencido ? "opacity-70" : ""}>
-                      <p className={`font-semibold ${vencido ? "line-through" : ""}`}>{c.nombre}</p>
-                      <p className="text-xs text-muted-foreground">{c.cedula || "Sin cédula"}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(eff)}`}>{eff}</span>
-                      <GenerarAccesoConductor conductorId={c.id} nombre={c.nombre} cedula={c.cedula} />
-                      <button onClick={() => startEdit(c)} className="text-muted-foreground hover:text-primary" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
-                      <button onClick={() => handleDelete(c.id)} className="text-muted-foreground hover:text-destructive" title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setModalConductorId(c.id)}
+                      className="shrink-0 rounded-full ring-2 ring-transparent hover:ring-primary/40 transition"
+                      title="Ver perfil y documentos"
+                    >
+                      <PersonaAvatar nombre={c.nombre} fotoUrl={c.foto_url} size="lg" />
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className={`min-w-0 ${vencido ? "opacity-70" : ""}`}>
+                          <button
+                            type="button"
+                            onClick={() => setModalConductorId(c.id)}
+                            className={`font-semibold text-left hover:text-primary truncate block ${vencido ? "line-through" : ""}`}
+                          >
+                            {c.nombre}
+                          </button>
+                          <p className="text-xs text-muted-foreground">{c.cedula || "Sin cédula"}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${estadoStyle(eff)}`}>{eff}</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-1 flex-wrap">
+                        <GenerarAccesoConductor conductorId={c.id} nombre={c.nombre} cedula={c.cedula} />
+                        <button onClick={() => startEdit(c)} className="text-muted-foreground hover:text-primary p-1" title="Editar"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleDelete(c.id)} className="text-muted-foreground hover:text-destructive p-1" title="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
                     </div>
                   </div>
+
                   {vencido && (
                     <div className="mt-2 flex items-center gap-1.5 text-[11px] text-destructive">
                       <AlertTriangle className="h-3 w-3" /> Licencia vencida — actualice la fecha para reactivar
@@ -283,25 +304,15 @@ function Conductores() {
                     )}
                   </div>
                   <button
-                    onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                    onClick={() => setModalConductorId(c.id)}
                     className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-primary hover:bg-primary/5 rounded-md py-1.5 border border-primary/20"
                   >
                     <FileText className="h-3.5 w-3.5" />
-                    Documentos
-                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded === c.id ? "rotate-180" : ""}`} />
+                    Ver perfil y documentos
                   </button>
-                  {expanded === c.id && (
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <DocumentManager
-                        kind="conductor"
-                        entityId={c.id}
-                        cliente={(c.clientes?.[0] ?? c.cliente ?? "corona") as "corona" | "sodimac"}
-                        tipos={TIPOS_CONDUCTOR}
-                      />
-                    </div>
-                  )}
                 </div>
               );
+
             })}
           </div>
         )}
