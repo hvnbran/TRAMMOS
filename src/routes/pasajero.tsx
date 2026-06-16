@@ -75,6 +75,7 @@ function PasajeroPage() {
   const [ultima, setUltima] = useState<{ origen: string; destino: string } | null>(null);
   const [vehiculoInfo, setVehiculoInfo] = useState<VehiculoInfo | null>(null);
   const [conductorTelefono, setConductorTelefono] = useState<string | null>(null);
+  const [conductorFoto, setConductorFoto] = useState<string | null>(null);
   const [pendienteCalif, setPendienteCalif] = useState<SolicitudPendienteCalif | null>(null);
   const [savingCalif, setSavingCalif] = useState(false);
   const [showIncidente, setShowIncidente] = useState(false);
@@ -135,9 +136,17 @@ function PasajeroPage() {
       setPerfilLoading(true);
       const { data: p } = await supabase
         .from("pasajeros_pcd")
-        .select("id,nombre,cliente,direccion_habitual,centros_costo_permitidos")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .select("id,nombre,cliente,direccion_habitual,centros_costo_permitidos,foto_url" as any)
         .eq("auth_user_id", user.id)
-        .maybeSingle();
+        .maybeSingle<{
+          id: string;
+          nombre: string;
+          cliente: string;
+          direccion_habitual: string | null;
+          centros_costo_permitidos: string[] | null;
+          foto_url: string | null;
+        }>();
       if (!mounted) return;
       if (p) {
         setPerfil({
@@ -146,6 +155,7 @@ function PasajeroPage() {
           cliente: p.cliente as "corona" | "sodimac",
           direccion_habitual: p.direccion_habitual,
           centros_costo_permitidos: p.centros_costo_permitidos,
+          foto_url: p.foto_url ?? null,
         });
       }
 
@@ -237,11 +247,12 @@ function PasajeroPage() {
     return () => { mounted = false; };
   }, [solicitud?.vehiculo_placa, perfil]);
 
-  // Cargar teléfono del conductor asignado vía RPC seguro
+  // Cargar teléfono y foto del conductor asignado vía RPC seguro
   useEffect(() => {
     const nombre = solicitud?.conductor_nombre?.trim();
     if (!nombre) {
       setConductorTelefono(null);
+      setConductorFoto(null);
       return;
     }
     let mounted = true;
@@ -249,10 +260,13 @@ function PasajeroPage() {
       const { data, error } = await supabase
         .rpc("get_conductor_publico_por_nombre", { _nombre: nombre });
       if (error) {
-        console.warn("[pasajero] No se pudo cargar teléfono del conductor:", error.message);
+        console.warn("[pasajero] No se pudo cargar info del conductor:", error.message);
       }
       const row = Array.isArray(data) ? data[0] : data;
-      if (mounted) setConductorTelefono(row?.telefono ?? null);
+      if (mounted) {
+        setConductorTelefono(row?.telefono ?? null);
+        setConductorFoto((row as { foto_url?: string | null } | null)?.foto_url ?? null);
+      }
     })();
     return () => { mounted = false; };
   }, [solicitud?.conductor_nombre]);
@@ -401,7 +415,13 @@ function PasajeroPage() {
   return (
     <div className="min-h-screen bg-background">
       <a href="#pasajero-main" className="skip-link">Saltar al contenido</a>
-      <PasajeroHeader nombre={displayName || perfil.nombre} onSignOut={() => signOut()} />
+      <PasajeroHeader
+        nombre={displayName || perfil.nombre}
+        onSignOut={() => signOut()}
+        pasajeroId={perfil.id}
+        fotoUrl={perfil.foto_url ?? null}
+        onFotoChange={(url) => setPerfil((p) => (p ? { ...p, foto_url: url } : p))}
+      />
       <main id="pasajero-main" className="mx-auto max-w-md px-4 py-5 pb-28">
         {solicitud ? (
           <ViajeEnCurso
@@ -410,6 +430,7 @@ function PasajeroPage() {
             destino={solicitud.destino}
             conductor={solicitud.conductor_nombre}
             conductorTelefono={conductorTelefono}
+            conductorFoto={conductorFoto}
             vehiculo={solicitud.vehiculo_placa}
             vehiculoFoto={vehiculoInfo?.foto_url ?? null}
             vehiculoMarca={vehiculoInfo?.marca ?? null}

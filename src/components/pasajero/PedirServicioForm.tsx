@@ -11,6 +11,7 @@ export interface PasajeroPerfil {
   cliente: "corona" | "sodimac";
   direccion_habitual: string | null;
   centros_costo_permitidos: string[] | null;
+  foto_url?: string | null;
 }
 
 export interface UltimaSolicitud {

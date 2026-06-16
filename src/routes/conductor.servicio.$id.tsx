@@ -2,12 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ConductorLayout } from "@/components/conductor/ConductorLayout";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
 import {
   Loader2,
   MapPin,
   Calendar,
   Clock,
-  User,
   AlertCircle,
   Navigation,
   Play,
@@ -44,6 +44,7 @@ interface Servicio {
 
 interface PasajeroBrief {
   nombre?: string;
+  foto_url?: string | null;
   telefono?: string;
   tipo_discapacidad?: string;
   ayudas_tecnicas?: string[];
@@ -188,9 +189,11 @@ function ServicioDetalle() {
             </span>
           </div>
 
-          <div className="text-base font-semibold flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            {servicio.pasajero || "Pasajero sin asignar"}
+          <div className="flex items-center gap-3">
+            <PersonaAvatar nombre={brief?.nombre ?? servicio.pasajero} fotoUrl={brief?.foto_url ?? null} size="md" />
+            <div className="text-base font-semibold flex-1 min-w-0 truncate">
+              {servicio.pasajero || "Pasajero sin asignar"}
+            </div>
           </div>
 
           {servicio.centro_costo && (
