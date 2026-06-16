@@ -1,13 +1,37 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { LogOut, Truck, Home } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { LogOut, Home } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { ProfilePhotoUploader } from "@/components/ProfilePhotoUploader";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
+
+interface ConductorMe {
+  id: string;
+  nombre: string;
+  foto_url: string | null;
+}
 
 export function ConductorLayout({ children, title }: { children: ReactNode; title?: string }) {
-  const { displayName, signOut } = useAuth();
+  const { user, displayName, signOut } = useAuth();
   const navigate = useNavigate();
+  const [me, setMe] = useState<ConductorMe | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("conductores")
+        .select("id, nombre, foto_url")
+        .eq("auth_user_id", user.id)
+        .maybeSingle<ConductorMe>();
+      if (mounted && data) setMe(data);
+    })();
+    return () => { mounted = false; };
+  }, [user]);
 
   async function handleLogout() {
     await signOut();
@@ -22,12 +46,28 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
             <img src={logo} alt="TRAMMOS" className="h-8 w-8 rounded-md object-contain" />
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground leading-none">TRAMMOS · Conductor</p>
-              <p className="text-sm font-semibold truncate flex items-center gap-1">
-                <Truck className="h-3.5 w-3.5 text-primary" />
-                {displayName || "Conductor"}
+              <p className="text-sm font-semibold truncate">
+                {displayName || me?.nombre || "Conductor"}
               </p>
             </div>
           </Link>
+
+          {me ? (
+            <div className="scale-90 -my-2">
+              <ProfilePhotoUploader
+                entity="conductor"
+                rowId={me.id}
+                nombre={me.nombre}
+                fotoUrl={me.foto_url}
+                size="md"
+                label=""
+                onChange={(url) => setMe({ ...me, foto_url: url })}
+              />
+            </div>
+          ) : (
+            <PersonaAvatar nombre={displayName} size="sm" />
+          )}
+
           <button
             onClick={handleLogout}
             aria-label="Cerrar sesión"
