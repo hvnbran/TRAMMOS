@@ -1,11 +1,44 @@
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useRef } from "react";
 import {
   LogOut,
   ArrowLeft,
+  LayoutDashboard,
+  GitBranch,
+  TrendingUp,
+  Package,
+  CreditCard,
+  Wrench,
+  Users,
+  Cake,
+  UserCog,
+  Building2,
+  UsersRound,
 } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
 import { CrmIntro } from "./CrmIntro";
+
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
+
+const navItems: NavItem[] = [
+  { to: "/crm", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/crm/pipeline", label: "Pipeline", icon: GitBranch },
+  { to: "/crm/ventas", label: "Ventas", icon: TrendingUp },
+  { to: "/crm/catalogo", label: "Catálogo", icon: Package },
+  { to: "/crm/creditos", label: "Créditos", icon: CreditCard },
+  { to: "/crm/capacidades", label: "Capacidades", icon: Wrench },
+  { to: "/crm/clientes", label: "Clientes", icon: Users },
+  { to: "/crm/cumpleanos", label: "Cumpleaños", icon: Cake },
+  { to: "/crm/asesores", label: "Asesores", icon: UserCog },
+  { to: "/crm/concesionarios", label: "Concesionarios", icon: Building2 },
+  { to: "/crm/equipo", label: "Equipo", icon: UsersRound },
+];
 
 export function CrmLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role, signOut } = useAuth();
@@ -19,6 +52,50 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
     .toUpperCase();
 
   const badge = role === "admin" ? "Administrador" : role === "crm" ? "Equipo CRM" : "";
+
+  // Drag-to-scroll for the nav bar
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<{ active: boolean; startX: number; startScroll: number; moved: boolean; pointerId: number }>(
+    { active: false, startX: 0, startScroll: 0, moved: false, pointerId: -1 }
+  );
+  const suppressClickRef = useRef(false);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    dragRef.current = {
+      active: true,
+      startX: e.clientX,
+      startScroll: el.scrollLeft,
+      moved: false,
+      pointerId: e.pointerId,
+    };
+    el.setPointerCapture(e.pointerId);
+    el.style.cursor = "grabbing";
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    const el = scrollerRef.current;
+    if (!d.active || !el) return;
+    const dx = e.clientX - d.startX;
+    if (Math.abs(dx) > 4) d.moved = true;
+    el.scrollLeft = d.startScroll - dx;
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    const el = scrollerRef.current;
+    if (!d.active) return;
+    if (el && el.hasPointerCapture(d.pointerId)) el.releasePointerCapture(d.pointerId);
+    if (el) el.style.cursor = "grab";
+    if (d.moved) {
+      suppressClickRef.current = true;
+      setTimeout(() => (suppressClickRef.current = false), 0);
+    }
+    dragRef.current = { ...d, active: false, moved: false };
+    void e;
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -78,6 +155,51 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </div>
+
+        {/* Fila 2 — navegación con drag-to-scroll (sin scrollbar visible) */}
+        <nav
+          aria-label="Secciones del CRM"
+          className="max-w-7xl mx-auto px-4 md:px-8"
+        >
+          <div
+            ref={scrollerRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onPointerLeave={endDrag}
+            className="flex items-center gap-1.5 py-2 overflow-x-auto select-none cursor-grab [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]"
+            title="Arrastra para desplazar"
+          >
+            {navItems.map(({ to, label, icon: Icon, exact }) => {
+              const active = exact
+                ? location.pathname === to
+                : location.pathname === to || location.pathname.startsWith(to + "/");
+              return (
+                <Link
+                  key={to}
+                  to={to as string}
+                  onClick={(e) => {
+                    if (suppressClickRef.current) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
+                  draggable={false}
+                  className={
+                    "inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm whitespace-nowrap shrink-0 border transition-colors " +
+                    (active
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-card text-foreground border-border hover:bg-muted")
+                  }
+                >
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
         {/* Firma visual: degradado cyan → lime */}
         <div
