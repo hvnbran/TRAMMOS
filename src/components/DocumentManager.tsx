@@ -400,13 +400,16 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const docsConVenc = docs.filter((d) => !tiposSinVenc.has(d.tipo));
     const vencidos = docsConVenc.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "vencido").length;
     const porVencer = docsConVenc.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "por_vencer").length;
+    const requierenActualizacion = docs.filter((d) => d.requiere_actualizacion).length;
     return {
       obligatoriosTotal: obligatorios.length,
       obligatoriosCargados: cargados.length,
       vencidos,
       porVencer,
+      requierenActualizacion,
     };
   }, [docs, tipos, tiposSinVenc]);
+
 
   return (
     <div className="space-y-3">
