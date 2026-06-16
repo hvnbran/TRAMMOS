@@ -65,7 +65,6 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
   });
   const [error, setError] = useState<string | null>(null);
   const geo = useGeolocation(true);
-  const reverseFn = useServerFn(placesReverseGeocode);
 
   // Favoritos del pasajero (guardados localmente en este dispositivo)
   const [favoritos, setFavoritos] = useState<Favorito[]>(() => loadFavoritos());
