@@ -579,21 +579,41 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
                       </button>
                     </td>
                     <td className="px-2 py-2">
-                      <div className="flex items-center flex-wrap gap-1">
-                        {sinVenc ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                            <Calendar className="h-2.5 w-2.5" /> No vence
-                          </span>
-                        ) : (
-                          <VencimientoBadge fecha={d.fecha_vencimiento} />
-                        )}
-                        {d.verificado && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success inline-flex items-center gap-0.5">
-                            <Sparkles className="h-2.5 w-2.5" /> Verificado
-                          </span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center flex-wrap gap-1">
+                          {sinVenc ? (
+                            d.requiere_actualizacion ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-medium">
+                                <AlertTriangle className="h-2.5 w-2.5" /> Requiere actualizar
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                <Calendar className="h-2.5 w-2.5" /> No vence
+                              </span>
+                            )
+                          ) : (
+                            <VencimientoBadge fecha={d.fecha_vencimiento} />
+                          )}
+                          {d.verificado && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success inline-flex items-center gap-0.5">
+                              <Sparkles className="h-2.5 w-2.5" /> Verificado
+                            </span>
+                          )}
+                        </div>
+                        {sinVenc && (
+                          <label className="inline-flex items-center gap-1 text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+                            <input
+                              type="checkbox"
+                              checked={d.requiere_actualizacion}
+                              onChange={() => toggleRequiereActualizacion(d)}
+                              className="h-3 w-3 accent-warning"
+                            />
+                            Pedir actualización
+                          </label>
                         )}
                       </div>
                     </td>
+
                     <td className="px-2 py-2">
                       <div className="flex items-center justify-end gap-1">
                         <button
