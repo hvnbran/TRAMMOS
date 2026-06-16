@@ -1,7 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
 import {
-
   LayoutDashboard,
   Users,
   UserCog,
