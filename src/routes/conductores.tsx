@@ -317,6 +317,14 @@ function Conductores() {
           </div>
         )}
       </div>
+
+      {modalConductorId && (
+        <ConductorProfileModal
+          conductorId={modalConductorId}
+          onClose={() => { setModalConductorId(null); load(); }}
+        />
+      )}
     </AppLayout>
   );
 }
+
