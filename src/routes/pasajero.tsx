@@ -136,9 +136,17 @@ function PasajeroPage() {
       setPerfilLoading(true);
       const { data: p } = await supabase
         .from("pasajeros_pcd")
-        .select("id,nombre,cliente,direccion_habitual,centros_costo_permitidos,foto_url")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .select("id,nombre,cliente,direccion_habitual,centros_costo_permitidos,foto_url" as any)
         .eq("auth_user_id", user.id)
-        .maybeSingle();
+        .maybeSingle<{
+          id: string;
+          nombre: string;
+          cliente: string;
+          direccion_habitual: string | null;
+          centros_costo_permitidos: string[] | null;
+          foto_url: string | null;
+        }>();
       if (!mounted) return;
       if (p) {
         setPerfil({
@@ -147,7 +155,7 @@ function PasajeroPage() {
           cliente: p.cliente as "corona" | "sodimac",
           direccion_habitual: p.direccion_habitual,
           centros_costo_permitidos: p.centros_costo_permitidos,
-          foto_url: (p as { foto_url?: string | null }).foto_url ?? null,
+          foto_url: p.foto_url ?? null,
         });
       }
 
