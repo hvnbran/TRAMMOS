@@ -1,39 +1,46 @@
-## Objetivo
-Permitir que tanto conductores como pasajeros tengan foto de perfil, y mostrarlas mutuamente cuando hay un servicio activo (el pasajero ve la foto del conductor asignado, y el conductor ve la foto del pasajero al recibir/realizar el servicio).
+## Qué quieres lograr
 
-## Estado actual
-- `conductores.foto_url` ya existe en la base de datos y se sube al bucket `vehiculos-fotos`.
-- `pasajeros_pcd` NO tiene columna de foto.
-- En la app del pasajero, cuando se asigna conductor, hoy solo se muestra el nombre y la placa (sin foto).
-- En la app del conductor (vista de servicio), se muestran datos del pasajero pero sin foto.
+En la página **Conductores** queremos que cada conductor se vea como una mini ficha con su **foto de perfil**, y al hacer click en la foto (o en un botón "Ver perfil") se abra una ventana grande con sus datos, vehículos asignados y todos sus documentos — igual que ya funciona en **Vehículos**.
+
+## Buena noticia
+
+Casi todo ya existe en el proyecto:
+
+- `ConductorProfileModal.tsx` ya muestra foto + datos + vehículos asignados + `DocumentManager` con `TIPOS_CONDUCTOR`, y permite **subir/cambiar la foto** desde ahí.
+- El bucket `vehiculos-fotos` ya guarda fotos de conductor (`conductores/...`).
+- La columna `conductores.foto_url` ya existe.
+
+Lo único que falta es **enchufarlo en la página `/conductores`** (hoy solo despliega los documentos en un acordeón, sin foto ni modal).
 
 ## Cambios
 
-### 1. Base de datos
-- Agregar columna `foto_url text` a `pasajeros_pcd`.
-- Crear bucket público nuevo `perfiles` (o reutilizar `vehiculos-fotos`) para fotos de pasajero. Propongo **reutilizar `vehiculos-fotos`** con prefijo `pasajeros/` y `conductores/` para no multiplicar buckets, ya que es público.
-- Actualizar la función `get_pasajero_brief_for_conductor` para incluir `foto_url` (ya devuelve todo el row, así que con agregar la columna queda incluida automáticamente).
-- Crear una función `get_conductor_publico_por_nombre` extendida o ajustar la existente para devolver también `foto_url` del conductor (hoy solo devuelve `nombre, telefono`).
+### 1. `src/routes/conductores.tsx` — rediseñar la tarjeta
+- Añadir `foto_url` al `select` y al tipo `ConductorRow`.
+- Cambiar el layout de cada tarjeta para que se parezca al de vehículos:
+  - **Avatar circular grande** a la izquierda (foto del conductor o iniciales como fallback usando `PersonaAvatar`).
+  - Click sobre el avatar → abre el modal.
+  - Nombre, cédula, estado, badges de cliente al lado derecho.
+  - Datos rápidos abajo (teléfono, licencia, vencimiento).
+- Reemplazar el botón actual "Documentos" (acordeón con `DocumentManager`) por **"Ver perfil y documentos"** que abre `ConductorProfileModal`.
+- Quitar el `expanded` / inline `DocumentManager` (ya vive dentro del modal, evita duplicar).
+- Mantener los botones existentes: Editar, Eliminar, Generar acceso.
 
-### 2. Subida de foto
-- **Pasajero**: en su perfil / pantalla de cuenta, botón "Cambiar foto" → sube a `vehiculos-fotos/pasajeros/{pasajero_id}.jpg` → guarda URL en `pasajeros_pcd.foto_url`.
-- **Conductor**: ya tiene foto desde el panel admin. Agregar también opción de que el propio conductor pueda cambiarla desde su app (sube a `vehiculos-fotos/conductores/{conductor_id}.jpg`).
-- **Admin CRM**: en `pasajeros-pcd.tsx`, agregar campo de foto al formulario (igual al que ya existe en conductores).
+### 2. Estado nuevo
+- `const [modalConductorId, setModalConductorId] = useState<string | null>(null)`.
+- Renderizar `<ConductorProfileModal conductorId={modalConductorId} onClose={() => { setModalConductorId(null); load(); }} />` al final (el `load()` en `onClose` refresca la foto si la cambiaron).
 
-### 3. Mostrar fotos durante el servicio
-- **App pasajero** (`ViajeEnCurso.tsx` / tarjeta de conductor asignado): mostrar avatar circular del conductor junto a su nombre/placa.
-- **App conductor** (`conductor.servicio.$id.tsx`): mostrar avatar circular del pasajero junto a su nombre y datos.
-- Fallback: iniciales sobre fondo de marca cuando no haya `foto_url`.
+### 3. Avatar component
+- Reutilizar `PersonaAvatar` (ya existe). Tamaño grande (`h-16 w-16` o similar) con borde sutil y cursor `pointer`.
+
+## Lo que NO cambia
+- `ConductorProfileModal.tsx` ya funciona — no se toca.
+- `DocumentManager` ya soporta `kind="conductor"` — no se toca.
+- Subida de foto, RLS del bucket, tipos de documento: todo ya está.
+- Tabla `conductores`: no se necesita migración.
 
 ## Detalles técnicos
-- Componente reutilizable `<AvatarPersona nombre fotoUrl size />` con fallback de iniciales (usa shadcn `Avatar`).
-- Subida con `supabase.storage.from('vehiculos-fotos').upload(..., { upsert: true })` + `getPublicUrl`.
-- Validación cliente: máx 5MB, tipos jpg/png/webp, recorte cuadrado simple (sin editor, solo `object-cover`).
-- RLS storage: el bucket ya es público para lectura; para escritura agregar policy que permita al usuario subir a `pasajeros/{su_pasajero_id}.*` y a conductores subir a `conductores/{su_conductor_id}.*`, además de admin a todo.
+- Archivos modificados: solo `src/routes/conductores.tsx`.
+- Sin cambios de base de datos, sin nuevas dependencias.
+- El modal ya gestiona Escape para cerrar, scroll interno, y upload con validación 5 MB / image/*.
 
-## Migración necesaria
-1. `ALTER TABLE pasajeros_pcd ADD COLUMN foto_url text;`
-2. Actualizar `get_conductor_publico_por_nombre` para retornar también `foto_url`.
-3. Policies en `storage.objects` para `vehiculos-fotos` que permitan a cada quien subir su propia foto.
-
-¿Confirmas que reutilicemos el bucket `vehiculos-fotos` (público) y que el pasajero pueda cambiar su propia foto desde la app?
+¿Lo aplico así?
