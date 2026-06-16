@@ -1,39 +1,39 @@
-# Arreglar animación de intro del CRM
+## Objetivo
+Permitir que tanto conductores como pasajeros tengan foto de perfil, y mostrarlas mutuamente cuando hay un servicio activo (el pasajero ve la foto del conductor asignado, y el conductor ve la foto del pasajero al recibir/realizar el servicio).
 
-## Problema
-La intro del CRM se monta pero salta directamente al estado final (efecto "cut") en lugar de reproducir la secuencia logo → grid → progress que armamos. Causas en `src/components/crm/CrmIntro.tsx`:
+## Estado actual
+- `conductores.foto_url` ya existe en la base de datos y se sube al bucket `vehiculos-fotos`.
+- `pasajeros_pcd` NO tiene columna de foto.
+- En la app del pasajero, cuando se asigna conductor, hoy solo se muestra el nombre y la placa (sin foto).
+- En la app del conductor (vista de servicio), se muestran datos del pasajero pero sin foto.
 
-1. **Transiciones que no disparan**: el código asigna `style.transition` y `style.opacity = "1"` (u otra propiedad) en el mismo tick de JS. Sin un `requestAnimationFrame` entre "estado inicial" y "estado final", muchos navegadores aplican el cambio sin animar, lo que se ve exactamente como un corte.
-2. **Doble montaje en dev (StrictMode / HMR)**: el efecto corre, hace cleanup (`aliveRef = false`, limpia timeouts), y vuelve a correr. La IIFE asíncrona del primer ciclo sigue viva pero opera sobre nodos DOM ya desmontados, y la del segundo ciclo compite con ella. Resultado: nodos visibles se quedan en su estado inicial o final sin pasar por la secuencia.
-3. **Refs capturados al inicio de la IIFE**: si la primera corrida es cancelada a mitad, los nodos viejos quedan con `opacity:0` un instante y luego se reemplazan por los nuevos, produciendo el flash.
-4. **Cleanup del listener `resize`**: hoy se guarda en `(canvas as any).__cleanupResize`, pero el canvas se vuelve a crear en el segundo montaje y el listener viejo nunca se quita.
+## Cambios
 
-## Cambios (solo `src/components/crm/CrmIntro.tsx`)
+### 1. Base de datos
+- Agregar columna `foto_url text` a `pasajeros_pcd`.
+- Crear bucket público nuevo `perfiles` (o reutilizar `vehiculos-fotos`) para fotos de pasajero. Propongo **reutilizar `vehiculos-fotos`** con prefijo `pasajeros/` y `conductores/` para no multiplicar buckets, ya que es público.
+- Actualizar la función `get_pasajero_brief_for_conductor` para incluir `foto_url` (ya devuelve todo el row, así que con agregar la columna queda incluida automáticamente).
+- Crear una función `get_conductor_publico_por_nombre` extendida o ajustar la existente para devolver también `foto_url` del conductor (hoy solo devuelve `nombre, telefono`).
 
-1. **Disparo correcto de transiciones**: para cada paso (logo, wordmark, CRM, tag, fade del logo, fade-in del grid, cards), aplicar primero el `transition` y luego, dentro de `requestAnimationFrame(() => requestAnimationFrame(...))`, cambiar la propiedad final. Esto garantiza que el browser registre el estado inicial antes del final.
-2. **Protección contra doble montaje**:
-   - Usar un módulo-level `let introPlayed = false` para que la intro se ejecute una sola vez por sesión de página (la segunda invocación —StrictMode o re-mount del layout al navegar entre rutas del CRM— se salta y no renderiza nada).
-   - Esto también responde al punto que dejamos pendiente: la intro corre solo al entrar al CRM, no en cada cambio de pestaña.
-3. **Refactor del bucle de canvas y cleanup**:
-   - Mover la función `setSize` a una variable del scope del efecto y removerla explícitamente en `cleanup`.
-   - En `cleanup`: cancelar `rafRef`, limpiar todos los `timeoutsRef`, quitar el listener `resize`, y marcar `aliveRef = false`. Quitar el hack `(canvas as any).__cleanupResize`.
-4. **Sustituir el patrón `await wait + mutar style` por un mini-helper**:
+### 2. Subida de foto
+- **Pasajero**: en su perfil / pantalla de cuenta, botón "Cambiar foto" → sube a `vehiculos-fotos/pasajeros/{pasajero_id}.jpg` → guarda URL en `pasajeros_pcd.foto_url`.
+- **Conductor**: ya tiene foto desde el panel admin. Agregar también opción de que el propio conductor pueda cambiarla desde su app (sube a `vehiculos-fotos/conductores/{conductor_id}.jpg`).
+- **Admin CRM**: en `pasajeros-pcd.tsx`, agregar campo de foto al formulario (igual al que ya existe en conductores).
 
-```text
-animateStep(el, {transition, props}) →
-  el.style.transition = transition;
-  rAF(rAF(() => Object.assign(el.style, props)));
-  await wait(durationOfThatStep);
-```
+### 3. Mostrar fotos durante el servicio
+- **App pasajero** (`ViajeEnCurso.tsx` / tarjeta de conductor asignado): mostrar avatar circular del conductor junto a su nombre/placa.
+- **App conductor** (`conductor.servicio.$id.tsx`): mostrar avatar circular del pasajero junto a su nombre y datos.
+- Fallback: iniciales sobre fondo de marca cuando no haya `foto_url`.
 
-   Cada paso queda atómico y legible, y la pausa entre pasos se vuelve solo el tiempo de la propia transición.
-5. **Mantener todo lo demás igual**: misma duración total (~5.5s), misma paleta lima/cian, mismo fade-out, mismo respeto a `prefers-reduced-motion`, misma grilla de 11 módulos con check ✓ y progress bar.
+## Detalles técnicos
+- Componente reutilizable `<AvatarPersona nombre fotoUrl size />` con fallback de iniciales (usa shadcn `Avatar`).
+- Subida con `supabase.storage.from('vehiculos-fotos').upload(..., { upsert: true })` + `getPublicUrl`.
+- Validación cliente: máx 5MB, tipos jpg/png/webp, recorte cuadrado simple (sin editor, solo `object-cover`).
+- RLS storage: el bucket ya es público para lectura; para escritura agregar policy que permita al usuario subir a `pasajeros/{su_pasajero_id}.*` y a conductores subir a `conductores/{su_conductor_id}.*`, además de admin a todo.
 
-## Verificación
-- Abrir `/crm` en el preview tras login, confirmar visualmente: logo aparece con scale+rotate, wordmark TRAMMOS entra desde la derecha, "CRM" se "abre" con clip-path, tagline cambia de color, fade al grid, los 11 módulos se marcan uno por uno, "SISTEMA LISTO ✓" y fade-out.
-- Navegar entre `/crm/clientes` → `/crm/pipeline` y verificar que la intro **no vuelve a salir** (flag de sesión).
-- Recargar la pestaña → la intro vuelve a reproducirse desde cero.
-- Activar `prefers-reduced-motion` en DevTools → debe cerrar en ~400ms sin animación.
+## Migración necesaria
+1. `ALTER TABLE pasajeros_pcd ADD COLUMN foto_url text;`
+2. Actualizar `get_conductor_publico_por_nombre` para retornar también `foto_url`.
+3. Policies en `storage.objects` para `vehiculos-fotos` que permitan a cada quien subir su propia foto.
 
-## Fuera de alcance
-No se tocan `CrmLayout`, rutas, ni autenticación. Solo se reescribe la secuencia y el cleanup dentro de `CrmIntro.tsx`.
+¿Confirmas que reutilicemos el bucket `vehiculos-fotos` (público) y que el pasajero pueda cambiar su propia foto desde la app?
