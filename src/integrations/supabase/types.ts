@@ -2028,6 +2028,7 @@ export type Database = {
       get_conductor_publico_por_nombre: {
         Args: { _nombre: string }
         Returns: {
+          foto_url: string
           nombre: string
           telefono: string
         }[]
