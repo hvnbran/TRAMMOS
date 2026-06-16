@@ -72,10 +72,11 @@ function Conductores() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [modalConductorId, setModalConductorId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const initialClientes: ("corona" | "sodimac")[] = cliente ? [cliente as "corona" | "sodimac"] : [];
   const [form, setForm] = useState({ ...EMPTY_FORM, clientes: initialClientes });
+
   const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "sin_asignar">("todos");
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
