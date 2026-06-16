@@ -1,11 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { Pictograma } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { reverseGeocode } from "@/lib/geo/photon";
-import { placesReverseGeocode } from "@/lib/geo/places.functions";
 import { Loader2, MapPin, Send, Clock, Star, Plus, X, Navigation } from "lucide-react";
 
 export interface PasajeroPerfil {
