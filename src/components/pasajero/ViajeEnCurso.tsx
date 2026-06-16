@@ -1,6 +1,7 @@
 import { SpeakButton } from "@/components/SpeakButton";
-import { Phone, AlertOctagon, X, Loader2, CheckCircle2, Car, User, AlertTriangle } from "lucide-react";
+import { Phone, AlertOctagon, X, Loader2, CheckCircle2, Car, AlertTriangle } from "lucide-react";
 import { Pictograma } from "@/components/Pictograma";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
 import { lazy, Suspense } from "react";
 const VehiculoLiveMiniMap = lazy(() => import("@/components/pasajero/VehiculoLiveMiniMap"));
 
@@ -12,6 +13,7 @@ interface Props {
   destino: string;
   conductor?: string | null;
   conductorTelefono?: string | null;
+  conductorFoto?: string | null;
   vehiculo?: string | null;
   vehiculoFoto?: string | null;
   vehiculoMarca?: string | null;
@@ -33,17 +35,13 @@ const LABELS: Record<EstadoSolicitud, { titulo: string; sub: string }> = {
   cancelada: { titulo: "Viaje cancelado", sub: "" },
 };
 
-function iniciales(nombre: string): string {
-  const partes = nombre.trim().split(/\s+/).slice(0, 2);
-  return partes.map((p) => p.charAt(0).toUpperCase()).join("") || "?";
-}
-
 export function ViajeEnCurso({
   estado,
   origen,
   destino,
   conductor,
   conductorTelefono,
+  conductorFoto,
   vehiculo,
   vehiculoFoto,
   vehiculoMarca,
@@ -119,12 +117,7 @@ export function ViajeEnCurso({
 
           {/* Info conductor */}
           <div className="p-4 flex items-center gap-3">
-            <div
-              className="h-12 w-12 rounded-full bg-primary/15 text-primary text-base font-bold flex items-center justify-center shrink-0 border border-primary/30"
-              aria-hidden="true"
-            >
-              {conductor ? iniciales(conductor) : <User className="h-5 w-5" />}
-            </div>
+            <PersonaAvatar nombre={conductor} fotoUrl={conductorFoto} size="md" />
             <div className="flex-1 min-w-0">
               <div className="text-[11px] uppercase tracking-wide text-muted-foreground leading-none">
                 Tu conductor
