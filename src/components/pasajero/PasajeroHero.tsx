@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
-import carAsset from "@/assets/pasajero-hero-car.png.asset.json";
+import carAsset from "@/assets/pasajero-hero-car-new.png.asset.json";
+
 
 interface PasajeroHeroProps {
   nombre: string;
