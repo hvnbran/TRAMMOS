@@ -291,7 +291,6 @@ function Conductores() {
                   <div className={`mt-3 grid grid-cols-2 gap-2 text-xs ${vencido ? "opacity-70" : ""}`}>
                     <div><span className="text-muted-foreground">Teléfono</span><p>{c.telefono || "—"}</p></div>
                     <div><span className="text-muted-foreground">Licencia</span><p>{c.licencia || "—"} · {c.categoria_lic}</p></div>
-                    <div><span className="text-muted-foreground">Vence</span><p className={isVencido(c.vence_licencia) ? "text-destructive font-medium" : ""}>{c.vence_licencia || "—"}</p></div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {((c.clientes && c.clientes.length > 0) ? c.clientes : (c.cliente ? [c.cliente] : [])).length === 0 ? (
