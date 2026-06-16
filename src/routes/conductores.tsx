@@ -90,7 +90,7 @@ function Conductores() {
       const { data: docs } = await supabase
         .from("conductor_documentos")
         .select("conductor_id, fecha_vencimiento")
-        .eq("tipo", "licencia")
+        .eq("tipo", "licencia_conduccion")
         .in("conductor_id", ids);
       const map = new Map<string, string | null>();
       (docs ?? []).forEach((d: any) => map.set(d.conductor_id, d.fecha_vencimiento));
