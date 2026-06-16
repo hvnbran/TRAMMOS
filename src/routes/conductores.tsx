@@ -85,7 +85,21 @@ function Conductores() {
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("conductores").select("*").order("nombre");
-    if (data) setItems(data as ConductorRow[]);
+    if (data) {
+      const ids = data.map((c: any) => c.id);
+      const { data: docs } = await supabase
+        .from("conductor_documentos")
+        .select("conductor_id, fecha_vencimiento")
+        .eq("tipo", "licencia")
+        .in("conductor_id", ids);
+      const map = new Map<string, string | null>();
+      (docs ?? []).forEach((d: any) => map.set(d.conductor_id, d.fecha_vencimiento));
+      const merged = data.map((c: any) => ({
+        ...c,
+        vence_licencia: map.get(c.id) ?? c.vence_licencia,
+      }));
+      setItems(merged as ConductorRow[]);
+    }
     setLoading(false);
   }
 
