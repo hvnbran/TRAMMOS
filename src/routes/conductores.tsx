@@ -1,12 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Trash2, Users, FileText, ChevronDown, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Users, Pencil, AlertTriangle, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { DocumentManager, TIPOS_CONDUCTOR } from "@/components/DocumentManager";
+import { TIPOS_CONDUCTOR } from "@/components/DocumentManager";
 import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { GenerarAccesoConductor } from "@/components/conductor/GenerarAccesoConductor";
+import { ConductorProfileModal } from "@/components/ConductorProfileModal";
+import { PersonaAvatar } from "@/components/PersonaAvatar";
+
 
 export const Route = createFileRoute("/conductores")({
   component: Conductores,
