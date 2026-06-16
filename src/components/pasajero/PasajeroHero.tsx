@@ -20,10 +20,9 @@ function PasajeroHeroBase({ nombre }: PasajeroHeroProps) {
   return (
     <section
       aria-label="Bienvenida TRAMMOS"
-      className="relative overflow-hidden rounded-3xl shadow-xl mb-6"
+      className="relative overflow-hidden rounded-3xl mb-6"
       style={{
         background: "#C6FF00",
-        boxShadow: "0 20px 60px -20px rgba(0, 202, 255, 0.45)",
       }}
     >
       {/* Mapa decorativo de fondo (curvas tipo trayecto) */}
@@ -135,7 +134,6 @@ function PasajeroHeroBase({ nombre }: PasajeroHeroProps) {
             alt="Camioneta TRAMMOS"
             className="w-full max-w-[280px] sm:max-w-[320px] h-auto select-none pointer-events-none"
             draggable={false}
-            style={{ filter: "drop-shadow(0 16px 20px rgba(0,153,204,0.35))" }}
           />
         </div>
 

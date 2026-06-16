@@ -1,12 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { Pictograma } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { reverseGeocode } from "@/lib/geo/photon";
-import { placesReverseGeocode } from "@/lib/geo/places.functions";
-import { Loader2, MapPin, Send, Clock, Briefcase, Home, Repeat, Navigation } from "lucide-react";
+import { Loader2, MapPin, Send, Clock, Star, Plus, X, Navigation } from "lucide-react";
 
 export interface PasajeroPerfil {
   id: string;
@@ -28,8 +25,35 @@ interface Props {
   onSubmit: (data: { origen: string; destino: string; hora_recogida: Date; programado: boolean; notas: string }) => Promise<void> | void;
 }
 
-export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Props) {
-  const [origen, setOrigen] = useState(perfil.direccion_habitual || "");
+type Favorito = { id: string; nombre: string; direccion: string };
+
+const FAVS_KEY = "pasajero_favoritos_v1";
+
+function loadFavoritos(): Favorito[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(FAVS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((f) => f && typeof f.nombre === "string" && typeof f.direccion === "string");
+  } catch {
+    return [];
+  }
+}
+
+function saveFavoritos(list: Favorito[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(FAVS_KEY, JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
+
+export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmit }: Props) {
+  // El origen SIEMPRE inicia vacío (el pasajero decide desde dónde sale).
+  const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
   const [notas, setNotas] = useState("");
   const [modoHora, setModoHora] = useState<"ahora" | "programar">("ahora");
@@ -41,42 +65,33 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
   });
   const [error, setError] = useState<string | null>(null);
   const geo = useGeolocation(true);
-  const reverseFn = useServerFn(placesReverseGeocode);
 
-  // Si el GPS otorga permiso y el origen sigue vacío, hacer reverse geocode (Google → Photon)
-  useEffect(() => {
-    if (geo.status !== "granted" || geo.lat == null || geo.lon == null) return;
-    if (origen.trim().length > 0) return;
-    let cancel = false;
-    (async () => {
-      try {
-        const r = await reverseFn({ data: { lat: geo.lat!, lon: geo.lon! } });
-        if (cancel) return;
-        if (r?.label) { setOrigen(r.label); return; }
-      } catch {}
-      const s = await reverseGeocode(geo.lat!, geo.lon!);
-      if (cancel || !s) return;
-      setOrigen(s.label);
-    })();
-    return () => { cancel = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geo.status, geo.lat, geo.lon]);
+  // Favoritos del pasajero (guardados localmente en este dispositivo)
+  const [favoritos, setFavoritos] = useState<Favorito[]>(() => loadFavoritos());
+  const [showAddFav, setShowAddFav] = useState(false);
+  const [favNombre, setFavNombre] = useState("");
+  const [favDireccion, setFavDireccion] = useState("");
 
   useEffect(() => {
-    if (perfil.direccion_habitual && !origen) setOrigen(perfil.direccion_habitual);
-  }, [perfil.direccion_habitual, origen]);
+    saveFavoritos(favoritos);
+  }, [favoritos]);
 
-  const atajos = useMemo(() => {
-    const list: { label: string; icon: typeof Home; destino: string }[] = [];
-    if (perfil.direccion_habitual) {
-      list.push({ label: "A casa", icon: Home, destino: perfil.direccion_habitual });
-    }
-    (perfil.centros_costo_permitidos || []).slice(0, 3).forEach((c) =>
-      list.push({ label: c, icon: Briefcase, destino: c }),
-    );
-    if (ultima) list.push({ label: "Repetir último", icon: Repeat, destino: ultima.destino });
-    return list;
-  }, [perfil, ultima]);
+  const handleAddFavorito = () => {
+    const nombre = favNombre.trim();
+    const direccion = favDireccion.trim();
+    if (!nombre || !direccion) return;
+    setFavoritos((prev) => [
+      ...prev,
+      { id: Math.random().toString(36).slice(2, 10), nombre, direccion },
+    ]);
+    setFavNombre("");
+    setFavDireccion("");
+    setShowAddFav(false);
+  };
+
+  const handleRemoveFavorito = (id: string) => {
+    setFavoritos((prev) => prev.filter((f) => f.id !== id));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,22 +126,87 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
         <SpeakButton text={narracion} size="md" label="Escuchar instrucciones" />
       </header>
 
-      {/* Atajos rápidos */}
-      {atajos.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {atajos.map((a) => (
-            <button
-              key={a.label}
-              type="button"
-              onClick={() => setDestino(a.destino)}
-              className="inline-flex items-center gap-2 px-3 h-10 rounded-full bg-muted/50 border border-border text-sm font-medium text-foreground hover:bg-muted transition-all active:scale-95"
-            >
-              <a.icon className="h-4 w-4 text-primary" />
-              {a.label}
-            </button>
-          ))}
+      {/* Destinos favoritos del pasajero */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Mis destinos favoritos
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowAddFav((v) => !v)}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {showAddFav ? "Cancelar" : "Nuevo"}
+          </button>
         </div>
-      )}
+
+        {favoritos.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {favoritos.map((f) => (
+              <div
+                key={f.id}
+                className="group inline-flex items-center gap-1 pl-3 pr-1 h-10 rounded-full bg-muted/50 border border-border text-sm font-medium text-foreground"
+              >
+                <button
+                  type="button"
+                  onClick={() => setDestino(f.direccion)}
+                  className="inline-flex items-center gap-2 hover:text-primary transition-colors"
+                  title={f.direccion}
+                >
+                  <Star className="h-4 w-4 text-primary" />
+                  {f.nombre}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFavorito(f.id)}
+                  className="ml-1 h-7 w-7 inline-flex items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`Eliminar favorito ${f.nombre}`}
+                  title="Eliminar"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {favoritos.length === 0 && !showAddFav && (
+          <p className="text-xs text-muted-foreground">
+            Aún no tienes destinos guardados. Toca <strong>Nuevo</strong> para agregar uno.
+          </p>
+        )}
+
+        {showAddFav && (
+          <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-3 space-y-2">
+            <input
+              type="text"
+              value={favNombre}
+              onChange={(e) => setFavNombre(e.target.value)}
+              placeholder="Nombre (ej: Casa, Oficina, Mamá)"
+              className="w-full h-11 rounded-lg border-2 border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+              maxLength={40}
+            />
+            <input
+              type="text"
+              value={favDireccion}
+              onChange={(e) => setFavDireccion(e.target.value)}
+              placeholder="Dirección completa"
+              className="w-full h-11 rounded-lg border-2 border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+              maxLength={200}
+            />
+            <button
+              type="button"
+              onClick={handleAddFavorito}
+              disabled={!favNombre.trim() || !favDireccion.trim()}
+              className="w-full h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50"
+            >
+              Guardar favorito
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-3">
         <div className="space-y-2">
