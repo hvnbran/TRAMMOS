@@ -6,6 +6,9 @@ import { useEffect, useRef, useState } from "react";
  * - Phase 1: logo (isotype + wordmark + tagline)
  * - Phase 2: module grid with progress bar
  * Auto-dismisses ~6s. Respects prefers-reduced-motion.
+ *
+ * Runs only ONCE per page session (module-level flag) so it doesn't
+ * replay on StrictMode double-mount or when navigating between CRM tabs.
  */
 
 const MODS = [
@@ -22,6 +25,10 @@ const MODS = [
   { icon: "🤝", name: "Equipo", lit: false },
 ];
 
+// Module-level flag — survives StrictMode double-mount and route changes
+// within the CRM. Resets only on full page reload.
+let introPlayed = false;
+
 function ensureMontserrat() {
   if (typeof document === "undefined") return;
   if (document.getElementById("crm-intro-montserrat")) return;
@@ -33,8 +40,15 @@ function ensureMontserrat() {
   document.head.appendChild(l);
 }
 
+function nextFrame(): Promise<void> {
+  return new Promise((res) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => res()));
+  });
+}
+
 export function CrmIntro() {
-  const [show, setShow] = useState(true);
+  // Skip entirely if already played this page session.
+  const [show, setShow] = useState(() => !introPlayed);
   const [fadeOut, setFadeOut] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -54,6 +68,9 @@ export function CrmIntro() {
   const gridRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (introPlayed) return;
+    introPlayed = true;
+
     ensureMontserrat();
     aliveRef.current = true;
 
@@ -68,6 +85,7 @@ export function CrmIntro() {
       });
 
     // ---- Canvas background ----
+    let removeResize: (() => void) | null = null;
     const canvas = canvasRef.current;
     if (canvas) {
       const setSize = () => {
@@ -76,6 +94,7 @@ export function CrmIntro() {
       };
       setSize();
       window.addEventListener("resize", setSize);
+      removeResize = () => window.removeEventListener("resize", setSize);
 
       const ctx = canvas.getContext("2d");
       if (ctx) {
@@ -135,15 +154,6 @@ export function CrmIntro() {
         };
         draw();
       }
-
-      // Cleanup resize listener via closure on unmount
-      timeoutsRef.current.push(
-        setTimeout(() => {
-          /* keep handle alive; removed in unmount below */
-        }, 0),
-      );
-      (canvas as any).__cleanupResize = () =>
-        window.removeEventListener("resize", setSize);
     }
 
     // ---- Build grid ----
@@ -178,6 +188,22 @@ export function CrmIntro() {
       return cleanup;
     }
 
+    /**
+     * Apply transition then commit final styles on the next frame, so the
+     * browser registers the initial state before the change → animation
+     * actually plays instead of snapping.
+     */
+    const animate = async (
+      el: HTMLElement | SVGElement,
+      transition: string,
+      finalStyles: Record<string, string>,
+    ) => {
+      el.style.transition = transition;
+      await nextFrame();
+      if (!aliveRef.current) return;
+      Object.assign(el.style, finalStyles);
+    };
+
     (async () => {
       const pLogo = phaseLogoRef.current;
       const pGrid = phaseGridRef.current;
@@ -188,54 +214,74 @@ export function CrmIntro() {
       const progWrap = progWrapRef.current;
       const progFill = progFillRef.current;
       const progText = progTextRef.current;
-      if (!pLogo || !pGrid || !iso || !wmMain || !wmCrm || !wmTag || !progWrap || !progFill || !progText) return;
+      if (
+        !pLogo ||
+        !pGrid ||
+        !iso ||
+        !wmMain ||
+        !wmCrm ||
+        !wmTag ||
+        !progWrap ||
+        !progFill ||
+        !progText
+      )
+        return;
 
-      await wait(250);
+      // Ensure first paint with initial (hidden) state
+      await nextFrame();
       if (!aliveRef.current) return;
+
+      pLogo.style.transition = "opacity .3s ease";
       pLogo.style.opacity = "1";
 
-      iso.style.transition =
-        "opacity .9s ease, transform .9s cubic-bezier(0.34, 1.56, 0.64, 1)";
-      iso.style.opacity = "1";
-      iso.style.transform = "scale(1) rotate(0deg)";
-      await wait(450);
-      if (!aliveRef.current) return;
-
-      wmMain.style.transition = "opacity .6s ease, transform .6s ease";
-      wmMain.style.opacity = "1";
-      wmMain.style.transform = "translateX(0)";
-      await wait(280);
-      if (!aliveRef.current) return;
-
-      wmCrm.style.transition = "opacity .5s, clip-path .5s";
-      wmCrm.style.opacity = "1";
-      wmCrm.style.clipPath = "inset(0 0% 0 0)";
       await wait(200);
       if (!aliveRef.current) return;
 
-      wmTag.style.transition = "opacity .6s, color 1.2s";
-      wmTag.style.opacity = "1";
+      await animate(
+        iso,
+        "opacity .9s ease, transform .9s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        { opacity: "1", transform: "scale(1) rotate(0deg)" },
+      );
+      await wait(550);
+      if (!aliveRef.current) return;
+
+      await animate(wmMain, "opacity .6s ease, transform .6s ease", {
+        opacity: "1",
+        transform: "translateX(0)",
+      });
+      await wait(380);
+      if (!aliveRef.current) return;
+
+      await animate(wmCrm, "opacity .5s ease, clip-path .5s ease", {
+        opacity: "1",
+        clipPath: "inset(0 0% 0 0)",
+      });
+      await wait(320);
+      if (!aliveRef.current) return;
+
+      await animate(wmTag, "opacity .6s ease, color 1.2s ease", {
+        opacity: "1",
+      });
       const tColor = setTimeout(() => {
-        wmTag.style.color = "#7ab47a";
+        if (aliveRef.current) wmTag.style.color = "#7ab47a";
       }, 400);
       timeoutsRef.current.push(tColor);
-      await wait(700);
+      await wait(900);
       if (!aliveRef.current) return;
 
-      pLogo.style.transition = "opacity .5s";
-      pLogo.style.opacity = "0";
-      await wait(450);
+      await animate(pLogo, "opacity .5s ease", { opacity: "0" });
+      await wait(500);
       if (!aliveRef.current) return;
 
-      pGrid.style.opacity = "1";
-      progWrap.style.transition = "opacity .4s";
-      progWrap.style.opacity = "1";
+      await animate(pGrid, "opacity .4s ease", { opacity: "1" });
+      await animate(progWrap, "opacity .4s ease", { opacity: "1" });
 
       for (let i = 0; i < MODS.length; i++) {
-        await wait(140);
-        if (!aliveRef.current) return;
         const card = document.getElementById("crm-intro-mc" + i);
         if (card) {
+          card.style.transition = "opacity .4s ease, transform .4s ease";
+          await nextFrame();
+          if (!aliveRef.current) return;
           card.style.opacity = "1";
           card.style.transform = "translateY(0) scale(1)";
           const check = card.querySelector(".mcard-check");
@@ -245,12 +291,15 @@ export function CrmIntro() {
         progText.textContent = MODS[i].name.toUpperCase();
         progFill.style.width =
           Math.round(((i + 1) / MODS.length) * 100) + "%";
+        await wait(160);
+        if (!aliveRef.current) return;
       }
-      await wait(350);
+
+      await wait(400);
       if (!aliveRef.current) return;
       progText.textContent = "SISTEMA LISTO ✓";
       progFill.style.background = "linear-gradient(90deg,#b2e800,#00d4b8)";
-      finish(550);
+      finish(650);
     })();
 
     function cleanup() {
@@ -258,8 +307,7 @@ export function CrmIntro() {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       timeoutsRef.current.forEach((t) => clearTimeout(t));
       timeoutsRef.current = [];
-      const cv = canvasRef.current as any;
-      if (cv && typeof cv.__cleanupResize === "function") cv.__cleanupResize();
+      if (removeResize) removeResize();
     }
 
     return cleanup;
@@ -439,7 +487,6 @@ export function CrmIntro() {
           text-align: center;
           opacity: 0;
           transform: translateY(20px) scale(0.9);
-          transition: opacity .4s, transform .4s;
         }
         .crm-intro-root .mcard.lit {
           background: rgba(0,180,216,0.08);
