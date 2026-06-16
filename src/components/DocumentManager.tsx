@@ -656,14 +656,15 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
 export const TIPOS_CONDUCTOR: TipoDef[] = [
   { value: "cedula", label: "Cédula de ciudadanía", obligatorio: true, sinVencimiento: true },
   { value: "licencia_conduccion", label: "Licencia de conductor", obligatorio: true },
-  { value: "seguridad_social", label: "Planilla seguridad social", obligatorio: true },
-  { value: "examenes_medicos", label: "Exámenes médicos", obligatorio: true },
-  { value: "antecedentes", label: "Antecedentes", obligatorio: true },
-  { value: "simit", label: "SIMIT", obligatorio: true },
+  { value: "seguridad_social", label: "Planilla seguridad social", obligatorio: true, sinVencimiento: true },
+  { value: "examenes_medicos", label: "Exámenes médicos", obligatorio: true, sinVencimiento: true },
+  { value: "antecedentes", label: "Antecedentes", obligatorio: true, sinVencimiento: true },
+  { value: "simit", label: "SIMIT", obligatorio: true, sinVencimiento: true },
   { value: "curso_defensivo", label: "Curso manejo defensivo", obligatorio: true },
   { value: "curso_teorico_practico", label: "Curso teórico-práctico", obligatorio: true },
   { value: "hoja_vida", label: "Hoja de vida", obligatorio: true, sinVencimiento: true },
 ];
+
 
 // Tipos completos de documentos para vehículos
 export const TIPOS_VEHICULO: TipoDef[] = [
