@@ -85,21 +85,7 @@ function Conductores() {
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("conductores").select("*").order("nombre");
-    if (data) {
-      const ids = data.map((c: any) => c.id);
-      const { data: docs } = await supabase
-        .from("conductor_documentos")
-        .select("conductor_id, fecha_vencimiento")
-        .eq("tipo", "licencia_conduccion")
-        .in("conductor_id", ids);
-      const map = new Map<string, string | null>();
-      (docs ?? []).forEach((d: any) => map.set(d.conductor_id, d.fecha_vencimiento));
-      const merged = data.map((c: any) => ({
-        ...c,
-        vence_licencia: map.get(c.id) ?? c.vence_licencia,
-      }));
-      setItems(merged as ConductorRow[]);
-    }
+    if (data) setItems(data as ConductorRow[]);
     setLoading(false);
   }
 
@@ -146,9 +132,8 @@ function Conductores() {
       telefono: form.telefono,
       licencia: form.licencia,
       categoria_lic: form.categoria_lic,
-      vence_licencia: form.vence_licencia || null,
       fecha_nacimiento: form.fecha_nacimiento || null,
-      estado: isVencido(form.vence_licencia || null) ? "Vencido" : form.estado,
+      estado: form.estado,
       clientes: form.clientes,
       cliente: form.clientes[0] ?? null,
     };
@@ -235,7 +220,7 @@ function Conductores() {
                   {["C1", "C2", "C3", "B1", "B2"].map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
-              <div><label className="text-xs text-muted-foreground">Vence licencia</label><input type="date" value={form.vence_licencia} onChange={(e) => setForm({ ...form, vence_licencia: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div className="md:col-span-2 text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">La fecha de vencimiento de la licencia se toma automáticamente del documento "Licencia de conductor" cargado en el perfil.</div>
               <div><label className="text-xs text-muted-foreground">Fecha de nacimiento</label><input type="date" value={form.fecha_nacimiento} onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Estado</label>
                 <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
