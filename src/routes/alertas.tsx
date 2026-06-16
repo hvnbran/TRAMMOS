@@ -83,7 +83,7 @@ function Alertas() {
       const filterCliente = <T extends { eq: (col: string, v: string) => T }>(q: T) =>
         cliente ? q.eq("cliente", cliente) : q;
 
-      const [{ data: conductores }, { data: vehiculos }, { data: incidentes }] = await Promise.all([
+      const [{ data: conductores }, { data: vehiculos }, { data: incidentes }, { data: condDocs }, { data: vehDocs }] = await Promise.all([
         filterCliente(
           supabase.from("conductores").select("id,nombre,vence_licencia").not("vence_licencia", "is", null),
         ),
@@ -95,7 +95,18 @@ function Alertas() {
             .eq("estado", "Abierto")
             .order("fecha", { ascending: false }),
         ),
+        filterCliente(
+          (supabase.from("conductor_documentos") as any)
+            .select("id,tipo,requiere_actualizacion_at,conductor_id,conductores(nombre)")
+            .eq("requiere_actualizacion", true),
+        ),
+        filterCliente(
+          (supabase.from("vehiculo_documentos") as any)
+            .select("id,tipo,requiere_actualizacion_at,vehiculo_id,vehiculos(placa)")
+            .eq("requiere_actualizacion", true),
+        ),
       ]);
+
 
       const list: Alerta[] = [];
 
