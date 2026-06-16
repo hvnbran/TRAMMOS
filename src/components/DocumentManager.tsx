@@ -79,7 +79,9 @@ interface DocItem {
   fecha_emision: string | null;
   numero_documento: string | null;
   verificado: boolean;
+  requiere_actualizacion: boolean;
 }
+
 
 interface TipoDef {
   value: string;
@@ -370,6 +372,23 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     load();
   }
 
+  async function toggleRequiereActualizacion(d: DocItem) {
+    const nuevo = !d.requiere_actualizacion;
+    const { error } = await (supabase.from(TABLE[kind]) as any)
+      .update({
+        requiere_actualizacion: nuevo,
+        requiere_actualizacion_at: nuevo ? new Date().toISOString() : null,
+      })
+      .eq("id", d.id);
+    if (error) {
+      toast.error("No se pudo actualizar", { description: error.message });
+      return;
+    }
+    toast.success(nuevo ? "Marcado para actualizar" : "Marca quitada");
+    load();
+  }
+
+
   // Resumen de cumplimiento
   const tiposSinVenc = useMemo(
     () => new Set(tipos.filter((t) => t.sinVencimiento).map((t) => t.value)),
@@ -381,13 +400,16 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     const docsConVenc = docs.filter((d) => !tiposSinVenc.has(d.tipo));
     const vencidos = docsConVenc.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "vencido").length;
     const porVencer = docsConVenc.filter((d) => estadoVencimiento(d.fecha_vencimiento).estado === "por_vencer").length;
+    const requierenActualizacion = docs.filter((d) => d.requiere_actualizacion).length;
     return {
       obligatoriosTotal: obligatorios.length,
       obligatoriosCargados: cargados.length,
       vencidos,
       porVencer,
+      requierenActualizacion,
     };
   }, [docs, tipos, tiposSinVenc]);
+
 
   return (
     <div className="space-y-3">
@@ -411,6 +433,12 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
               {resumen.porVencer} por vencer (30 días)
             </span>
           )}
+          {resumen.requierenActualizacion > 0 && (
+            <span className="px-2 py-1 rounded-md bg-warning/15 text-warning font-medium">
+              {resumen.requierenActualizacion} pendiente{resumen.requierenActualizacion > 1 ? "s" : ""} de actualizar
+            </span>
+          )}
+
         </div>
       )}
 
@@ -560,21 +588,41 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
                       </button>
                     </td>
                     <td className="px-2 py-2">
-                      <div className="flex items-center flex-wrap gap-1">
-                        {sinVenc ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                            <Calendar className="h-2.5 w-2.5" /> No vence
-                          </span>
-                        ) : (
-                          <VencimientoBadge fecha={d.fecha_vencimiento} />
-                        )}
-                        {d.verificado && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success inline-flex items-center gap-0.5">
-                            <Sparkles className="h-2.5 w-2.5" /> Verificado
-                          </span>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center flex-wrap gap-1">
+                          {sinVenc ? (
+                            d.requiere_actualizacion ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning font-medium">
+                                <AlertTriangle className="h-2.5 w-2.5" /> Requiere actualizar
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                                <Calendar className="h-2.5 w-2.5" /> No vence
+                              </span>
+                            )
+                          ) : (
+                            <VencimientoBadge fecha={d.fecha_vencimiento} />
+                          )}
+                          {d.verificado && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success inline-flex items-center gap-0.5">
+                              <Sparkles className="h-2.5 w-2.5" /> Verificado
+                            </span>
+                          )}
+                        </div>
+                        {sinVenc && (
+                          <label className="inline-flex items-center gap-1 text-[10px] text-muted-foreground cursor-pointer hover:text-foreground">
+                            <input
+                              type="checkbox"
+                              checked={d.requiere_actualizacion}
+                              onChange={() => toggleRequiereActualizacion(d)}
+                              className="h-3 w-3 accent-warning"
+                            />
+                            Pedir actualización
+                          </label>
                         )}
                       </div>
                     </td>
+
                     <td className="px-2 py-2">
                       <div className="flex items-center justify-end gap-1">
                         <button
@@ -656,14 +704,15 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
 export const TIPOS_CONDUCTOR: TipoDef[] = [
   { value: "cedula", label: "Cédula de ciudadanía", obligatorio: true, sinVencimiento: true },
   { value: "licencia_conduccion", label: "Licencia de conductor", obligatorio: true },
-  { value: "seguridad_social", label: "Planilla seguridad social", obligatorio: true },
-  { value: "examenes_medicos", label: "Exámenes médicos", obligatorio: true },
-  { value: "antecedentes", label: "Antecedentes", obligatorio: true },
-  { value: "simit", label: "SIMIT", obligatorio: true },
+  { value: "seguridad_social", label: "Planilla seguridad social", obligatorio: true, sinVencimiento: true },
+  { value: "examenes_medicos", label: "Exámenes médicos", obligatorio: true, sinVencimiento: true },
+  { value: "antecedentes", label: "Antecedentes", obligatorio: true, sinVencimiento: true },
+  { value: "simit", label: "SIMIT", obligatorio: true, sinVencimiento: true },
   { value: "curso_defensivo", label: "Curso manejo defensivo", obligatorio: true },
   { value: "curso_teorico_practico", label: "Curso teórico-práctico", obligatorio: true },
   { value: "hoja_vida", label: "Hoja de vida", obligatorio: true, sinVencimiento: true },
 ];
+
 
 // Tipos completos de documentos para vehículos
 export const TIPOS_VEHICULO: TipoDef[] = [

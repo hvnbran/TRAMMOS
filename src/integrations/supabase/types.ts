@@ -131,6 +131,8 @@ export type Database = {
           mime_type: string | null
           numero_documento: string | null
           observaciones: string | null
+          requiere_actualizacion: boolean
+          requiere_actualizacion_at: string | null
           size_bytes: number | null
           storage_path: string
           tipo: string
@@ -148,6 +150,8 @@ export type Database = {
           mime_type?: string | null
           numero_documento?: string | null
           observaciones?: string | null
+          requiere_actualizacion?: boolean
+          requiere_actualizacion_at?: string | null
           size_bytes?: number | null
           storage_path: string
           tipo: string
@@ -165,6 +169,8 @@ export type Database = {
           mime_type?: string | null
           numero_documento?: string | null
           observaciones?: string | null
+          requiere_actualizacion?: boolean
+          requiere_actualizacion_at?: string | null
           size_bytes?: number | null
           storage_path?: string
           tipo?: string
@@ -1891,6 +1897,8 @@ export type Database = {
           mime_type: string | null
           numero_documento: string | null
           observaciones: string | null
+          requiere_actualizacion: boolean
+          requiere_actualizacion_at: string | null
           size_bytes: number | null
           storage_path: string
           tipo: string
@@ -1908,6 +1916,8 @@ export type Database = {
           mime_type?: string | null
           numero_documento?: string | null
           observaciones?: string | null
+          requiere_actualizacion?: boolean
+          requiere_actualizacion_at?: string | null
           size_bytes?: number | null
           storage_path: string
           tipo: string
@@ -1925,6 +1935,8 @@ export type Database = {
           mime_type?: string | null
           numero_documento?: string | null
           observaciones?: string | null
+          requiere_actualizacion?: boolean
+          requiere_actualizacion_at?: string | null
           size_bytes?: number | null
           storage_path?: string
           tipo?: string

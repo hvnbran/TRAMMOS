@@ -83,7 +83,7 @@ function Alertas() {
       const filterCliente = <T extends { eq: (col: string, v: string) => T }>(q: T) =>
         cliente ? q.eq("cliente", cliente) : q;
 
-      const [{ data: conductores }, { data: vehiculos }, { data: incidentes }] = await Promise.all([
+      const [{ data: conductores }, { data: vehiculos }, { data: incidentes }, { data: condDocs }, { data: vehDocs }] = await Promise.all([
         filterCliente(
           supabase.from("conductores").select("id,nombre,vence_licencia").not("vence_licencia", "is", null),
         ),
@@ -95,7 +95,18 @@ function Alertas() {
             .eq("estado", "Abierto")
             .order("fecha", { ascending: false }),
         ),
+        filterCliente(
+          (supabase.from("conductor_documentos") as any)
+            .select("id,tipo,requiere_actualizacion_at,conductor_id,conductores(nombre)")
+            .eq("requiere_actualizacion", true),
+        ),
+        filterCliente(
+          (supabase.from("vehiculo_documentos") as any)
+            .select("id,tipo,requiere_actualizacion_at,vehiculo_id,vehiculos(placa)")
+            .eq("requiere_actualizacion", true),
+        ),
       ]);
+
 
       const list: Alerta[] = [];
 
@@ -173,6 +184,63 @@ function Alertas() {
           });
         },
       );
+
+      const LABELS_DOC: Record<string, string> = {
+        cedula: "Cédula",
+        hoja_vida: "Hoja de vida",
+        simit: "SIMIT",
+        antecedentes: "Antecedentes",
+        examenes_medicos: "Exámenes médicos",
+        seguridad_social: "Planilla seg. social",
+        licencia_conduccion: "Licencia",
+        curso_defensivo: "Curso defensivo",
+        curso_teorico_practico: "Curso teórico-práctico",
+        tarjeta_propiedad: "Tarjeta propiedad",
+        cedula_propietario: "Cédula propietario",
+        seguro_rc: "Seguro RC",
+        soat: "SOAT",
+        tecnico_mecanica: "Técnico-mecánica",
+        revision_preventiva: "Revisión preventiva",
+        tarjeta_operacion: "Tarjeta operación",
+        certificado_gps: "Certificado GPS",
+        antecedentes_propietario: "Antecedentes propietario",
+        simit_vehiculo: "SIMIT vehículo",
+      };
+
+      (condDocs ?? []).forEach((d: { id: string; tipo: string; requiere_actualizacion_at: string | null; conductores: { nombre: string } | null }) => {
+        const nombre = d.conductores?.nombre ?? "Conductor";
+        const label = LABELS_DOC[d.tipo] ?? d.tipo;
+        list.push({
+          id: `cdupd-${d.id}`,
+          tipo: "warning",
+          categoria: "Documento",
+          mensaje: `Actualizar ${label} de ${nombre}`,
+          detalle: d.requiere_actualizacion_at
+            ? `Solicitado el ${new Date(d.requiere_actualizacion_at).toLocaleDateString("es-CO")}`
+            : "Pendiente de actualización",
+          fecha: d.requiere_actualizacion_at?.slice(0, 10) ?? "",
+          critica: false,
+          to: "/conductores",
+        });
+      });
+
+      (vehDocs ?? []).forEach((d: { id: string; tipo: string; requiere_actualizacion_at: string | null; vehiculos: { placa: string } | null }) => {
+        const placa = d.vehiculos?.placa ?? "Vehículo";
+        const label = LABELS_DOC[d.tipo] ?? d.tipo;
+        list.push({
+          id: `vdupd-${d.id}`,
+          tipo: "warning",
+          categoria: "Documento",
+          mensaje: `Actualizar ${label} del vehículo ${placa}`,
+          detalle: d.requiere_actualizacion_at
+            ? `Solicitado el ${new Date(d.requiere_actualizacion_at).toLocaleDateString("es-CO")}`
+            : "Pendiente de actualización",
+          fecha: d.requiere_actualizacion_at?.slice(0, 10) ?? "",
+          critica: false,
+          to: "/vehiculos",
+        });
+      });
+
 
       // Sort: críticas primero, luego por fecha desc
       list.sort((a, b) => {
