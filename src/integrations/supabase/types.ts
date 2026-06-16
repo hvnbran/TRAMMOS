@@ -1251,6 +1251,7 @@ export type Database = {
           direccion_habitual: string | null
           email: string | null
           empresa_id: string | null
+          foto_url: string | null
           id: string
           medicamentos: string | null
           nivel_asistencia: number
@@ -1283,6 +1284,7 @@ export type Database = {
           direccion_habitual?: string | null
           email?: string | null
           empresa_id?: string | null
+          foto_url?: string | null
           id?: string
           medicamentos?: string | null
           nivel_asistencia?: number
@@ -1315,6 +1317,7 @@ export type Database = {
           direccion_habitual?: string | null
           email?: string | null
           empresa_id?: string | null
+          foto_url?: string | null
           id?: string
           medicamentos?: string | null
           nivel_asistencia?: number
