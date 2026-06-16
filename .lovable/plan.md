@@ -1,46 +1,41 @@
-## Qué quieres lograr
+## Objetivo
 
-En la página **Conductores** queremos que cada conductor se vea como una mini ficha con su **foto de perfil**, y al hacer click en la foto (o en un botón "Ver perfil") se abra una ventana grande con sus datos, vehículos asignados y todos sus documentos — igual que ya funciona en **Vehículos**.
+Que la fecha "Vence" (licencia) de **todos** los conductores siempre sea la del documento `licencia_conduccion` cargado en su perfil, sin necesidad de tocar nada manualmente. Si la fecha del documento ya no está vencida, el conductor deja de aparecer como "Vencido" automáticamente.
 
-## Buena noticia
+## Problema actual
 
-Casi todo ya existe en el proyecto:
+Hoy la fecha vive en dos lugares:
+- `conductores.vence_licencia` (campo manual, viejo) → lo usan dashboard, alertas, notificaciones, reportes Excel/PDF, modal de perfil, asignación de servicios, cumplimiento.
+- `conductor_documentos` tipo `licencia_conduccion` (la fecha real del PDF subido).
 
-- `ConductorProfileModal.tsx` ya muestra foto + datos + vehículos asignados + `DocumentManager` con `TIPOS_CONDUCTOR`, y permite **subir/cambiar la foto** desde ahí.
-- El bucket `vehiculos-fotos` ya guarda fotos de conductor (`conductores/...`).
-- La columna `conductores.foto_url` ya existe.
+El parche anterior solo arregló la pantalla `/conductores`. Por eso el resto sigue mostrando la fecha vieja y el conductor sigue como "Vencido" aunque ya haya cargado licencia nueva.
 
-Lo único que falta es **enchufarlo en la página `/conductores`** (hoy solo despliega los documentos en un acordeón, sin foto ni modal).
+## Solución (una sola ley para todo el sistema)
 
-## Cambios
+**El documento manda. Siempre.** Lo logramos con un trigger en la base de datos que mantiene `conductores.vence_licencia` espejeado con la fecha del documento `licencia_conduccion`. Así, todo el código existente sigue funcionando sin tocar nada — la fecha simplemente está siempre correcta.
 
-### 1. `src/routes/conductores.tsx` — rediseñar la tarjeta
-- Añadir `foto_url` al `select` y al tipo `ConductorRow`.
-- Cambiar el layout de cada tarjeta para que se parezca al de vehículos:
-  - **Avatar circular grande** a la izquierda (foto del conductor o iniciales como fallback usando `PersonaAvatar`).
-  - Click sobre el avatar → abre el modal.
-  - Nombre, cédula, estado, badges de cliente al lado derecho.
-  - Datos rápidos abajo (teléfono, licencia, vencimiento).
-- Reemplazar el botón actual "Documentos" (acordeón con `DocumentManager`) por **"Ver perfil y documentos"** que abre `ConductorProfileModal`.
-- Quitar el `expanded` / inline `DocumentManager` (ya vive dentro del modal, evita duplicar).
-- Mantener los botones existentes: Editar, Eliminar, Generar acceso.
+### Pasos
 
-### 2. Estado nuevo
-- `const [modalConductorId, setModalConductorId] = useState<string | null>(null)`.
-- Renderizar `<ConductorProfileModal conductorId={modalConductorId} onClose={() => { setModalConductorId(null); load(); }} />` al final (el `load()` en `onClose` refresca la foto si la cambiaron).
+1. **Trigger en la base de datos**
+   En `conductor_documentos`, cada vez que se inserta, actualiza o borra un documento de tipo `licencia_conduccion`, se actualiza `conductores.vence_licencia` del conductor afectado con la fecha del documento más reciente (o `NULL` si no queda ninguno).
 
-### 3. Avatar component
-- Reutilizar `PersonaAvatar` (ya existe). Tamaño grande (`h-16 w-16` o similar) con borde sutil y cursor `pointer`.
+2. **Backfill inicial**
+   Una sola corrida que recorre todos los conductores con documento de licencia y copia la fecha del documento al campo `vence_licencia`. Esto corrige el estado actual de todos de una vez.
 
-## Lo que NO cambia
-- `ConductorProfileModal.tsx` ya funciona — no se toca.
-- `DocumentManager` ya soporta `kind="conductor"` — no se toca.
-- Subida de foto, RLS del bucket, tipos de documento: todo ya está.
-- Tabla `conductores`: no se necesita migración.
+3. **Reactivación automática**
+   No requiere código extra: el estado "Vencido" en la UI se calcula en vivo con `isVencido(vence_licencia)`. Si la fecha sincronizada queda en el futuro, el conductor vuelve a aparecer "Activo" solo. Se aplica en `/conductores`, modal de perfil, vehículos, asignación de servicios, alertas, dashboard, notificaciones y reportes.
+
+4. **Limpieza en `/conductores`**
+   - Quitar el campo manual "Vence licencia" del formulario de crear/editar conductor (la fuente única ahora es el documento — evita que un admin escriba una fecha y el trigger se la sobrescriba).
+   - Quitar el `merge` manual que hicimos antes en `load()`, ya no hace falta porque la columna ya está correcta en la BD.
 
 ## Detalles técnicos
-- Archivos modificados: solo `src/routes/conductores.tsx`.
-- Sin cambios de base de datos, sin nuevas dependencias.
-- El modal ya gestiona Escape para cerrar, scroll interno, y upload con validación 5 MB / image/*.
 
-¿Lo aplico así?
+- **Trigger**: `AFTER INSERT OR UPDATE OR DELETE` en `public.conductor_documentos`, filtrado por `tipo = 'licencia_conduccion'`. Recalcula con `SELECT MAX(fecha_vencimiento)` (o el más reciente por `created_at`) de los documentos vigentes de ese conductor.
+- **Sin tocar `estado`**: dejamos que la UI lo derive. Evitamos pelear con valores guardados como "Vencido" que ya no aplican.
+- **Archivos afectados**: solo `src/routes/conductores.tsx` (quitar input + merge). Migración nueva para el trigger + backfill. Nada más necesita cambios.
+
+## Lo que NO cambia
+
+- Subida y gestión de documentos en el modal de perfil.
+- Lógica de alertas, reportes, asignación, notificaciones — todas siguen leyendo `vence_licencia` y ahora reciben el valor correcto sin saberlo.
