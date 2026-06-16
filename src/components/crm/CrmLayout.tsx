@@ -178,7 +178,7 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
               return (
                 <Link
                   key={to}
-                  to={to}
+                  to={to as string}
                   onClick={(e) => {
                     if (suppressClickRef.current) {
                       e.preventDefault();
