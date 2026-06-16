@@ -34,7 +34,9 @@ interface ConductorRow {
   vence_licencia: string | null;
   servicios: number | null;
   cumplimiento: number | null;
+  foto_url: string | null;
 }
+
 
 const EMPTY_FORM = {
   clientes: [] as ("corona" | "sodimac")[],
