@@ -372,6 +372,23 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
     load();
   }
 
+  async function toggleRequiereActualizacion(d: DocItem) {
+    const nuevo = !d.requiere_actualizacion;
+    const { error } = await (supabase.from(TABLE[kind]) as any)
+      .update({
+        requiere_actualizacion: nuevo,
+        requiere_actualizacion_at: nuevo ? new Date().toISOString() : null,
+      })
+      .eq("id", d.id);
+    if (error) {
+      toast.error("No se pudo actualizar", { description: error.message });
+      return;
+    }
+    toast.success(nuevo ? "Marcado para actualizar" : "Marca quitada");
+    load();
+  }
+
+
   // Resumen de cumplimiento
   const tiposSinVenc = useMemo(
     () => new Set(tipos.filter((t) => t.sinVencimiento).map((t) => t.value)),
