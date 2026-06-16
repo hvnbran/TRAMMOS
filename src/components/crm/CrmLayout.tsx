@@ -19,7 +19,14 @@ import logo from "@/assets/logo-trammos.png";
 import { useAuth } from "@/lib/auth-context";
 import { CrmIntro } from "./CrmIntro";
 
-const navItems = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
+
+const navItems: NavItem[] = [
   { to: "/crm", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/crm/pipeline", label: "Pipeline", icon: GitBranch },
   { to: "/crm/ventas", label: "Ventas", icon: TrendingUp },
@@ -31,7 +38,7 @@ const navItems = [
   { to: "/crm/asesores", label: "Asesores", icon: UserCog },
   { to: "/crm/concesionarios", label: "Concesionarios", icon: Building2 },
   { to: "/crm/equipo", label: "Equipo", icon: UsersRound },
-] as const;
+];
 
 export function CrmLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role, signOut } = useAuth();
