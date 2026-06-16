@@ -28,8 +28,35 @@ interface Props {
   onSubmit: (data: { origen: string; destino: string; hora_recogida: Date; programado: boolean; notas: string }) => Promise<void> | void;
 }
 
-export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Props) {
-  const [origen, setOrigen] = useState(perfil.direccion_habitual || "");
+type Favorito = { id: string; nombre: string; direccion: string };
+
+const FAVS_KEY = "pasajero_favoritos_v1";
+
+function loadFavoritos(): Favorito[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(FAVS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((f) => f && typeof f.nombre === "string" && typeof f.direccion === "string");
+  } catch {
+    return [];
+  }
+}
+
+function saveFavoritos(list: Favorito[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(FAVS_KEY, JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
+
+export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmit }: Props) {
+  // El origen SIEMPRE inicia vacío (el pasajero decide desde dónde sale).
+  const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
   const [notas, setNotas] = useState("");
   const [modoHora, setModoHora] = useState<"ahora" | "programar">("ahora");
@@ -43,40 +70,32 @@ export function PedirServicioForm({ perfil, ultima, submitting, onSubmit }: Prop
   const geo = useGeolocation(true);
   const reverseFn = useServerFn(placesReverseGeocode);
 
-  // Si el GPS otorga permiso y el origen sigue vacío, hacer reverse geocode (Google → Photon)
-  useEffect(() => {
-    if (geo.status !== "granted" || geo.lat == null || geo.lon == null) return;
-    if (origen.trim().length > 0) return;
-    let cancel = false;
-    (async () => {
-      try {
-        const r = await reverseFn({ data: { lat: geo.lat!, lon: geo.lon! } });
-        if (cancel) return;
-        if (r?.label) { setOrigen(r.label); return; }
-      } catch {}
-      const s = await reverseGeocode(geo.lat!, geo.lon!);
-      if (cancel || !s) return;
-      setOrigen(s.label);
-    })();
-    return () => { cancel = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geo.status, geo.lat, geo.lon]);
+  // Favoritos del pasajero (guardados localmente en este dispositivo)
+  const [favoritos, setFavoritos] = useState<Favorito[]>(() => loadFavoritos());
+  const [showAddFav, setShowAddFav] = useState(false);
+  const [favNombre, setFavNombre] = useState("");
+  const [favDireccion, setFavDireccion] = useState("");
 
   useEffect(() => {
-    if (perfil.direccion_habitual && !origen) setOrigen(perfil.direccion_habitual);
-  }, [perfil.direccion_habitual, origen]);
+    saveFavoritos(favoritos);
+  }, [favoritos]);
 
-  const atajos = useMemo(() => {
-    const list: { label: string; icon: typeof Home; destino: string }[] = [];
-    if (perfil.direccion_habitual) {
-      list.push({ label: "A casa", icon: Home, destino: perfil.direccion_habitual });
-    }
-    (perfil.centros_costo_permitidos || []).slice(0, 3).forEach((c) =>
-      list.push({ label: c, icon: Briefcase, destino: c }),
-    );
-    if (ultima) list.push({ label: "Repetir último", icon: Repeat, destino: ultima.destino });
-    return list;
-  }, [perfil, ultima]);
+  const handleAddFavorito = () => {
+    const nombre = favNombre.trim();
+    const direccion = favDireccion.trim();
+    if (!nombre || !direccion) return;
+    setFavoritos((prev) => [
+      ...prev,
+      { id: Math.random().toString(36).slice(2, 10), nombre, direccion },
+    ]);
+    setFavNombre("");
+    setFavDireccion("");
+    setShowAddFav(false);
+  };
+
+  const handleRemoveFavorito = (id: string) => {
+    setFavoritos((prev) => prev.filter((f) => f.id !== id));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
