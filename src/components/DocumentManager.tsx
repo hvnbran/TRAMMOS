@@ -433,6 +433,12 @@ export function DocumentManager({ kind, entityId, cliente, tipos }: Props) {
               {resumen.porVencer} por vencer (30 días)
             </span>
           )}
+          {resumen.requierenActualizacion > 0 && (
+            <span className="px-2 py-1 rounded-md bg-warning/15 text-warning font-medium">
+              {resumen.requierenActualizacion} pendiente{resumen.requierenActualizacion > 1 ? "s" : ""} de actualizar
+            </span>
+          )}
+
         </div>
       )}
 
