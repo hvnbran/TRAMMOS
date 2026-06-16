@@ -17,23 +17,34 @@ type Item = {
   relacion?: string | null;
 };
 
+/**
+ * Parsea "YYYY-MM-DD" como fecha LOCAL (no UTC).
+ * Si usamos `new Date("2000-06-08")` JS lo lee como UTC medianoche, lo que
+ * en zonas con offset negativo (Colombia UTC-5) se muestra como 7 de junio.
+ */
+function parseLocalDate(fecha: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(fecha);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return new Date(fecha);
+}
+
 function diasParaCumple(fecha: string): number {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  const f = new Date(fecha);
+  const f = parseLocalDate(fecha);
   const c = new Date(hoy.getFullYear(), f.getMonth(), f.getDate());
   if (c < hoy) c.setFullYear(hoy.getFullYear() + 1);
   return Math.round((c.getTime() - hoy.getTime()) / 86400000);
 }
 
 function fmt(fecha: string): string {
-  const f = new Date(fecha);
+  const f = parseLocalDate(fecha);
   return f.toLocaleDateString("es-CO", { day: "2-digit", month: "long" });
 }
 
 function edad(fecha: string): number {
   const hoy = new Date();
-  const f = new Date(fecha);
+  const f = parseLocalDate(fecha);
   let e = hoy.getFullYear() - f.getFullYear();
   const m = hoy.getMonth() - f.getMonth();
   if (m < 0 || (m === 0 && hoy.getDate() < f.getDate())) e--;
