@@ -189,17 +189,30 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
           aria-label="Navegación CRM"
           className="max-w-7xl mx-auto px-4 md:px-8 pb-3"
         >
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1">
-            {items.map((item) => {
+          <div
+            ref={scrollerRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onPointerLeave={endDrag}
+            className="flex items-center gap-2 overflow-x-auto scrollbar-none -mx-1 px-1 select-none cursor-grab"
+            title="Arrastra para desplazar · Alt+1..9 para saltar"
+          >
+            {items.map((item, idx) => {
               const isActive = item.exact
                 ? location.pathname === item.to
                 : location.pathname.startsWith(item.to);
+              const shortcut = idx < 9 ? `Alt+${idx + 1}` : undefined;
               return (
                 <Link
                   key={item.to}
                   to={item.to}
                   preload="intent"
                   aria-current={isActive ? "page" : undefined}
+                  title={shortcut ? `${item.label} (${shortcut})` : item.label}
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
                   className={`group inline-flex items-center gap-2 h-9 px-4 rounded-full text-sm whitespace-nowrap transition-all shrink-0 ${
                     isActive
                       ? "bg-primary text-primary-foreground font-medium shadow-sm"
@@ -222,6 +235,7 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
             })}
           </div>
         </nav>
+
 
         {/* Firma visual: degradado cyan → lime */}
         <div
