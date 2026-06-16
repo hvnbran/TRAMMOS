@@ -79,7 +79,9 @@ interface DocItem {
   fecha_emision: string | null;
   numero_documento: string | null;
   verificado: boolean;
+  requiere_actualizacion: boolean;
 }
+
 
 interface TipoDef {
   value: string;
