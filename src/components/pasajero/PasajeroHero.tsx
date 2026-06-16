@@ -20,10 +20,9 @@ function PasajeroHeroBase({ nombre }: PasajeroHeroProps) {
   return (
     <section
       aria-label="Bienvenida TRAMMOS"
-      className="relative overflow-hidden rounded-3xl shadow-xl mb-6"
+      className="relative overflow-hidden rounded-3xl mb-6"
       style={{
         background: "#C6FF00",
-        boxShadow: "0 20px 60px -20px rgba(0, 202, 255, 0.45)",
       }}
     >
       {/* Mapa decorativo de fondo (curvas tipo trayecto) */}
