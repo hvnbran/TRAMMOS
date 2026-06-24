@@ -2,16 +2,18 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const TIPOS = ["Empresarial", "VIP", "Especial", "Otro"];
+const TIPOS = ["Empresarial", "Turismo", "Salud", "Escolar", "Otro"];
 
 function badgeClass(tipo: string) {
   switch (tipo) {
     case "Empresarial":
       return "bg-primary/15 text-primary";
-    case "VIP":
+    case "Turismo":
       return "bg-accent/15 text-accent";
-    case "Especial":
+    case "Salud":
       return "bg-success/15 text-success";
+    case "Escolar":
+      return "bg-warning/15 text-warning";
     default:
       return "bg-muted text-muted-foreground";
   }

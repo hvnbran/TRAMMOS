@@ -9,9 +9,24 @@ type ParsedRow = {
   origen: string;
   destino: string;
   departamento: string | null;
+  tipo: string;
   tarifa: number;
   yellow: boolean;
 };
+
+const TIPOS_VALIDOS = ["Empresarial", "Turismo", "Salud", "Escolar", "Otro"];
+function normalizarTipo(raw: unknown): string {
+  if (!raw) return "Empresarial";
+  const n = NORM(String(raw));
+  for (const t of TIPOS_VALIDOS) {
+    if (NORM(t) === n) return t;
+  }
+  if (n.includes("EMPRES")) return "Empresarial";
+  if (n.includes("TURISM")) return "Turismo";
+  if (n.includes("SALUD")) return "Salud";
+  if (n.includes("ESCOL") || n.includes("COLEGIO")) return "Escolar";
+  return "Otro";
+}
 
 const NORM = (s: string) =>
   s
@@ -42,7 +57,7 @@ export function ImportarExcelModal({
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
-  const [onlyYellow, setOnlyYellow] = useState(true);
+  const [onlyYellow, setOnlyYellow] = useState(false);
   const [clienteMode, setClienteMode] = useState<"auto" | "corona" | "sodimac">(
     defaultCliente ?? "auto",
   );
@@ -80,6 +95,8 @@ export function ImportarExcelModal({
         const cValor = findCol(headers, ["VALOR UNITARIO", "VALOR", "TARIFA", "PRECIO"]);
         const cDepto = findCol(headers, ["CIUDAD", "DEPARTAMENTO", "DEPTO"]);
         const cSodimac = findCol(headers, ["SODIMAC URBANA", "SODIMAC", "CLIENTE SODIMAC"]);
+        const cCliente = findCol(headers, ["CLIENTE"]);
+        const cTipo = findCol(headers, ["TIPO EMPRESA", "TIPO SERVICIO", "TIPO"]);
         if (cOrigen < 0 || cDestino < 0 || cValor < 0) continue;
 
         for (let r = headerIdx + 1; r < aoa.length; r++) {
@@ -98,16 +115,27 @@ export function ImportarExcelModal({
           const fg = cell?.s?.fgColor?.rgb || cell?.s?.bgColor?.rgb;
           const yellow = !!(fg && /FFFF00|FFFFFF00|FFFF/i.test(String(fg)));
 
-          const sodimacMark = cSodimac >= 0 ? row[cSodimac] : null;
           let cliente: Cliente = "corona";
-          if (clienteMode === "auto") cliente = sodimacMark ? "sodimac" : "corona";
-          else cliente = clienteMode;
+          if (clienteMode === "auto") {
+            const clienteRaw = cCliente >= 0 ? row[cCliente] : null;
+            if (clienteRaw) {
+              cliente = NORM(String(clienteRaw)).includes("SODIMAC") ? "sodimac" : "corona";
+            } else {
+              const sodimacMark = cSodimac >= 0 ? row[cSodimac] : null;
+              cliente = sodimacMark ? "sodimac" : "corona";
+            }
+          } else {
+            cliente = clienteMode;
+          }
+
+          const tipo = cTipo >= 0 ? normalizarTipo(row[cTipo]) : "Empresarial";
 
           all.push({
             cliente,
             origen: String(origen).trim(),
             destino: String(destino).trim(),
             departamento: row[cDepto] ? String(row[cDepto]).trim() : null,
+            tipo,
             tarifa,
             yellow,
           });
@@ -193,7 +221,7 @@ export function ImportarExcelModal({
             origen: r.origen,
             destino: r.destino,
             departamento: r.departamento,
-            tipo: "Empresarial",
+            tipo: r.tipo,
             tarifa: r.tarifa,
           });
         }
@@ -244,7 +272,7 @@ export function ImportarExcelModal({
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">Selecciona un archivo .xlsx</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Detectamos columnas: ORIGEN, DESTINO, VALOR UNITARIO, CIUDAD, SODIMAC URBANA
+                Columnas reconocidas: ORIGEN, DESTINO, VALOR, CLIENTE, DEPARTAMENTO, TIPO EMPRESA
               </p>
               <input
                 type="file"
