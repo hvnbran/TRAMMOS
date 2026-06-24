@@ -64,7 +64,7 @@ interface CentroCosto {
   activo: boolean;
 }
 
-const TIPOS = ["Empresarial", "VIP", "Especial", "Otro"];
+const TIPOS = ["Empresarial", "Turismo", "Salud", "Escolar", "Otro"];
 
 function Operacion() {
   const { cliente } = useAuth();
