@@ -178,13 +178,21 @@ export function ImportarExcelModal({
       const clientesUsados = Array.from(new Set(unique.map((r) => r.cliente)));
       const existing = new Map<string, string>(); // key -> id
       for (const c of clientesUsados) {
-        const { data } = await supabase
-          .from("centros_costo")
-          .select("id,origen,destino")
-          .eq("cliente", c);
-        (data ?? []).forEach((r) => {
-          existing.set(`${c}|${normKey(r.origen)}|${normKey(r.destino)}`, r.id);
-        });
+        let from = 0;
+        const pageSize = 1000;
+        for (;;) {
+          const { data, error: e } = await supabase
+            .from("centros_costo")
+            .select("id,origen,destino")
+            .eq("cliente", c)
+            .range(from, from + pageSize - 1);
+          if (e) throw e;
+          (data ?? []).forEach((r) => {
+            existing.set(`${c}|${normKey(r.origen)}|${normKey(r.destino)}`, r.id);
+          });
+          if (!data || data.length < pageSize) break;
+          from += pageSize;
+        }
       }
 
       // Próximo número de código por cliente (los códigos son únicos por cliente)
