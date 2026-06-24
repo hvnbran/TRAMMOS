@@ -9,9 +9,24 @@ type ParsedRow = {
   origen: string;
   destino: string;
   departamento: string | null;
+  tipo: string;
   tarifa: number;
   yellow: boolean;
 };
+
+const TIPOS_VALIDOS = ["Empresarial", "Turismo", "Salud", "Escolar", "Otro"];
+function normalizarTipo(raw: unknown): string {
+  if (!raw) return "Empresarial";
+  const n = NORM(String(raw));
+  for (const t of TIPOS_VALIDOS) {
+    if (NORM(t) === n) return t;
+  }
+  if (n.includes("EMPRES")) return "Empresarial";
+  if (n.includes("TURISM")) return "Turismo";
+  if (n.includes("SALUD")) return "Salud";
+  if (n.includes("ESCOL") || n.includes("COLEGIO")) return "Escolar";
+  return "Otro";
+}
 
 const NORM = (s: string) =>
   s
