@@ -57,7 +57,7 @@ export function ImportarExcelModal({
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
-  const [onlyYellow, setOnlyYellow] = useState(true);
+  const [onlyYellow, setOnlyYellow] = useState(false);
   const [clienteMode, setClienteMode] = useState<"auto" | "corona" | "sodimac">(
     defaultCliente ?? "auto",
   );
