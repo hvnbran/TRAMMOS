@@ -246,7 +246,13 @@ export function ImportarExcelModal({
       setResult({ inserted, updated, skipped });
       onDone();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      let msg: string;
+      if (e instanceof Error) msg = e.message;
+      else if (e && typeof e === "object") {
+        const obj = e as { message?: string; details?: string; hint?: string; code?: string };
+        msg = [obj.message, obj.details, obj.hint, obj.code].filter(Boolean).join(" · ") || JSON.stringify(e);
+      } else msg = String(e);
+      console.error("Importar Excel error:", e);
       setError("Error al importar: " + msg);
     } finally {
       setImporting(false);
