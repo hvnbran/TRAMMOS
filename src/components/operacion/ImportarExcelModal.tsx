@@ -272,7 +272,7 @@ export function ImportarExcelModal({
               <Upload className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">Selecciona un archivo .xlsx</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Detectamos columnas: ORIGEN, DESTINO, VALOR UNITARIO, CIUDAD, SODIMAC URBANA
+                Columnas reconocidas: ORIGEN, DESTINO, VALOR, CLIENTE, DEPARTAMENTO, TIPO EMPRESA
               </p>
               <input
                 type="file"
