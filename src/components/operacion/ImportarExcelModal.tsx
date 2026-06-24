@@ -221,7 +221,7 @@ export function ImportarExcelModal({
             origen: r.origen,
             destino: r.destino,
             departamento: r.departamento,
-            tipo: "Empresarial",
+            tipo: r.tipo,
             tarifa: r.tarifa,
           });
         }
