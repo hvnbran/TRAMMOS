@@ -95,6 +95,8 @@ export function ImportarExcelModal({
         const cValor = findCol(headers, ["VALOR UNITARIO", "VALOR", "TARIFA", "PRECIO"]);
         const cDepto = findCol(headers, ["CIUDAD", "DEPARTAMENTO", "DEPTO"]);
         const cSodimac = findCol(headers, ["SODIMAC URBANA", "SODIMAC", "CLIENTE SODIMAC"]);
+        const cCliente = findCol(headers, ["CLIENTE"]);
+        const cTipo = findCol(headers, ["TIPO EMPRESA", "TIPO SERVICIO", "TIPO"]);
         if (cOrigen < 0 || cDestino < 0 || cValor < 0) continue;
 
         for (let r = headerIdx + 1; r < aoa.length; r++) {
@@ -113,16 +115,27 @@ export function ImportarExcelModal({
           const fg = cell?.s?.fgColor?.rgb || cell?.s?.bgColor?.rgb;
           const yellow = !!(fg && /FFFF00|FFFFFF00|FFFF/i.test(String(fg)));
 
-          const sodimacMark = cSodimac >= 0 ? row[cSodimac] : null;
           let cliente: Cliente = "corona";
-          if (clienteMode === "auto") cliente = sodimacMark ? "sodimac" : "corona";
-          else cliente = clienteMode;
+          if (clienteMode === "auto") {
+            const clienteRaw = cCliente >= 0 ? row[cCliente] : null;
+            if (clienteRaw) {
+              cliente = NORM(String(clienteRaw)).includes("SODIMAC") ? "sodimac" : "corona";
+            } else {
+              const sodimacMark = cSodimac >= 0 ? row[cSodimac] : null;
+              cliente = sodimacMark ? "sodimac" : "corona";
+            }
+          } else {
+            cliente = clienteMode;
+          }
+
+          const tipo = cTipo >= 0 ? normalizarTipo(row[cTipo]) : "Empresarial";
 
           all.push({
             cliente,
             origen: String(origen).trim(),
             destino: String(destino).trim(),
             departamento: row[cDepto] ? String(row[cDepto]).trim() : null,
+            tipo,
             tarifa,
             yellow,
           });
