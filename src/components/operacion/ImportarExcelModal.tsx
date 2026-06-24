@@ -173,7 +173,8 @@ export function ImportarExcelModal({
       updated = 0,
       skipped = 0;
     try {
-      // Pre-cargar existentes por cliente
+      // Pre-cargar existentes por cliente (normalizando espacios)
+      const normKey = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
       const clientesUsados = Array.from(new Set(unique.map((r) => r.cliente)));
       const existing = new Map<string, string>(); // key -> id
       for (const c of clientesUsados) {
@@ -182,20 +183,25 @@ export function ImportarExcelModal({
           .select("id,origen,destino")
           .eq("cliente", c);
         (data ?? []).forEach((r) => {
-          existing.set(`${c}|${r.origen.toLowerCase()}|${r.destino.toLowerCase()}`, r.id);
+          existing.set(`${c}|${normKey(r.origen)}|${normKey(r.destino)}`, r.id);
         });
       }
 
-      // Próximo número de código
-      const { data: codeRows } = await supabase
-        .from("centros_costo")
-        .select("codigo")
-        .like("codigo", `${prefijo}-%`);
-      let next = 1;
-      (codeRows ?? []).forEach((r) => {
-        const m = /-(\d+)/.exec(r.codigo);
-        if (m) next = Math.max(next, parseInt(m[1], 10) + 1);
-      });
+      // Próximo número de código por cliente (los códigos son únicos por cliente)
+      const nextByCliente = new Map<Cliente, number>();
+      for (const c of clientesUsados) {
+        const { data: codeRows } = await supabase
+          .from("centros_costo")
+          .select("codigo")
+          .eq("cliente", c)
+          .like("codigo", `${prefijo}-%`);
+        let n = 1;
+        (codeRows ?? []).forEach((r) => {
+          const m = /-(\d+)/.exec(r.codigo);
+          if (m) n = Math.max(n, parseInt(m[1], 10) + 1);
+        });
+        nextByCliente.set(c, n);
+      }
 
       const toInsert: Array<{
         codigo: string;
@@ -209,14 +215,16 @@ export function ImportarExcelModal({
       const toUpdate: Array<{ id: string; tarifa: number }> = [];
 
       for (const r of unique) {
-        const k = `${r.cliente}|${r.origen.toLowerCase()}|${r.destino.toLowerCase()}`;
+        const k = `${r.cliente}|${normKey(r.origen)}|${normKey(r.destino)}`;
         const existId = existing.get(k);
         if (existId) {
           if (updateExisting) toUpdate.push({ id: existId, tarifa: r.tarifa });
           else skipped++;
         } else {
+          const n = nextByCliente.get(r.cliente) ?? 1;
+          nextByCliente.set(r.cliente, n + 1);
           toInsert.push({
-            codigo: `${prefijo}-${String(next++).padStart(3, "0")}`,
+            codigo: `${prefijo}-${String(n).padStart(3, "0")}`,
             cliente: r.cliente,
             origen: r.origen,
             destino: r.destino,
