@@ -275,7 +275,7 @@ function Vehiculos() {
           {([
             { v: "todos", l: "Todos" },
             { v: "corona", l: "Corona" },
-            { v: "sodimac", l: "Sodimac" },
+            { v: "sodimac", l: "Sodimac" }, { v: "hospital_sur", l: "Hospital del Sur" },
             { v: "sin_asignar", l: "Sin asignar" },
           ] as const).map((opt) => (
             <button
