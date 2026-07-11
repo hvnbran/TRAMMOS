@@ -25,6 +25,7 @@ import { useEffect, useState } from "react";
 import logo from "@/assets/logo-trammos.png";
 import logoCorona from "@/assets/logo-corona.png";
 import logoSodimac from "@/assets/logo-sodimac-icon.png";
+import logoHospitalSur from "@/assets/logo-hospital-sur.png";
 import { useAuth } from "@/lib/auth-context";
 
 type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean };
@@ -56,6 +57,18 @@ const CLIENT_NAV: NavItem[] = [
   { to: "/feedback", icon: Star, label: "Feedback" },
 ];
 
+const HOSPITAL_NAV: NavItem[] = [
+  { to: "/", icon: LayoutDashboard, label: "Dashboard", exact: true },
+  { to: "/servicios", icon: RouteIcon, label: "Servicios" },
+  { to: "/conductores", icon: Users, label: "Conductores" },
+  { to: "/vehiculos", icon: Car, label: "Vehículos" },
+  { to: "/pasajeros-pcd", icon: Accessibility, label: "Pasajeros PCD" },
+  { to: "/monitoreo", icon: Radar, label: "Monitoreo" },
+  { to: "/cumplimiento", icon: ClipboardCheck, label: "Cumplimiento ANS" },
+  { to: "/cuentas", icon: UserCog, label: "Crear pasajeros" },
+  { to: "/feedback", icon: Star, label: "Feedback" },
+];
+
 type SidebarProps = {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -66,13 +79,16 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const location = useLocation();
   const { role, signOut } = useAuth();
 
-  const navItems = role === "admin" ? ADMIN_NAV : CLIENT_NAV;
+  const navItems =
+    role === "admin" ? ADMIN_NAV : role === "hospital_sur" ? HOSPITAL_NAV : CLIENT_NAV;
 
   const brand =
     role === "corona"
       ? { name: "CORONA", subtitle: "Cliente Corona", logo: logoCorona, rounded: "rounded-md" }
       : role === "sodimac"
       ? { name: "SODIMAC", subtitle: "Cliente Sodimac", logo: logoSodimac, rounded: "rounded-md" }
+      : role === "hospital_sur"
+      ? { name: "HOSPITAL DEL SUR", subtitle: "ESE Itagüí", logo: logoHospitalSur, rounded: "rounded-md" }
       : { name: "TRAMMOS", subtitle: "Admin General", logo, rounded: "rounded-lg" };
 
   // Cerrar drawer al cambiar de ruta
