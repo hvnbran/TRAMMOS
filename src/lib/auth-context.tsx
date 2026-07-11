@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "corona" | "sodimac" | "pasajero" | "conductor" | "crm";
-export type ClienteTipo = "corona" | "sodimac";
+export type AppRole = "admin" | "corona" | "sodimac" | "hospital_sur" | "pasajero" | "conductor" | "crm";
+export type ClienteTipo = "corona" | "sodimac" | "hospital_sur";
 
 interface AuthState {
   session: Session | null;
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const allRoles = (roles ?? []).map((rr) => rr.role as AppRole);
 
     // Prefer non-pasajero roles when multiple exist.
-    const priority: AppRole[] = ["admin", "crm", "corona", "sodimac", "conductor", "pasajero"];
+    const priority: AppRole[] = ["admin", "crm", "corona", "sodimac", "hospital_sur", "conductor", "pasajero"];
     let r: AppRole | null = priority.find((p) => allRoles.includes(p)) ?? null;
 
     // If user has no role yet, try to link as pasajero (auto-bootstrap on first login via OTP)
@@ -96,7 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const cliente: ClienteTipo | null =
-    role === "corona" ? "corona" : role === "sodimac" ? "sodimac" : null;
+    role === "corona" ? "corona"
+      : role === "sodimac" ? "sodimac"
+      : role === "hospital_sur" ? "hospital_sur"
+      : null;
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
