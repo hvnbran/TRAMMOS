@@ -3,7 +3,42 @@ import { Pictograma } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { Loader2, MapPin, Send, Clock, Star, Plus, X, Navigation } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, MapPin, Send, Clock, Star, Plus, X, Navigation, Cross } from "lucide-react";
+
+type Sede = { id: string; nombre: string; direccion: string };
+
+function SedesHospitalPicker({
+  sedes,
+  onPick,
+  label,
+}: {
+  sedes: Sede[];
+  onPick: (direccion: string) => void;
+  label: string;
+}) {
+  if (sedes.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-2.5">
+      <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">
+        <Cross className="h-3.5 w-3.5" /> {label}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {sedes.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => onPick(`${s.nombre} — ${s.direccion}`)}
+            className="text-xs px-2.5 py-1.5 rounded-full bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 transition-colors"
+            title={s.direccion}
+          >
+            {s.nombre}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export interface PasajeroPerfil {
   id: string;
@@ -72,10 +107,26 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
   const [showAddFav, setShowAddFav] = useState(false);
   const [favNombre, setFavNombre] = useState("");
   const [favDireccion, setFavDireccion] = useState("");
-
+  // Sedes del cliente (por ahora solo Hospital del Sur Itagüí las expone)
+  const [sedes, setSedes] = useState<Sede[]>([]);
   useEffect(() => {
-    saveFavoritos(favoritos);
-  }, [favoritos]);
+    if (perfil.cliente !== "hospital_sur") return;
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("empresas")
+        .select("id, empresa_sedes(id, nombre, direccion, orden, activo)")
+        .eq("slug", "hospital-sur-itagui")
+        .maybeSingle();
+      const list = (((data as unknown) as { empresa_sedes?: (Sede & { orden: number; activo: boolean })[] } | null)?.empresa_sedes ?? [])
+        .filter((s) => s.activo)
+        .sort((a, b) => a.orden - b.orden)
+        .map(({ id, nombre, direccion }) => ({ id, nombre, direccion }));
+      if (mounted) setSedes(list);
+    })();
+    return () => { mounted = false; };
+  }, [perfil.cliente]);
+
 
   const handleAddFavorito = () => {
     const nombre = favNombre.trim();
@@ -229,6 +280,7 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
               </button>
             )}
           </label>
+          <SedesHospitalPicker sedes={sedes} onPick={setOrigen} label="Salir desde una sede del Hospital" />
           <AddressAutocomplete
             value={origen}
             onChange={(v) => setOrigen(v)}
@@ -248,6 +300,7 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
             <Pictograma name="ubicacion" size="sm" />
             Vas a
           </label>
+          <SedesHospitalPicker sedes={sedes} onPick={setDestino} label="Ir a una sede del Hospital" />
           <AddressAutocomplete
             value={destino}
             onChange={(v) => setDestino(v)}

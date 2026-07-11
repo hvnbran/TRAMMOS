@@ -1030,6 +1030,53 @@ export type Database = {
         }
         Relationships: []
       }
+      empresa_sedes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          direccion: string
+          empresa_id: string
+          id: string
+          lat: number | null
+          lng: number | null
+          nombre: string
+          orden: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          direccion: string
+          empresa_id: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nombre: string
+          orden?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          direccion?: string
+          empresa_id?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nombre?: string
+          orden?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresa_sedes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           activo: boolean
