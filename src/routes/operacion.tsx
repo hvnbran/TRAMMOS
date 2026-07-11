@@ -28,7 +28,7 @@ import { ImportarExcelModal } from "@/components/operacion/ImportarExcelModal";
 
 const searchSchema = z.object({
   q: fallback(z.string(), "").default(""),
-  cliente: fallback(z.enum(["all", "corona", "sodimac"]), "all").default("all"),
+  cliente: fallback(z.enum(["all", "corona", "sodimac", "hospital_sur"]), "all").default("all"),
   depto: fallback(z.string(), "all").default("all"),
   tipo: fallback(z.string(), "all").default("all"),
   page: fallback(z.number().int().min(1), 1).default(1),

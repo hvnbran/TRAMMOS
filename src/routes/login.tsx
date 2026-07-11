@@ -25,9 +25,9 @@ export const Route = createFileRoute("/login")({
   }),
 });
 
-type SeedKey = "corona" | "sodimac" | "hospital_sur" | "admin";
+type SeedKey = "corona" | "sodimac" | "admin";
 
-const SEED_USERS: Record<SeedKey, { email: string; display_name: string; role: "admin" | "corona" | "sodimac" | "hospital_sur" }> = {
+const SEED_USERS: Record<SeedKey, { email: string; display_name: string; role: "admin" | "corona" | "sodimac" }> = {
   corona: { email: "corona@trammos.app", display_name: "Corona", role: "corona" },
   sodimac: { email: "sodimac@trammos.app", display_name: "Sodimac", role: "sodimac" },
   admin: { email: "admin@trammos.app", display_name: "Admin General", role: "admin" },
