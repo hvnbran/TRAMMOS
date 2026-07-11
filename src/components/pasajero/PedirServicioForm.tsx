@@ -8,7 +8,7 @@ import { Loader2, MapPin, Send, Clock, Star, Plus, X, Navigation } from "lucide-
 export interface PasajeroPerfil {
   id: string;
   nombre: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   direccion_habitual: string | null;
   centros_costo_permitidos: string[] | null;
   foto_url?: string | null;

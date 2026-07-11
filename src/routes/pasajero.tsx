@@ -152,7 +152,7 @@ function PasajeroPage() {
         setPerfil({
           id: p.id,
           nombre: p.nombre,
-          cliente: p.cliente as "corona" | "sodimac",
+          cliente: p.cliente as "corona" | "sodimac" | "hospital_sur",
           direccion_habitual: p.direccion_habitual,
           centros_costo_permitidos: p.centros_costo_permitidos,
           foto_url: p.foto_url ?? null,

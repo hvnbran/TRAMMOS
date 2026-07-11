@@ -23,8 +23,8 @@ export const Route = createFileRoute("/conductores")({
 
 interface ConductorRow {
   id: string;
-  cliente: "corona" | "sodimac" | null;
-  clientes: ("corona" | "sodimac")[];
+  cliente: "corona" | "sodimac" | "hospital_sur" | null;
+  clientes: ("corona" | "sodimac" | "hospital_sur")[];
   nombre: string;
   cedula: string | null;
   telefono: string | null;
@@ -39,7 +39,7 @@ interface ConductorRow {
 
 
 const EMPTY_FORM = {
-  clientes: [] as ("corona" | "sodimac")[],
+  clientes: [] as ("corona" | "sodimac" | "hospital_sur")[],
   nombre: "", cedula: "", telefono: "", licencia: "", categoria_lic: "C1",
   estado: "Activo", vence_licencia: "", fecha_nacimiento: "",
 };
@@ -74,10 +74,10 @@ function Conductores() {
   const [saving, setSaving] = useState(false);
   const [modalConductorId, setModalConductorId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const initialClientes: ("corona" | "sodimac")[] = cliente ? [cliente as "corona" | "sodimac"] : [];
+  const initialClientes: ("corona" | "sodimac" | "hospital_sur")[] = cliente ? [cliente as "corona" | "sodimac" | "hospital_sur"] : [];
   const [form, setForm] = useState({ ...EMPTY_FORM, clientes: initialClientes });
 
-  const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "sin_asignar">("todos");
+  const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "hospital_sur" | "sin_asignar">("todos");
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
@@ -111,7 +111,7 @@ function Conductores() {
     setShowForm(true);
   }
 
-  function toggleCliente(cl: "corona" | "sodimac") {
+  function toggleCliente(cl: "corona" | "sodimac" | "hospital_sur") {
     setForm((f) => ({
       ...f,
       clientes: f.clientes.includes(cl) ? f.clientes.filter((x) => x !== cl) : [...f.clientes, cl],

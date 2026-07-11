@@ -66,11 +66,11 @@ function Feedback() {
   const [saving, setSaving] = useState(false);
 
   const [califForm, setCalifForm] = useState({
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    cliente: (cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur",
     tipo: "conductor", nombre: "", servicio: "", estrellas: 5, mejoras: "",
   });
   const [incForm, setIncForm] = useState({
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    cliente: (cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur",
     fecha: new Date().toISOString().slice(0, 10),
     conductor: "", vehiculo: "", tipo_incidente: TIPOS_INCIDENTE[0],
     que_paso: "", cuando: "", por_que: "", soporte: "", solucion: "", plan_mejoramiento: "",
@@ -147,7 +147,7 @@ function Feedback() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {role === "admin" && (
                 <div><label className="text-xs text-muted-foreground">Cliente</label>
-                  <select value={califForm.cliente} onChange={(e) => setCalifForm({ ...califForm, cliente: e.target.value as "corona" | "sodimac" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <select value={califForm.cliente} onChange={(e) => setCalifForm({ ...califForm, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                     <option value="corona">Corona</option><option value="sodimac">Sodimac</option>
                   </select>
                 </div>
@@ -183,7 +183,7 @@ function Feedback() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {role === "admin" && (
                 <div><label className="text-xs text-muted-foreground">Cliente</label>
-                  <select value={incForm.cliente} onChange={(e) => setIncForm({ ...incForm, cliente: e.target.value as "corona" | "sodimac" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <select value={incForm.cliente} onChange={(e) => setIncForm({ ...incForm, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                     <option value="corona">Corona</option><option value="sodimac">Sodimac</option>
                   </select>
                 </div>

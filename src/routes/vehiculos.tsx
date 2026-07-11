@@ -32,8 +32,8 @@ export const Route = createFileRoute("/vehiculos")({
 
 interface VehiculoRow {
   id: string;
-  cliente: "corona" | "sodimac" | null;
-  clientes: ("corona" | "sodimac")[];
+  cliente: "corona" | "sodimac" | "hospital_sur" | null;
+  clientes: ("corona" | "sodimac" | "hospital_sur")[];
   placa: string;
   marca: string | null;
   linea: string | null;
@@ -48,7 +48,7 @@ interface VehiculoRow {
 }
 
 const EMPTY_FORM = {
-  clientes: [] as ("corona" | "sodimac")[],
+  clientes: [] as ("corona" | "sodimac" | "hospital_sur")[],
   placa: "", marca: "", linea: "", modelo: new Date().getFullYear(), color: "",
   num_interno: "", estado: "Disponible", conductor: "",
 };
@@ -89,9 +89,9 @@ function Vehiculos() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const initialClientes: ("corona" | "sodimac")[] = cliente ? [cliente as "corona" | "sodimac"] : [];
+  const initialClientes: ("corona" | "sodimac" | "hospital_sur")[] = cliente ? [cliente as "corona" | "sodimac" | "hospital_sur"] : [];
   const [form, setForm] = useState({ ...EMPTY_FORM, clientes: initialClientes });
-  const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "sin_asignar">("todos");
+  const [filtroCliente, setFiltroCliente] = useState<"todos" | "corona" | "sodimac" | "hospital_sur" | "sin_asignar">("todos");
   const [conductoresOpts, setConductoresOpts] = useState<ConductorOpt[]>([]);
   const [nuevoConductor, setNuevoConductor] = useState(false);
   const [asignacionesPorVehiculo, setAsignacionesPorVehiculo] = useState<Record<string, number>>({});
@@ -180,7 +180,7 @@ function Vehiculos() {
     setShowForm(true);
   }
 
-  function toggleCliente(c: "corona" | "sodimac") {
+  function toggleCliente(c: "corona" | "sodimac" | "hospital_sur") {
     setForm((f) => ({
       ...f,
       clientes: f.clientes.includes(c) ? f.clientes.filter((x) => x !== c) : [...f.clientes, c],
@@ -513,14 +513,14 @@ function Vehiculos() {
                     <div className="pt-4 border-t border-border">
                       <VehiculoConductores
                         vehiculoId={v.id}
-                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
+                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur"}
                       />
                     </div>
                     <div className="pt-4 border-t border-border">
                       <DocumentManager
                         kind="vehiculo"
                         entityId={v.id}
-                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac"}
+                        cliente={(v.clientes?.[0] ?? v.cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur"}
                         tipos={TIPOS_VEHICULO}
                       />
                     </div>

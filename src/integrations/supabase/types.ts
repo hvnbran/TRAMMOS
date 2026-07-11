@@ -2131,7 +2131,7 @@ export type Database = {
         | "conductor"
         | "crm"
         | "hospital_sur"
-      cliente_tipo: "corona" | "sodimac" | "hospital_sur"
+      cliente_tipo: "corona" | "sodimac" | "hospital_sur" | "hospital_sur"
       crm_temperatura: "frio" | "tibio" | "caliente"
     }
     CompositeTypes: {

@@ -3,7 +3,7 @@ import * as XLSX from "xlsx";
 import { X, Upload, Loader2, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-type Cliente = "corona" | "sodimac";
+type Cliente = "corona" | "sodimac" | "hospital_sur";
 type ParsedRow = {
   cliente: Cliente;
   origen: string;
@@ -58,7 +58,7 @@ export function ImportarExcelModal({
   const [parsing, setParsing] = useState(false);
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [onlyYellow, setOnlyYellow] = useState(false);
-  const [clienteMode, setClienteMode] = useState<"auto" | "corona" | "sodimac">(
+  const [clienteMode, setClienteMode] = useState<"auto" | "corona" | "sodimac" | "hospital_sur">(
     defaultCliente ?? "auto",
   );
   const [prefijo, setPrefijo] = useState("RUT");

@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "corona" | "sodimac" | "hospital_sur" | "pasajero" | "conductor" | "crm";
-export type ClienteTipo = "corona" | "sodimac" | "hospital_sur";
+export type AppRole = "admin" | "corona" | "sodimac" | "hospital_sur" | "hospital_sur" | "pasajero" | "conductor" | "crm";
+export type ClienteTipo = "corona" | "sodimac" | "hospital_sur" | "hospital_sur";
 
 interface AuthState {
   session: Session | null;

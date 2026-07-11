@@ -14,8 +14,8 @@ interface ConductorFull {
   categoria_lic: string | null;
   estado: string;
   vence_licencia: string | null;
-  cliente: "corona" | "sodimac" | null;
-  clientes: ("corona" | "sodimac")[] | null;
+  cliente: "corona" | "sodimac" | "hospital_sur" | null;
+  clientes: ("corona" | "sodimac" | "hospital_sur")[] | null;
   foto_url: string | null;
 }
 
@@ -108,7 +108,7 @@ export function ConductorProfileModal({ conductorId, onClose }: Props) {
     load();
   }
 
-  const cliente = (conductor?.clientes?.[0] ?? conductor?.cliente ?? "corona") as "corona" | "sodimac";
+  const cliente = (conductor?.clientes?.[0] ?? conductor?.cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur";
   const licVencida = isVencido(conductor?.vence_licencia ?? null);
 
   return (

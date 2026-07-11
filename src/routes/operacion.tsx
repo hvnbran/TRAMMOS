@@ -53,7 +53,7 @@ export const Route = createFileRoute("/operacion")({
 
 interface CentroCosto {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   codigo: string;
   origen: string;
   destino: string;
@@ -84,7 +84,7 @@ function Operacion() {
     tipo: "Empresarial",
     tarifa: "",
     descripcion: "",
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    cliente: (cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur",
   });
 
   useEffect(() => {
@@ -220,7 +220,7 @@ function Operacion() {
         tipo: "Empresarial",
         tarifa: "",
         descripcion: "",
-        cliente: (cliente ?? "corona") as "corona" | "sodimac",
+        cliente: (cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur",
       });
       void load();
     } finally {
@@ -342,7 +342,7 @@ function Operacion() {
             <select
               value={search.cliente}
               onChange={(e) =>
-                updateSearch({ cliente: e.target.value as "all" | "corona" | "sodimac" })
+                updateSearch({ cliente: e.target.value as "all" | "corona" | "sodimac" | "hospital_sur" })
               }
               className="text-sm rounded-md border border-border bg-background px-3 py-2 capitalize"
             >
@@ -541,7 +541,7 @@ function Operacion() {
                   <select
                     value={form.cliente}
                     disabled={!!cliente}
-                    onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" })}
+                    onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })}
                     className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm capitalize"
                   >
                     <option value="corona">Corona</option>

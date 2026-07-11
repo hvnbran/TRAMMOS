@@ -5,7 +5,7 @@ export type Comunicacion = "voz" | "texto_grande" | "pictogramas" | "lengua_sena
 
 export interface PasajeroPCD {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   nombre: string;
   cedula: string | null;
   telefono: string | null;

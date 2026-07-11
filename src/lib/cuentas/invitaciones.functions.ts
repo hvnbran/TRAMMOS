@@ -119,8 +119,8 @@ export const validarInvitacionRegistro = createServerFn({ method: "POST" })
     return {
       ok: true as const,
       tipo: row.tipo as "empresa" | "pasajero",
-      rol: row.rol as "corona" | "sodimac" | "admin" | null,
-      cliente: row.cliente as "corona" | "sodimac" | null,
+      rol: row.rol as "corona" | "sodimac" | "hospital_sur" | "admin" | null,
+      cliente: row.cliente as "corona" | "sodimac" | "hospital_sur" | null,
       empresa_id: row.empresa_id as string | null,
       empresa_nombre: empresaNombre,
       email_sugerido: row.email_sugerido,
@@ -273,7 +273,7 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
 
         // Resolver empresa: la de la invitación o la elegida por el pasajero
         let empresaIdPas = inv.empresa_id as string | null;
-        let cliente = inv.cliente as "corona" | "sodimac" | null;
+        let cliente = inv.cliente as "corona" | "sodimac" | "hospital_sur" | null;
 
         if (!empresaIdPas && data.empresa_id_elegida) {
           const { data: empSel, error: empSelErr } = await supabaseAdmin
@@ -284,7 +284,7 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
           if (empSelErr) throw new Error(empSelErr.message);
           if (!empSel) throw new Error("La empresa seleccionada no existe.");
           empresaIdPas = empSel.id;
-          cliente = (empSel.cliente_legacy as "corona" | "sodimac" | null) ?? cliente;
+          cliente = (empSel.cliente_legacy as "corona" | "sodimac" | "hospital_sur" | null) ?? cliente;
         }
 
         if (!empresaIdPas) throw new Error("Debes seleccionar tu empresa.");

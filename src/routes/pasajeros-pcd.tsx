@@ -26,7 +26,7 @@ export const Route = createFileRoute("/pasajeros-pcd")({
   }),
 });
 
-type ClienteTipo = "corona" | "sodimac";
+type ClienteTipo = "corona" | "sodimac" | "hospital_sur";
 
 const EMPTY: Omit<PasajeroPCD, "id" | "created_at" | "updated_at"> = {
   cliente: "corona",

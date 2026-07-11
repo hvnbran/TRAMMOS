@@ -24,8 +24,8 @@ function isVencido(fecha: string | null | undefined): boolean {
 interface ConductorOpt {
   id: string;
   nombre: string;
-  cliente: "corona" | "sodimac" | null;
-  clientes: ("corona" | "sodimac")[] | null;
+  cliente: "corona" | "sodimac" | "hospital_sur" | null;
+  clientes: ("corona" | "sodimac" | "hospital_sur")[] | null;
   estado: string;
   vence_licencia: string | null;
 }
@@ -35,8 +35,8 @@ interface VehiculoOpt {
   placa: string;
   marca: string | null;
   linea: string | null;
-  cliente: "corona" | "sodimac" | null;
-  clientes: ("corona" | "sodimac")[] | null;
+  cliente: "corona" | "sodimac" | "hospital_sur" | null;
+  clientes: ("corona" | "sodimac" | "hospital_sur")[] | null;
   estado: string;
   vence_soat: string | null;
   vence_rtm: string | null;
@@ -61,7 +61,7 @@ export const Route = createFileRoute("/servicios")({
 
 interface ServicioRow {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   numero_orden: string | null;
   fecha: string;
   hora: string | null;
@@ -101,7 +101,7 @@ function Servicios() {
   // ... keep existing code (form state)
   const [pasajerosPCD, setPasajerosPCD] = useState<PasajeroPCD[]>([]);
   const [form, setForm] = useState({
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    cliente: (cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur",
     numero_orden: "",
     fecha: new Date().toISOString().slice(0, 10),
     hora: "08:00",
@@ -148,14 +148,14 @@ function Servicios() {
   //  - está asignado al cliente del servicio (en `clientes[]` o legacy `cliente`), O
   //  - no está asignado a ningún cliente (queda como recurso compartido / pool)
   // Solo se excluye si está asignado explícitamente a otros clientes que NO incluyen el del servicio.
-  function perteneceA(cs: ("corona" | "sodimac")[] | null | undefined, cliLegacy: "corona" | "sodimac" | null, target: "corona" | "sodimac"): boolean {
+  function perteneceA(cs: ("corona" | "sodimac" | "hospital_sur")[] | null | undefined, cliLegacy: "corona" | "sodimac" | "hospital_sur" | null, target: "corona" | "sodimac" | "hospital_sur"): boolean {
     const arr = (cs && cs.length > 0) ? cs : (cliLegacy ? [cliLegacy] : []);
     if (arr.length === 0) return true; // sin asignar → disponible para todos
     return arr.includes(target);
   }
 
   const conductoresDisponibles = useMemo(() => {
-    const clienteForm = (cliente ?? form.cliente) as "corona" | "sodimac";
+    const clienteForm = (cliente ?? form.cliente) as "corona" | "sodimac" | "hospital_sur";
     return conductoresAll.filter((c) =>
       perteneceA(c.clientes, c.cliente, clienteForm) &&
       c.estado !== "Inactivo" &&
@@ -164,7 +164,7 @@ function Servicios() {
   }, [conductoresAll, cliente, form.cliente]);
 
   const vehiculosDisponibles = useMemo(() => {
-    const clienteForm = (cliente ?? form.cliente) as "corona" | "sodimac";
+    const clienteForm = (cliente ?? form.cliente) as "corona" | "sodimac" | "hospital_sur";
     return vehiculosAll.filter((v) =>
       perteneceA(v.clientes, v.cliente, clienteForm) &&
       v.estado !== "Inactivo" &&
@@ -334,7 +334,7 @@ function Servicios() {
                   <label className="text-xs text-muted-foreground">Cliente</label>
                   <select
                     value={form.cliente}
-                    onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" })}
+                    onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
                     <option value="corona">Corona</option>

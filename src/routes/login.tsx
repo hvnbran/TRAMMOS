@@ -25,9 +25,9 @@ export const Route = createFileRoute("/login")({
   }),
 });
 
-type SeedKey = "corona" | "sodimac" | "admin";
+type SeedKey = "corona" | "sodimac" | "hospital_sur" | "admin";
 
-const SEED_USERS: Record<SeedKey, { email: string; display_name: string; role: "admin" | "corona" | "sodimac" }> = {
+const SEED_USERS: Record<SeedKey, { email: string; display_name: string; role: "admin" | "corona" | "sodimac" | "hospital_sur" }> = {
   corona: { email: "corona@trammos.app", display_name: "Corona", role: "corona" },
   sodimac: { email: "sodimac@trammos.app", display_name: "Sodimac", role: "sodimac" },
   admin: { email: "admin@trammos.app", display_name: "Admin General", role: "admin" },
@@ -58,7 +58,7 @@ function LoginPage() {
   // Splash
   const [showSplash, setShowSplash] = useState(false);
   const [splashName, setSplashName] = useState("");
-  const [splashClient, setSplashClient] = useState<"corona" | "sodimac" | "admin" | "pasajero" | null>(null);
+  const [splashClient, setSplashClient] = useState<"corona" | "sodimac" | "hospital_sur" | "admin" | "pasajero" | null>(null);
   const [progress, setProgress] = useState(0);
   const [splashFadeOut, setSplashFadeOut] = useState(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -83,7 +83,7 @@ function LoginPage() {
 
   const startSplashSequence = (
     displayName: string,
-    clientKey: "corona" | "sodimac" | "admin" | "pasajero" | null,
+    clientKey: "corona" | "sodimac" | "hospital_sur" | "admin" | "pasajero" | null,
     target: "/" | "/pasajero" | "/crm" | null,
   ) => {
     setSplashName(displayName);
