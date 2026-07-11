@@ -107,10 +107,26 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
   const [showAddFav, setShowAddFav] = useState(false);
   const [favNombre, setFavNombre] = useState("");
   const [favDireccion, setFavDireccion] = useState("");
-
+  // Sedes del cliente (por ahora solo Hospital del Sur Itagüí las expone)
+  const [sedes, setSedes] = useState<Sede[]>([]);
   useEffect(() => {
-    saveFavoritos(favoritos);
-  }, [favoritos]);
+    if (perfil.cliente !== "hospital_sur") return;
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("empresas")
+        .select("id, empresa_sedes(id, nombre, direccion, orden, activo)")
+        .eq("slug", "hospital-sur-itagui")
+        .maybeSingle();
+      const list = (((data as unknown) as { empresa_sedes?: (Sede & { orden: number; activo: boolean })[] } | null)?.empresa_sedes ?? [])
+        .filter((s) => s.activo)
+        .sort((a, b) => a.orden - b.orden)
+        .map(({ id, nombre, direccion }) => ({ id, nombre, direccion }));
+      if (mounted) setSedes(list);
+    })();
+    return () => { mounted = false; };
+  }, [perfil.cliente]);
+
 
   const handleAddFavorito = () => {
     const nombre = favNombre.trim();
