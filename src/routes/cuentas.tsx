@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { AdminOnly } from "@/components/layout/AdminOnly";
+import { RoleAllowed } from "@/components/layout/RoleAllowed";
+import { useAuth } from "@/lib/auth-context";
 
 import { crearInvitacionRegistro } from "@/lib/cuentas/invitaciones.functions";
 import { listarEmpresas, crearEmpresa } from "@/lib/empresas/empresas.functions";
@@ -14,9 +15,9 @@ import {
 
 export const Route = createFileRoute("/cuentas")({
   component: () => (
-    <AdminOnly>
+    <RoleAllowed roles={["hospital_sur"]}>
       <CuentasPage />
-    </AdminOnly>
+    </RoleAllowed>
   ),
   head: () => ({
     meta: [
