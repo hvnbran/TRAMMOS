@@ -191,7 +191,9 @@ function CrearEmpresaModal({
 // ============== Página principal ==============
 
 function CuentasPage() {
-  const [tab, setTab] = useState<Tab>("empresa");
+  const { role } = useAuth();
+  const isHospital = role === "hospital_sur";
+  const [tab, setTab] = useState<Tab>(isHospital ? "pasajero" : "empresa");
   const { refresh } = useEmpresas();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -199,22 +201,27 @@ function CuentasPage() {
     <AppLayout>
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">Creación de cuentas</h1>
+          <h1 className="text-2xl font-bold">
+            {isHospital ? "Crear pasajeros" : "Creación de cuentas"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Crea y administra las credenciales para empresas (monitoreo), pasajeros PcD y conductores.
-            Cada cuenta queda asociada a una empresa específica.
+            {isHospital
+              ? "Genera enlaces de auto-registro para los pasajeros del Hospital del Sur Itagüí. Cada enlace es de un solo uso."
+              : "Crea y administra las credenciales para empresas (monitoreo), pasajeros PcD y conductores. Cada cuenta queda asociada a una empresa específica."}
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-muted/40 border border-border max-w-2xl">
-          <TabBtn active={tab === "empresa"} onClick={() => setTab("empresa")} icon={<Building2 className="h-4 w-4" />} label="Empresa" />
-          <TabBtn active={tab === "pasajero"} onClick={() => setTab("pasajero")} icon={<Accessibility className="h-4 w-4" />} label="Pasajero" />
-          <TabBtn active={tab === "conductor"} onClick={() => setTab("conductor")} icon={<Users className="h-4 w-4" />} label="Conductor" />
-        </div>
+        {!isHospital && (
+          <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-muted/40 border border-border max-w-2xl">
+            <TabBtn active={tab === "empresa"} onClick={() => setTab("empresa")} icon={<Building2 className="h-4 w-4" />} label="Empresa" />
+            <TabBtn active={tab === "pasajero"} onClick={() => setTab("pasajero")} icon={<Accessibility className="h-4 w-4" />} label="Pasajero" />
+            <TabBtn active={tab === "conductor"} onClick={() => setTab("conductor")} icon={<Users className="h-4 w-4" />} label="Conductor" />
+          </div>
+        )}
 
-        {tab === "empresa" && <EmpresaTab />}
+        {!isHospital && tab === "empresa" && <EmpresaTab />}
         {tab === "pasajero" && <PasajeroTab />}
-        {tab === "conductor" && <ConductorTab />}
+        {!isHospital && tab === "conductor" && <ConductorTab />}
       </div>
 
       <CrearEmpresaModal
