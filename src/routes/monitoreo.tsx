@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useCallback, useState } from "react";
 import { AppLayout } from "../components/layout/AppLayout";
-import { AdminOnly } from "../components/layout/AdminOnly";
+import { RoleAllowed } from "../components/layout/RoleAllowed";
 import { Skeleton } from "../components/ui/skeleton";
 import VehiculosLiveList from "../components/monitoreo/VehiculosLiveList";
 import { Activity, WifiOff } from "lucide-react";
@@ -10,9 +10,9 @@ const MonitoreoMap = lazy(() => import("../components/MonitoreoMap"));
 
 export const Route = createFileRoute("/monitoreo")({
   component: () => (
-    <AdminOnly>
+    <RoleAllowed roles={["hospital_sur"]}>
       <Monitoreo />
-    </AdminOnly>
+    </RoleAllowed>
   ),
   head: () => ({
     meta: [
