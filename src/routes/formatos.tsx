@@ -248,7 +248,7 @@ function Formatos() {
                   <label className="text-xs text-muted-foreground mb-1 block">Cliente (empresa)</label>
                   <select value={fCliente} onChange={(e) => setFCliente(e.target.value as "corona" | "sodimac" | "hospital_sur")} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
                     <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
+                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </div>
               )}

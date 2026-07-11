@@ -296,7 +296,7 @@ function Facturacion() {
                     className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm capitalize"
                   >
                     <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
+                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </div>
               </div>

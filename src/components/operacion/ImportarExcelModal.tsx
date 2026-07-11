@@ -361,7 +361,7 @@ export function ImportarExcelModal({
                   >
                     <option value="auto">Auto-detectar</option>
                     <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
+                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </div>
                 <div>

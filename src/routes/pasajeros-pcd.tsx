@@ -548,7 +548,7 @@ function FormularioModal(props: {
                     className="form-input"
                   >
                     <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
+                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </Field>
               )}

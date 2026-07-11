@@ -148,7 +148,7 @@ function Feedback() {
               {role === "admin" && (
                 <div><label className="text-xs text-muted-foreground">Cliente</label>
                   <select value={califForm.cliente} onChange={(e) => setCalifForm({ ...califForm, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="corona">Corona</option><option value="sodimac">Sodimac</option>
+                    <option value="corona">Corona</option><option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </div>
               )}
@@ -184,7 +184,7 @@ function Feedback() {
               {role === "admin" && (
                 <div><label className="text-xs text-muted-foreground">Cliente</label>
                   <select value={incForm.cliente} onChange={(e) => setIncForm({ ...incForm, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="corona">Corona</option><option value="sodimac">Sodimac</option>
+                    <option value="corona">Corona</option><option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </div>
               )}
