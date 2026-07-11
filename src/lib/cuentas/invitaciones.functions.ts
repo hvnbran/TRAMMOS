@@ -37,12 +37,39 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => crearSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    // Roles del caller
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const roleSet = new Set((roles ?? []).map((r) => r.role as string));
+    const isAdmin = roleSet.has("admin");
+    // Un rol cliente (corona/sodimac/hospital_sur) puede crear invitaciones
+    // de tipo "pasajero" únicamente para su propia empresa.
+    const clienteRol = ["corona", "sodimac", "hospital_sur"].find((r) => roleSet.has(r)) ?? null;
+
+    if (!isAdmin) {
+      if (!clienteRol) throw new Error("Solo administradores");
+      if (data.tipo !== "pasajero") {
+        throw new Error("Solo puedes generar invitaciones de pasajeros.");
+      }
+    }
 
     let empresaId: string | null = null;
     let clienteLegacy: string | null = null;
 
-    if (data.empresaId) {
+    // Si el caller no es admin, forzar empresaId a la empresa del cliente_legacy correspondiente.
+    if (!isAdmin && clienteRol) {
+      const { data: emp } = await supabaseAdmin
+        .from("empresas")
+        .select("id, cliente_legacy")
+        .eq("cliente_legacy", clienteRol)
+        .eq("activo", true)
+        .maybeSingle();
+      if (!emp) throw new Error("No se encontró tu empresa.");
+      empresaId = emp.id;
+      clienteLegacy = emp.cliente_legacy ?? null;
+    } else if (data.empresaId) {
       const { data: empresa, error: eErr } = await supabaseAdmin
         .from("empresas")
         .select("id, nombre, cliente_legacy")
@@ -55,7 +82,7 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
 
       if (data.tipo === "pasajero" && !empresa.cliente_legacy) {
         throw new Error(
-          "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
+          "Esta empresa todavía no tiene cliente legacy configurado.",
         );
       }
     }
