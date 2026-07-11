@@ -3,7 +3,42 @@ import { Pictograma } from "@/components/Pictograma";
 import { SpeakButton } from "@/components/SpeakButton";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { Loader2, MapPin, Send, Clock, Star, Plus, X, Navigation } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, MapPin, Send, Clock, Star, Plus, X, Navigation, Cross } from "lucide-react";
+
+type Sede = { id: string; nombre: string; direccion: string };
+
+function SedesHospitalPicker({
+  sedes,
+  onPick,
+  label,
+}: {
+  sedes: Sede[];
+  onPick: (direccion: string) => void;
+  label: string;
+}) {
+  if (sedes.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-2.5">
+      <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-emerald-800 uppercase tracking-wide">
+        <Cross className="h-3.5 w-3.5" /> {label}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {sedes.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => onPick(`${s.nombre} — ${s.direccion}`)}
+            className="text-xs px-2.5 py-1.5 rounded-full bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 transition-colors"
+            title={s.direccion}
+          >
+            {s.nombre}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export interface PasajeroPerfil {
   id: string;
