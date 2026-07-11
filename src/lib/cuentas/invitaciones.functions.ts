@@ -46,7 +46,7 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
     const isAdmin = roleSet.has("admin");
     // Un rol cliente (corona/sodimac/hospital_sur) puede crear invitaciones
     // de tipo "pasajero" únicamente para su propia empresa.
-    const clienteRol = ["corona", "sodimac", "hospital_sur"].find((r) => roleSet.has(r)) ?? null;
+    const clienteRol = (["corona", "sodimac", "hospital_sur"] as const).find((r) => roleSet.has(r)) ?? null;
 
     if (!isAdmin) {
       if (!clienteRol) throw new Error("Solo administradores");
