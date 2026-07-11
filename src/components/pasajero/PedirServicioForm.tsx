@@ -280,6 +280,7 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
               </button>
             )}
           </label>
+          <SedesHospitalPicker sedes={sedes} onPick={setOrigen} label="Salir desde una sede del Hospital" />
           <AddressAutocomplete
             value={origen}
             onChange={(v) => setOrigen(v)}
@@ -299,6 +300,7 @@ export function PedirServicioForm({ perfil, ultima: _ultima, submitting, onSubmi
             <Pictograma name="ubicacion" size="sm" />
             Vas a
           </label>
+          <SedesHospitalPicker sedes={sedes} onPick={setDestino} label="Ir a una sede del Hospital" />
           <AddressAutocomplete
             value={destino}
             onChange={(v) => setDestino(v)}
