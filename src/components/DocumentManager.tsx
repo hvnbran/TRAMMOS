@@ -93,7 +93,7 @@ interface TipoDef {
 interface Props {
   kind: DocKind;
   entityId: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   tipos: TipoDef[];
 }
 

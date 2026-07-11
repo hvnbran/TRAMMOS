@@ -58,7 +58,7 @@ function LoginPage() {
   // Splash
   const [showSplash, setShowSplash] = useState(false);
   const [splashName, setSplashName] = useState("");
-  const [splashClient, setSplashClient] = useState<"corona" | "sodimac" | "admin" | "pasajero" | null>(null);
+  const [splashClient, setSplashClient] = useState<"corona" | "sodimac" | "hospital_sur" | "admin" | "pasajero" | null>(null);
   const [progress, setProgress] = useState(0);
   const [splashFadeOut, setSplashFadeOut] = useState(false);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -83,7 +83,7 @@ function LoginPage() {
 
   const startSplashSequence = (
     displayName: string,
-    clientKey: "corona" | "sodimac" | "admin" | "pasajero" | null,
+    clientKey: "corona" | "sodimac" | "hospital_sur" | "admin" | "pasajero" | null,
     target: "/" | "/pasajero" | "/crm" | null,
   ) => {
     setSplashName(displayName);

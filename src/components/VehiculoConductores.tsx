@@ -38,7 +38,7 @@ interface Asignacion {
 
 interface Props {
   vehiculoId: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
 }
 
 export function VehiculoConductores({ vehiculoId, cliente }: Props) {

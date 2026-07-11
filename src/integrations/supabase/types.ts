@@ -2130,7 +2130,8 @@ export type Database = {
         | "pasajero"
         | "conductor"
         | "crm"
-      cliente_tipo: "corona" | "sodimac"
+        | "hospital_sur"
+      cliente_tipo: "corona" | "sodimac" | "hospital_sur"
       crm_temperatura: "frio" | "tibio" | "caliente"
     }
     CompositeTypes: {
@@ -2259,8 +2260,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "corona", "sodimac", "pasajero", "conductor", "crm"],
-      cliente_tipo: ["corona", "sodimac"],
+      app_role: [
+        "admin",
+        "corona",
+        "sodimac",
+        "pasajero",
+        "conductor",
+        "crm",
+        "hospital_sur",
+      ],
+      cliente_tipo: ["corona", "sodimac", "hospital_sur"],
       crm_temperatura: ["frio", "tibio", "caliente"],
     },
   },

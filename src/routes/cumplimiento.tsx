@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AppLayout } from "../components/layout/AppLayout";
-import { AdminOnly } from "../components/layout/AdminOnly";
+import { RoleAllowed } from "../components/layout/RoleAllowed";
 import { CheckCircle, XCircle, AlertTriangle, Shield, MinusCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/cumplimiento")({
   component: () => (
-    <AdminOnly>
+    <RoleAllowed roles={["hospital_sur"]}>
       <Cumplimiento />
-    </AdminOnly>
+    </RoleAllowed>
   ),
   head: () => ({
     meta: [

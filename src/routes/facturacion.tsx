@@ -23,7 +23,7 @@ export const Route = createFileRoute("/facturacion")({
 
 interface Factura {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   numero: string;
   periodo: string;
   fecha_emision: string;
@@ -54,7 +54,7 @@ function Facturacion() {
     monto: "",
     estado: "Pendiente",
     notas: "",
-    cliente: (cliente ?? "corona") as "corona" | "sodimac",
+    cliente: (cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur",
   });
 
   useEffect(() => {
@@ -100,7 +100,7 @@ function Facturacion() {
         monto: "",
         estado: "Pendiente",
         notas: "",
-        cliente: (cliente ?? "corona") as "corona" | "sodimac",
+        cliente: (cliente ?? "corona") as "corona" | "sodimac" | "hospital_sur",
       });
       void load();
     } finally {
@@ -292,11 +292,11 @@ function Facturacion() {
                   <select
                     value={form.cliente}
                     disabled={!!cliente}
-                    onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" })}
+                    onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })}
                     className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm capitalize"
                   >
                     <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
+                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </div>
               </div>

@@ -23,7 +23,7 @@ type EstadoFormato = "Pendiente" | "En revisión" | "Completado";
 
 interface Formato {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   codigo: string;
   nombre: string;
   tipo: TipoFormato;
@@ -61,7 +61,7 @@ function Formatos() {
   const [fEntidad, setFEntidad] = useState("");
   const [fVehiculos, setFVehiculos] = useState<number | "">("");
   const [fEstado, setFEstado] = useState<EstadoFormato>("Pendiente");
-  const [fCliente, setFCliente] = useState<"corona" | "sodimac">(userCliente ?? "corona");
+  const [fCliente, setFCliente] = useState<"corona" | "sodimac" | "hospital_sur">(userCliente ?? "corona");
   const [fFile, setFFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -246,9 +246,9 @@ function Formatos() {
               {role === "admin" && (
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Cliente (empresa)</label>
-                  <select value={fCliente} onChange={(e) => setFCliente(e.target.value as "corona" | "sodimac")} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
+                  <select value={fCliente} onChange={(e) => setFCliente(e.target.value as "corona" | "sodimac" | "hospital_sur")} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm">
                     <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
+                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </div>
               )}

@@ -37,12 +37,39 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => crearSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+    // Roles del caller
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const roleSet = new Set((roles ?? []).map((r) => r.role as string));
+    const isAdmin = roleSet.has("admin");
+    // Un rol cliente (corona/sodimac/hospital_sur) puede crear invitaciones
+    // de tipo "pasajero" únicamente para su propia empresa.
+    const clienteRol = (["corona", "sodimac", "hospital_sur"] as const).find((r) => roleSet.has(r)) ?? null;
+
+    if (!isAdmin) {
+      if (!clienteRol) throw new Error("Solo administradores");
+      if (data.tipo !== "pasajero") {
+        throw new Error("Solo puedes generar invitaciones de pasajeros.");
+      }
+    }
 
     let empresaId: string | null = null;
     let clienteLegacy: string | null = null;
 
-    if (data.empresaId) {
+    // Si el caller no es admin, forzar empresaId a la empresa del cliente_legacy correspondiente.
+    if (!isAdmin && clienteRol) {
+      const { data: emp } = await supabaseAdmin
+        .from("empresas")
+        .select("id, cliente_legacy")
+        .eq("cliente_legacy", clienteRol)
+        .eq("activo", true)
+        .maybeSingle();
+      if (!emp) throw new Error("No se encontró tu empresa.");
+      empresaId = emp.id;
+      clienteLegacy = emp.cliente_legacy ?? null;
+    } else if (data.empresaId) {
       const { data: empresa, error: eErr } = await supabaseAdmin
         .from("empresas")
         .select("id, nombre, cliente_legacy")
@@ -55,7 +82,7 @@ export const crearInvitacionRegistro = createServerFn({ method: "POST" })
 
       if (data.tipo === "pasajero" && !empresa.cliente_legacy) {
         throw new Error(
-          "Esta empresa todavía no tiene cliente legacy configurado. Por ahora los pasajeros solo pueden registrarse en empresas con cliente legacy (Corona/Sodimac).",
+          "Esta empresa todavía no tiene cliente legacy configurado.",
         );
       }
     }
@@ -119,8 +146,8 @@ export const validarInvitacionRegistro = createServerFn({ method: "POST" })
     return {
       ok: true as const,
       tipo: row.tipo as "empresa" | "pasajero",
-      rol: row.rol as "corona" | "sodimac" | "admin" | null,
-      cliente: row.cliente as "corona" | "sodimac" | null,
+      rol: row.rol as "corona" | "sodimac" | "hospital_sur" | "admin" | null,
+      cliente: row.cliente as "corona" | "sodimac" | "hospital_sur" | null,
       empresa_id: row.empresa_id as string | null,
       empresa_nombre: empresaNombre,
       email_sugerido: row.email_sugerido,
@@ -273,7 +300,7 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
 
         // Resolver empresa: la de la invitación o la elegida por el pasajero
         let empresaIdPas = inv.empresa_id as string | null;
-        let cliente = inv.cliente as "corona" | "sodimac" | null;
+        let cliente = inv.cliente as "corona" | "sodimac" | "hospital_sur" | null;
 
         if (!empresaIdPas && data.empresa_id_elegida) {
           const { data: empSel, error: empSelErr } = await supabaseAdmin
@@ -284,7 +311,7 @@ export const consumirInvitacionRegistro = createServerFn({ method: "POST" })
           if (empSelErr) throw new Error(empSelErr.message);
           if (!empSel) throw new Error("La empresa seleccionada no existe.");
           empresaIdPas = empSel.id;
-          cliente = (empSel.cliente_legacy as "corona" | "sodimac" | null) ?? cliente;
+          cliente = (empSel.cliente_legacy as "corona" | "sodimac" | "hospital_sur" | null) ?? cliente;
         }
 
         if (!empresaIdPas) throw new Error("Debes seleccionar tu empresa.");

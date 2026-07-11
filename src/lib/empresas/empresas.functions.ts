@@ -25,14 +25,14 @@ function slugify(s: string) {
     .slice(0, 60);
 }
 
-/** Listar empresas activas (cualquier admin autenticado). */
+/** Listar empresas activas (cualquier usuario autenticado). */
 export const listarEmpresas = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertAdmin(context.userId);
+  .handler(async () => {
     const { data, error } = await supabaseAdmin
       .from("empresas")
       .select("id, nombre, slug, cliente_legacy, activo, created_at")
+      .eq("activo", true)
       .order("nombre", { ascending: true });
     if (error) throw new Error(error.message);
     return { empresas: data ?? [] };

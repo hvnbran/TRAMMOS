@@ -26,7 +26,7 @@ export const Route = createFileRoute("/pasajeros-pcd")({
   }),
 });
 
-type ClienteTipo = "corona" | "sodimac";
+type ClienteTipo = "corona" | "sodimac" | "hospital_sur";
 
 const EMPTY: Omit<PasajeroPCD, "id" | "created_at" | "updated_at"> = {
   cliente: "corona",
@@ -548,7 +548,7 @@ function FormularioModal(props: {
                     className="form-input"
                   >
                     <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option>
+                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
                   </select>
                 </Field>
               )}

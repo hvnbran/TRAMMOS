@@ -5,7 +5,7 @@ import { Inbox, Check, X, MapPin, Clock, Loader2, Phone, AlertCircle } from "luc
 
 interface SolicitudEntrante {
   id: string;
-  cliente: "corona" | "sodimac";
+  cliente: "corona" | "sodimac" | "hospital_sur";
   pasajero_pcd_id: string;
   origen: string;
   destino: string;
