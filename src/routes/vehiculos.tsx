@@ -291,9 +291,12 @@ function Vehiculos() {
         </div>)}
 
 
-        {showForm && (
-          <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
-            <p className="text-sm font-semibold">{editingId ? "Editar vehículo" : "Nuevo vehículo"}</p>
+        <Dialog open={showForm} onOpenChange={(o) => { if (!o) cancelForm(); }}>
+          <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Editar vehículo" : "Nuevo vehículo"}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="md:col-span-3">
                 <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
@@ -363,8 +366,10 @@ function Vehiculos() {
               <button type="button" onClick={cancelForm} className="px-4 py-2 rounded-md text-sm text-muted-foreground">Cancelar</button>
               <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}</button>
             </div>
-          </form>
-        )}
+            </form>
+          </DialogContent>
+        </Dialog>
+
 
         {loading ? (
           <CardGridSkeleton count={6} />
