@@ -9,10 +9,17 @@ import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { GenerarAccesoConductor } from "@/components/conductor/GenerarAccesoConductor";
 import { ConductorProfileModal } from "@/components/ConductorProfileModal";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
+import { z } from "zod";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
 
 
 export const Route = createFileRoute("/conductores")({
   component: Conductores,
+  validateSearch: zodValidator(
+    z.object({
+      open: fallback(z.string().optional(), undefined),
+    })
+  ),
   head: () => ({
     meta: [
       { title: "Conductores - TRAMMOS" },
@@ -81,6 +88,15 @@ function Conductores() {
 
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
+
+  const { open: openFromUrl } = Route.useSearch();
+  useEffect(() => {
+    if (!openFromUrl || items.length === 0) return;
+    if (items.some((c) => c.id === openFromUrl)) {
+      setFiltroCliente("todos");
+      setModalConductorId(openFromUrl);
+    }
+  }, [openFromUrl, items]);
 
   async function load() {
     setLoading(true);
@@ -173,7 +189,7 @@ function Conductores() {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        {role === "admin" && (<div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Filtrar:</span>
           {([
             { v: "todos", l: "Todos" },
@@ -191,7 +207,7 @@ function Conductores() {
             </button>
           ))}
           <span className="text-muted-foreground ml-auto">{itemsFiltrados.length} de {items.length}</span>
-        </div>
+        </div>)}
 
         {showForm && (
           <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
@@ -200,10 +216,10 @@ function Conductores() {
               <div className="md:col-span-3">
                 <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
                 <div className="flex flex-wrap gap-3 mt-1">
-                  {(["corona", "sodimac"] as const).map((cl) => (
+                  {(["corona", "sodimac", "hospital_sur"] as const).map((cl) => (
                     <label key={cl} className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer hover:bg-secondary/30">
                       <input type="checkbox" checked={form.clientes.includes(cl)} onChange={() => toggleCliente(cl)} />
-                      <span className="capitalize">{cl}</span>
+                      <span className="capitalize">{cl === "hospital_sur" ? "Hospital del Sur" : cl}</span>
                     </label>
                   ))}
                   {form.clientes.length === 0 && (
