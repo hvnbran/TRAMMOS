@@ -25,6 +25,7 @@ import { Route as CumplimientoRouteImport } from './routes/cumplimiento'
 import { Route as CuentasRouteImport } from './routes/cuentas'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as ConductoresRouteImport } from './routes/conductores'
+import { Route as AyudaRouteImport } from './routes/ayuda'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CrmIndexRouteImport } from './routes/crm.index'
@@ -129,6 +130,11 @@ const CrmRoute = CrmRouteImport.update({
 const ConductoresRoute = ConductoresRouteImport.update({
   id: '/conductores',
   path: '/conductores',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AyudaRoute = AyudaRouteImport.update({
+  id: '/ayuda',
+  path: '/ayuda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AlertasRoute = AlertasRouteImport.update({
@@ -261,6 +267,7 @@ const ApiPublicPushProcessRoute = ApiPublicPushProcessRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
+  '/ayuda': typeof AyudaRoute
   '/conductores': typeof ConductoresRoute
   '/crm': typeof CrmRouteWithChildren
   '/cuentas': typeof CuentasRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
+  '/ayuda': typeof AyudaRoute
   '/conductores': typeof ConductoresRoute
   '/cuentas': typeof CuentasRoute
   '/cumplimiento': typeof CumplimientoRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/alertas': typeof AlertasRoute
+  '/ayuda': typeof AyudaRoute
   '/conductores': typeof ConductoresRoute
   '/crm': typeof CrmRouteWithChildren
   '/cuentas': typeof CuentasRoute
@@ -392,6 +401,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/alertas'
+    | '/ayuda'
     | '/conductores'
     | '/crm'
     | '/cuentas'
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/alertas'
+    | '/ayuda'
     | '/conductores'
     | '/cuentas'
     | '/cumplimiento'
@@ -477,6 +488,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/alertas'
+    | '/ayuda'
     | '/conductores'
     | '/crm'
     | '/cuentas'
@@ -521,6 +533,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AlertasRoute: typeof AlertasRoute
+  AyudaRoute: typeof AyudaRoute
   ConductoresRoute: typeof ConductoresRoute
   CrmRoute: typeof CrmRouteWithChildren
   CuentasRoute: typeof CuentasRoute
@@ -662,6 +675,13 @@ declare module '@tanstack/react-router' {
       path: '/conductores'
       fullPath: '/conductores'
       preLoaderRoute: typeof ConductoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ayuda': {
+      id: '/ayuda'
+      path: '/ayuda'
+      fullPath: '/ayuda'
+      preLoaderRoute: typeof AyudaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/alertas': {
@@ -877,6 +897,7 @@ const CrmRouteWithChildren = CrmRoute._addFileChildren(CrmRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AlertasRoute: AlertasRoute,
+  AyudaRoute: AyudaRoute,
   ConductoresRoute: ConductoresRoute,
   CrmRoute: CrmRouteWithChildren,
   CuentasRoute: CuentasRoute,
