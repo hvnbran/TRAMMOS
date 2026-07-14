@@ -89,6 +89,15 @@ function Conductores() {
   useEffect(() => { if (!authLoading && !role) navigate({ to: "/login" }); }, [authLoading, role, navigate]);
   useEffect(() => { if (role) load(); /* eslint-disable-next-line */ }, [role]);
 
+  const { open: openFromUrl } = Route.useSearch();
+  useEffect(() => {
+    if (!openFromUrl || items.length === 0) return;
+    if (items.some((c) => c.id === openFromUrl)) {
+      setFiltroCliente("todos");
+      setModalConductorId(openFromUrl);
+    }
+  }, [openFromUrl, items]);
+
   async function load() {
     setLoading(true);
     const { data } = await supabase.from("conductores").select("*").order("nombre");
