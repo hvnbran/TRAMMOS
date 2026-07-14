@@ -45,7 +45,7 @@ const GUIDES: Record<Platform, { title: string; subtitle: string; icon: React.Re
     icon: <Apple className="h-6 w-6" />,
     warning: "Para la mejor experiencia, abre esta página en Safari y vuelve a esta guía.",
     steps: [
-      { text: "Copia esta dirección: tramos.online", icon: <Globe className="h-5 w-5 text-primary" /> },
+      { text: "Copia esta dirección: trammos.online", icon: <Globe className="h-5 w-5 text-primary" /> },
       { text: "Abre Safari y pega la dirección", icon: <Apple className="h-5 w-5 text-primary" /> },
       { text: "Toca el botón Compartir en Safari", icon: <Share className="h-5 w-5 text-primary" /> },
       { text: 'Selecciona "Añadir a pantalla de inicio"', icon: <Plus className="h-5 w-5 text-primary" /> },
