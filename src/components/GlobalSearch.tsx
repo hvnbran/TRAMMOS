@@ -100,6 +100,7 @@ export function GlobalSearch() {
             title: c.nombre,
             subtitle: [c.cedula, c.estado].filter(Boolean).join(" • "),
             to: "/conductores",
+            search: { open: c.id },
           }))
         ),
         // Vehículos

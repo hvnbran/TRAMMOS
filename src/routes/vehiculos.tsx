@@ -270,7 +270,7 @@ function Vehiculos() {
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        {role === "admin" && (<div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-muted-foreground">Filtrar:</span>
           {([
             { v: "todos", l: "Todos" },
@@ -297,14 +297,14 @@ function Vehiculos() {
               <div className="md:col-span-3">
                 <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
                 <div className="flex flex-wrap gap-3 mt-1">
-                  {(["corona", "sodimac"] as const).map((c) => (
+                  {(["corona", "sodimac", "hospital_sur"] as const).map((c) => (
                     <label key={c} className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer hover:bg-secondary/30">
                       <input
                         type="checkbox"
                         checked={form.clientes.includes(c)}
                         onChange={() => toggleCliente(c)}
                       />
-                      <span className="capitalize">{c}</span>
+                      <span className="capitalize">{c === "hospital_sur" ? "Hospital del Sur" : c}</span>
                     </label>
                   ))}
                   {form.clientes.length === 0 && (
