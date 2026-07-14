@@ -288,7 +288,8 @@ function Vehiculos() {
             </button>
           ))}
           <span className="text-muted-foreground ml-auto">{itemsFiltrados.length} de {items.length}</span>
-        </div>
+        </div>)}
+
 
         {showForm && (
           <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
