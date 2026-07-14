@@ -102,7 +102,7 @@ export function GenerarAccesoConductor({
     if (!currentPassword) return;
     const msg =
       `Hola ${nombre}, este es tu acceso a TRAMMOS Conductor:\n` +
-      `Enlace: https://tramos.online/conductor/login\n` +
+      `Enlace: https://trammos.online/conductor/login\n` +
       `Cédula: ${cedula ?? "(tu cédula)"}\n` +
       `Contraseña: ${currentPassword}`;
     await navigator.clipboard.writeText(msg);
@@ -175,7 +175,7 @@ export function GenerarAccesoConductor({
                 </button>
 
                 <p className="text-[11px] text-muted-foreground">
-                  Entra a <strong>tramos.online/conductor/login</strong> con la <strong>cédula</strong>{cedula ? ` (${cedula})` : ""} y esta contraseña.
+                  Entra a <strong>trammos.online/conductor/login</strong> con la <strong>cédula</strong>{cedula ? ` (${cedula})` : ""} y esta contraseña.
                 </p>
 
                 <div className="flex gap-2 justify-between items-center pt-2 border-t border-border">
@@ -221,7 +221,7 @@ export function GenerarAccesoConductor({
                 </div>
                 <p className="text-[11px] text-muted-foreground bg-secondary/50 rounded p-2">
                   Quedará guardada y la podrás consultar aquí cuando la necesites. El conductor entra a{" "}
-                  <strong>tramos.online/conductor/login</strong> con su <strong>cédula</strong> y esta contraseña.
+                  <strong>trammos.online/conductor/login</strong> con su <strong>cédula</strong> y esta contraseña.
                 </p>
                 {error && <div className="text-sm text-destructive">{error}</div>}
                 <div className="flex gap-2 justify-end">

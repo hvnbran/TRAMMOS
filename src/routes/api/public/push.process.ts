@@ -9,7 +9,7 @@ let configured = false;
 function configureVapid() {
   if (configured) return;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:soporte@tramos.online";
+  const subject = process.env.VAPID_SUBJECT || "mailto:soporte@trammos.online";
   if (!privateKey) throw new Error("VAPID_PRIVATE_KEY no configurada");
   webpush.setVapidDetails(subject, VAPID_PUBLIC_KEY, privateKey);
   configured = true;

@@ -19,8 +19,8 @@ export const TRAMMOS_BRAND = {
   border: '#E5E7EB',
   background: '#F8FAFC',
 
-  siteUrl: 'https://tramos.online',
-  supportEmail: 'soporte@tramos.online',
+  siteUrl: 'https://trammos.online',
+  supportEmail: 'soporte@trammos.online',
 } as const;
 
 // Reusable inline styles (email clients require inline styles)
