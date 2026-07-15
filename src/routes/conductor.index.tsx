@@ -13,6 +13,9 @@ const PushNotificationsToggle = lazy(() =>
 const ShareLocationToggle = lazy(() =>
   import("@/components/conductor/ShareLocationToggle").then((m) => ({ default: m.ShareLocationToggle })),
 );
+const ServiciosFijosHoy = lazy(() =>
+  import("@/components/conductor/ServiciosFijosHoy").then((m) => ({ default: m.ServiciosFijosHoy })),
+);
 
 export const Route = createFileRoute("/conductor/")({
   component: ConductorHome,

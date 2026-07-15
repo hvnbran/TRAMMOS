@@ -19,6 +19,7 @@ import {
   Accessibility,
   UserCog,
   Briefcase,
+  Repeat,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -37,6 +38,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/pasajeros-pcd", icon: Accessibility, label: "Pasajeros PCD" },
   { to: "/operacion", icon: MapPin, label: "Operación" },
   { to: "/servicios", icon: RouteIcon, label: "Servicios" },
+  { to: "/servicios-fijos", icon: Repeat, label: "Servicios fijos" },
   { to: "/cumplimiento", icon: ClipboardCheck, label: "Cumplimiento ANS" },
   { to: "/monitoreo", icon: Radar, label: "Monitoreo" },
   { to: "/facturacion", icon: FileText, label: "Facturación" },
