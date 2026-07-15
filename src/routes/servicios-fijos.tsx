@@ -321,17 +321,19 @@ function ServiciosFijosPage() {
                 <label className="text-xs text-muted-foreground">Conductor *</label>
                 <select
                   value={form.conductor}
-                  onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                  onChange={(e) => onChangeConductor(e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Selecciona…</option>
                   {conductores.map((c) => (
                     <option key={c.nombre} value={c.nombre}>
                       {c.nombre}
+                      {placaPorConductor[c.nombre] ? ` — ${placaPorConductor[c.nombre]}` : ""}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div>
                 <label className="text-xs text-muted-foreground">Vehículo (placa)</label>
                 <select
