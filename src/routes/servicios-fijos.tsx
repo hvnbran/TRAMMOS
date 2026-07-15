@@ -415,24 +415,39 @@ function ServiciosFijosPage() {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Hora inicio</label>
-                <input
-                  type="time"
-                  value={form.hora_inicio_prog ?? ""}
-                  onChange={(e) => setForm({ ...form, hora_inicio_prog: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={horarioLibre}
+                    onChange={(e) => setHorarioLibre(e.target.checked)}
+                  />
+                  El conductor define hora de inicio y fin (horario libre)
+                </label>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Hora fin</label>
-                <input
-                  type="time"
-                  value={form.hora_fin_prog ?? ""}
-                  onChange={(e) => setForm({ ...form, hora_fin_prog: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
+              {!horarioLibre && (
+                <>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Hora inicio</label>
+                    <input
+                      type="time"
+                      value={form.hora_inicio_prog ?? ""}
+                      onChange={(e) => setForm({ ...form, hora_inicio_prog: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Hora fin</label>
+                    <input
+                      type="time"
+                      value={form.hora_fin_prog ?? ""}
+                      onChange={(e) => setForm({ ...form, hora_fin_prog: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                </>
+              )}
+
               <div>
                 <label className="text-xs text-muted-foreground">Fecha inicio</label>
                 <input
