@@ -547,20 +547,34 @@ function ConductorTab() {
               <div>
                 <div className="text-sm font-semibold">{selected.nombre}</div>
                 <div className="text-xs text-muted-foreground">Cédula: {selected.cedula ?? "—"}</div>
+                {hasExisting && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-primary/10 text-primary border border-primary/20">
+                    <KeyRound className="h-3 w-3" /> Este conductor ya tiene acceso · contraseña actual precargada
+                  </div>
+                )}
               </div>
-              <Field label="Nueva contraseña">
+              <Field label={hasExisting ? "Contraseña actual (editable)" : "Nueva contraseña"}>
                 <div className="flex gap-2">
                   <input className="input flex-1 font-mono" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} />
                   <button type="button" onClick={() => setPassword(genPassword())} className="text-xs px-3 rounded border border-border hover:bg-secondary">
                     Aleatoria
                   </button>
+                  <button
+                    type="button"
+                    onClick={async () => { await navigator.clipboard.writeText(password); }}
+                    className="text-xs px-3 rounded border border-border hover:bg-secondary inline-flex items-center gap-1"
+                    title="Copiar contraseña"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </Field>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <button onClick={guardar} className="btn-primary">
-                <KeyRound className="h-4 w-4" /> Guardar contraseña
+                <KeyRound className="h-4 w-4" /> {hasExisting ? "Actualizar contraseña" : "Guardar contraseña"}
               </button>
             </div>
+
           )}
         </div>
       </div>
