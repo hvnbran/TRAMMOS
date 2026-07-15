@@ -75,30 +75,47 @@ const EMPTY: Omit<Fijo, "id"> = {
   notas: "",
 };
 
+const HOSPITAL_SUR = "Hospital del Sur Itagüí";
+
 function ServiciosFijosPage() {
   const [rows, setRows] = useState<Fijo[]>([]);
   const [loading, setLoading] = useState(true);
   const [conductores, setConductores] = useState<{ nombre: string }[]>([]);
   const [vehiculos, setVehiculos] = useState<{ placa: string }[]>([]);
+  const [placaPorConductor, setPlacaPorConductor] = useState<Record<string, string>>({});
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Fijo | null>(null);
   const [form, setForm] = useState<Omit<Fijo, "id">>(EMPTY);
+  const [horarioLibre, setHorarioLibre] = useState(false);
+  const [esHospitalSur, setEsHospitalSur] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detalle, setDetalle] = useState<Fijo | null>(null);
   const [ejecs, setEjecs] = useState<Ejec[]>([]);
 
   async function load() {
     setLoading(true);
-    const [{ data: f }, { data: c }, { data: v }] = await Promise.all([
+    const [{ data: f }, { data: c }, { data: v }, { data: vc }] = await Promise.all([
       supabase.from("servicios_fijos").select("*").order("created_at", { ascending: false }),
       supabase.from("conductores").select("nombre").order("nombre"),
       supabase.from("vehiculos").select("placa").order("placa"),
+      supabase
+        .from("vehiculo_conductores")
+        .select("asignado_hasta, conductores!inner(nombre), vehiculos!inner(placa)")
+        .or("asignado_hasta.is.null,asignado_hasta.gte." + new Date().toISOString().slice(0, 10)),
     ]);
     setRows((f as Fijo[]) ?? []);
     setConductores(c ?? []);
     setVehiculos(v ?? []);
+    const map: Record<string, string> = {};
+    for (const row of (vc ?? []) as any[]) {
+      const nombre = row.conductores?.nombre;
+      const placa = row.vehiculos?.placa;
+      if (nombre && placa && !map[nombre]) map[nombre] = placa;
+    }
+    setPlacaPorConductor(map);
     setLoading(false);
   }
+
 
   useEffect(() => {
     load();
