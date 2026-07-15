@@ -9,6 +9,7 @@ import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { GenerarAccesoConductor } from "@/components/conductor/GenerarAccesoConductor";
 import { ConductorProfileModal } from "@/components/ConductorProfileModal";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 
