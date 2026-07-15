@@ -9,6 +9,7 @@ import { CardGridSkeleton } from "@/components/ui/loading-skeletons";
 import { GenerarAccesoConductor } from "@/components/conductor/GenerarAccesoConductor";
 import { ConductorProfileModal } from "@/components/ConductorProfileModal";
 import { PersonaAvatar } from "@/components/PersonaAvatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 
@@ -209,47 +210,51 @@ function Conductores() {
           <span className="text-muted-foreground ml-auto">{itemsFiltrados.length} de {items.length}</span>
         </div>)}
 
-        {showForm && (
-          <form onSubmit={handleSubmit} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
-            <p className="text-sm font-semibold">{editingId ? "Editar conductor" : "Nuevo conductor"}</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="md:col-span-3">
-                <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
-                <div className="flex flex-wrap gap-3 mt-1">
-                  {(["corona", "sodimac", "hospital_sur"] as const).map((cl) => (
-                    <label key={cl} className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer hover:bg-secondary/30">
-                      <input type="checkbox" checked={form.clientes.includes(cl)} onChange={() => toggleCliente(cl)} />
-                      <span className="capitalize">{cl === "hospital_sur" ? "Hospital del Sur" : cl}</span>
-                    </label>
-                  ))}
-                  {form.clientes.length === 0 && (
-                    <span className="text-[11px] text-warning self-center">Sin asignar — visible para todos los administradores hasta que sea reclamado</span>
-                  )}
+        <Dialog open={showForm} onOpenChange={(o) => { if (!o) cancelForm(); }}>
+          <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Editar conductor" : "Nuevo conductor"}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="md:col-span-3">
+                  <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
+                  <div className="flex flex-wrap gap-3 mt-1">
+                    {(["corona", "sodimac", "hospital_sur"] as const).map((cl) => (
+                      <label key={cl} className="flex items-center gap-2 px-3 py-2 rounded-md border border-input bg-background text-sm cursor-pointer hover:bg-secondary/30">
+                        <input type="checkbox" checked={form.clientes.includes(cl)} onChange={() => toggleCliente(cl)} />
+                        <span className="capitalize">{cl === "hospital_sur" ? "Hospital del Sur" : cl}</span>
+                      </label>
+                    ))}
+                    {form.clientes.length === 0 && (
+                      <span className="text-[11px] text-warning self-center">Sin asignar — visible para todos los administradores hasta que sea reclamado</span>
+                    )}
+                  </div>
+                </div>
+                <div><label className="text-xs text-muted-foreground">Nombre completo</label><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+                <div><label className="text-xs text-muted-foreground">Cédula</label><input value={form.cedula} onChange={(e) => setForm({ ...form, cedula: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+                <div><label className="text-xs text-muted-foreground">Teléfono</label><input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+                <div><label className="text-xs text-muted-foreground">Licencia</label><input value={form.licencia} onChange={(e) => setForm({ ...form, licencia: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+                <div><label className="text-xs text-muted-foreground">Categoría</label>
+                  <select value={form.categoria_lic} onChange={(e) => setForm({ ...form, categoria_lic: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    {["C1", "C2", "C3", "B1", "B2"].map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="md:col-span-2 text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">La fecha de vencimiento de la licencia se toma automáticamente del documento "Licencia de conductor" cargado en el perfil.</div>
+                <div><label className="text-xs text-muted-foreground">Fecha de nacimiento</label><input type="date" value={form.fecha_nacimiento} onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
+                <div><label className="text-xs text-muted-foreground">Estado</label>
+                  <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    {["Activo", "Suspendido", "Vencido"].map((x) => <option key={x}>{x}</option>)}
+                  </select>
                 </div>
               </div>
-              <div><label className="text-xs text-muted-foreground">Nombre completo</label><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Cédula</label><input value={form.cedula} onChange={(e) => setForm({ ...form, cedula: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Teléfono</label><input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Licencia</label><input value={form.licencia} onChange={(e) => setForm({ ...form, licencia: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Categoría</label>
-                <select value={form.categoria_lic} onChange={(e) => setForm({ ...form, categoria_lic: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  {["C1", "C2", "C3", "B1", "B2"].map((c) => <option key={c}>{c}</option>)}
-                </select>
+              <div className="flex gap-2 justify-end border-t border-border pt-3">
+                <button type="button" onClick={cancelForm} className="px-4 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted">Cancelar</button>
+                <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}</button>
               </div>
-              <div className="md:col-span-2 text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">La fecha de vencimiento de la licencia se toma automáticamente del documento "Licencia de conductor" cargado en el perfil.</div>
-              <div><label className="text-xs text-muted-foreground">Fecha de nacimiento</label><input type="date" value={form.fecha_nacimiento} onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs text-muted-foreground">Estado</label>
-                <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  {["Activo", "Suspendido", "Vencido"].map((x) => <option key={x}>{x}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button type="button" onClick={cancelForm} className="px-4 py-2 rounded-md text-sm text-muted-foreground">Cancelar</button>
-              <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">{saving ? "Guardando..." : editingId ? "Actualizar" : "Guardar"}</button>
-            </div>
-          </form>
-        )}
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {loading ? (
           <CardGridSkeleton count={6} />
