@@ -99,6 +99,9 @@ function ConductorHome() {
             {userId && <PushNotificationsToggle userId={userId} />}
             <InstallAppBanner />
           </Suspense>
+          <Suspense fallback={null}>
+            <ServiciosFijosHoy />
+          </Suspense>
           <Section title={`Hoy (${hoy.length})`} servicios={hoy} empty="No tienes servicios hoy." />
           <Section title={`Próximos (${proximos.length})`} servicios={proximos} empty="Sin servicios programados." />
           {pasados.length > 0 && (
