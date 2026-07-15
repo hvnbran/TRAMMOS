@@ -15,7 +15,9 @@ import { useTheme } from "@/hooks/useTheme";
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
 
   const initials = (displayName || "U")
     .split(" ")
