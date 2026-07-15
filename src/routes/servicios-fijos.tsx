@@ -124,13 +124,26 @@ function ServiciosFijosPage() {
   function openNew() {
     setEditing(null);
     setForm(EMPTY);
+    setHorarioLibre(false);
+    setEsHospitalSur(false);
     setShowForm(true);
   }
   function openEdit(f: Fijo) {
     setEditing(f);
     const { id: _id, ...rest } = f;
     setForm({ ...rest, notas: rest.notas ?? "" });
+    setHorarioLibre(!rest.hora_inicio_prog && !rest.hora_fin_prog);
+    setEsHospitalSur(rest.origen === HOSPITAL_SUR && rest.destino === HOSPITAL_SUR);
     setShowForm(true);
+  }
+  function onChangeConductor(nombre: string) {
+    setForm((s) => {
+      const placa = placaPorConductor[nombre];
+      // Solo autocompleta si el vehículo actual está vacío o venía del conductor previo
+      const prevPlaca = placaPorConductor[s.conductor];
+      const nuevoVehiculo = !s.vehiculo || s.vehiculo === prevPlaca ? placa ?? s.vehiculo : s.vehiculo;
+      return { ...s, conductor: nombre, vehiculo: nuevoVehiculo ?? "" };
+    });
   }
   function toggleDia(d: number) {
     setForm((s) => ({
@@ -151,18 +164,21 @@ function ServiciosFijosPage() {
       ...form,
       vehiculo: form.vehiculo || null,
       pasajero: form.pasajero || null,
-      origen: form.origen || null,
-      destino: form.destino || null,
+      origen: esHospitalSur ? HOSPITAL_SUR : form.origen || null,
+      destino: esHospitalSur ? HOSPITAL_SUR : form.destino || null,
       centro_costo: form.centro_costo || null,
       tipo: form.tipo || null,
-      cliente: form.cliente || null,
+      cliente: esHospitalSur ? "hospital-sur" : form.cliente || null,
       fecha_fin: form.fecha_fin || null,
       notas: form.notas || null,
+      hora_inicio_prog: horarioLibre ? null : form.hora_inicio_prog || null,
+      hora_fin_prog: horarioLibre ? null : form.hora_fin_prog || null,
     };
     const { error } = editing
       ? await supabase.from("servicios_fijos").update(payload).eq("id", editing.id)
       : await supabase.from("servicios_fijos").insert(payload);
     setSaving(false);
+
     if (error) {
       alert("Error: " + error.message);
       return;
