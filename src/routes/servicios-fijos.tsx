@@ -75,30 +75,47 @@ const EMPTY: Omit<Fijo, "id"> = {
   notas: "",
 };
 
+const HOSPITAL_SUR = "Hospital del Sur Itagüí";
+
 function ServiciosFijosPage() {
   const [rows, setRows] = useState<Fijo[]>([]);
   const [loading, setLoading] = useState(true);
   const [conductores, setConductores] = useState<{ nombre: string }[]>([]);
   const [vehiculos, setVehiculos] = useState<{ placa: string }[]>([]);
+  const [placaPorConductor, setPlacaPorConductor] = useState<Record<string, string>>({});
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Fijo | null>(null);
   const [form, setForm] = useState<Omit<Fijo, "id">>(EMPTY);
+  const [horarioLibre, setHorarioLibre] = useState(false);
+  const [esHospitalSur, setEsHospitalSur] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detalle, setDetalle] = useState<Fijo | null>(null);
   const [ejecs, setEjecs] = useState<Ejec[]>([]);
 
   async function load() {
     setLoading(true);
-    const [{ data: f }, { data: c }, { data: v }] = await Promise.all([
+    const [{ data: f }, { data: c }, { data: v }, { data: vc }] = await Promise.all([
       supabase.from("servicios_fijos").select("*").order("created_at", { ascending: false }),
       supabase.from("conductores").select("nombre").order("nombre"),
       supabase.from("vehiculos").select("placa").order("placa"),
+      supabase
+        .from("vehiculo_conductores")
+        .select("asignado_hasta, conductores!inner(nombre), vehiculos!inner(placa)")
+        .or("asignado_hasta.is.null,asignado_hasta.gte." + new Date().toISOString().slice(0, 10)),
     ]);
     setRows((f as Fijo[]) ?? []);
     setConductores(c ?? []);
     setVehiculos(v ?? []);
+    const map: Record<string, string> = {};
+    for (const row of (vc ?? []) as any[]) {
+      const nombre = row.conductores?.nombre;
+      const placa = row.vehiculos?.placa;
+      if (nombre && placa && !map[nombre]) map[nombre] = placa;
+    }
+    setPlacaPorConductor(map);
     setLoading(false);
   }
+
 
   useEffect(() => {
     load();
@@ -107,13 +124,26 @@ function ServiciosFijosPage() {
   function openNew() {
     setEditing(null);
     setForm(EMPTY);
+    setHorarioLibre(false);
+    setEsHospitalSur(false);
     setShowForm(true);
   }
   function openEdit(f: Fijo) {
     setEditing(f);
     const { id: _id, ...rest } = f;
     setForm({ ...rest, notas: rest.notas ?? "" });
+    setHorarioLibre(!rest.hora_inicio_prog && !rest.hora_fin_prog);
+    setEsHospitalSur(rest.origen === HOSPITAL_SUR && rest.destino === HOSPITAL_SUR);
     setShowForm(true);
+  }
+  function onChangeConductor(nombre: string) {
+    setForm((s) => {
+      const placa = placaPorConductor[nombre];
+      // Solo autocompleta si el vehículo actual está vacío o venía del conductor previo
+      const prevPlaca = placaPorConductor[s.conductor];
+      const nuevoVehiculo = !s.vehiculo || s.vehiculo === prevPlaca ? placa ?? s.vehiculo : s.vehiculo;
+      return { ...s, conductor: nombre, vehiculo: nuevoVehiculo ?? "" };
+    });
   }
   function toggleDia(d: number) {
     setForm((s) => ({
@@ -134,18 +164,21 @@ function ServiciosFijosPage() {
       ...form,
       vehiculo: form.vehiculo || null,
       pasajero: form.pasajero || null,
-      origen: form.origen || null,
-      destino: form.destino || null,
+      origen: esHospitalSur ? HOSPITAL_SUR : form.origen || null,
+      destino: esHospitalSur ? HOSPITAL_SUR : form.destino || null,
       centro_costo: form.centro_costo || null,
       tipo: form.tipo || null,
-      cliente: form.cliente || null,
+      cliente: esHospitalSur ? "hospital-sur" : form.cliente || null,
       fecha_fin: form.fecha_fin || null,
       notas: form.notas || null,
+      hora_inicio_prog: horarioLibre ? null : form.hora_inicio_prog || null,
+      hora_fin_prog: horarioLibre ? null : form.hora_fin_prog || null,
     };
     const { error } = editing
       ? await supabase.from("servicios_fijos").update(payload).eq("id", editing.id)
       : await supabase.from("servicios_fijos").insert(payload);
     setSaving(false);
+
     if (error) {
       alert("Error: " + error.message);
       return;
@@ -235,8 +268,11 @@ function ServiciosFijosPage() {
                       ))}
                     </td>
                     <td className="p-2 text-xs">
-                      {f.hora_inicio_prog?.slice(0, 5) ?? "--"}–{f.hora_fin_prog?.slice(0, 5) ?? "--"}
+                      {!f.hora_inicio_prog && !f.hora_fin_prog
+                        ? <span className="italic text-muted-foreground">Libre</span>
+                        : `${f.hora_inicio_prog?.slice(0, 5) ?? "--"}–${f.hora_fin_prog?.slice(0, 5) ?? "--"}`}
                     </td>
+
                     <td className="p-2">
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full border ${
@@ -285,17 +321,19 @@ function ServiciosFijosPage() {
                 <label className="text-xs text-muted-foreground">Conductor *</label>
                 <select
                   value={form.conductor}
-                  onChange={(e) => setForm({ ...form, conductor: e.target.value })}
+                  onChange={(e) => onChangeConductor(e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Selecciona…</option>
                   {conductores.map((c) => (
                     <option key={c.nombre} value={c.nombre}>
                       {c.nombre}
+                      {placaPorConductor[c.nombre] ? ` — ${placaPorConductor[c.nombre]}` : ""}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div>
                 <label className="text-xs text-muted-foreground">Vehículo (placa)</label>
                 <select
@@ -328,21 +366,36 @@ function ServiciosFijosPage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs text-muted-foreground">Origen</label>
-                <input
-                  value={form.origen ?? ""}
-                  onChange={(e) => setForm({ ...form, origen: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={esHospitalSur}
+                    onChange={(e) => setEsHospitalSur(e.target.checked)}
+                  />
+                  Servicio para <strong>Hospital del Sur Itagüí</strong> (omite origen/destino)
+                </label>
               </div>
-              <div className="md:col-span-2">
-                <label className="text-xs text-muted-foreground">Destino</label>
-                <input
-                  value={form.destino ?? ""}
-                  onChange={(e) => setForm({ ...form, destino: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
+              {!esHospitalSur && (
+                <>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-muted-foreground">Origen</label>
+                    <input
+                      value={form.origen ?? ""}
+                      onChange={(e) => setForm({ ...form, origen: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-muted-foreground">Destino</label>
+                    <input
+                      value={form.destino ?? ""}
+                      onChange={(e) => setForm({ ...form, destino: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="md:col-span-2">
                 <label className="text-xs text-muted-foreground block mb-1">Días de la semana</label>
                 <div className="flex gap-1">
@@ -362,24 +415,39 @@ function ServiciosFijosPage() {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Hora inicio</label>
-                <input
-                  type="time"
-                  value={form.hora_inicio_prog ?? ""}
-                  onChange={(e) => setForm({ ...form, hora_inicio_prog: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={horarioLibre}
+                    onChange={(e) => setHorarioLibre(e.target.checked)}
+                  />
+                  El conductor define hora de inicio y fin (horario libre)
+                </label>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Hora fin</label>
-                <input
-                  type="time"
-                  value={form.hora_fin_prog ?? ""}
-                  onChange={(e) => setForm({ ...form, hora_fin_prog: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
+              {!horarioLibre && (
+                <>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Hora inicio</label>
+                    <input
+                      type="time"
+                      value={form.hora_inicio_prog ?? ""}
+                      onChange={(e) => setForm({ ...form, hora_inicio_prog: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Hora fin</label>
+                    <input
+                      type="time"
+                      value={form.hora_fin_prog ?? ""}
+                      onChange={(e) => setForm({ ...form, hora_fin_prog: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                </>
+              )}
+
               <div>
                 <label className="text-xs text-muted-foreground">Fecha inicio</label>
                 <input
