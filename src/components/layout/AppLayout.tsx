@@ -7,8 +7,10 @@ import { AccessibilityPanel } from "./AccessibilityPanel";
 import { TramiAssistant } from "@/components/TramiAssistant";
 import { SiteFooter } from "./SiteFooter";
 import { TRAMI_ENABLED } from "@/lib/feature-flags";
-import { Briefcase, Menu } from "lucide-react";
+import { Briefcase, Menu, Moon, Sun } from "lucide-react";
 import { useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
+
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { displayName, role } = useAuth();
