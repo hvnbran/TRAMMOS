@@ -70,8 +70,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 CRM
               </Link>
             )}
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              className="inline-flex items-center justify-center h-9 w-9 rounded-md border border-border text-foreground hover:bg-muted transition-colors shrink-0"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Moon className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
             <NotificationsBell />
             <div className="flex items-center gap-2" aria-label={`Sesión de ${displayName || "usuario"}`}>
+
               <div
                 className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary"
                 aria-hidden="true"
