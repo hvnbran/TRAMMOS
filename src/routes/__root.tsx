@@ -185,11 +185,13 @@ function AuthGate() {
 
 function RootComponent() {
   return (
-    <A11yProvider>
-      <AuthProvider>
-        <ColorBlindFilters />
-        <AuthGate />
-      </AuthProvider>
-    </A11yProvider>
+    <ThemeProvider>
+      <A11yProvider>
+        <AuthProvider>
+          <ColorBlindFilters />
+          <AuthGate />
+        </AuthProvider>
+      </A11yProvider>
+    </ThemeProvider>
   );
 }
