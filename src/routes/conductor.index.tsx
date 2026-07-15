@@ -13,6 +13,9 @@ const PushNotificationsToggle = lazy(() =>
 const ShareLocationToggle = lazy(() =>
   import("@/components/conductor/ShareLocationToggle").then((m) => ({ default: m.ShareLocationToggle })),
 );
+const ServiciosFijosHoy = lazy(() =>
+  import("@/components/conductor/ServiciosFijosHoy").then((m) => ({ default: m.ServiciosFijosHoy })),
+);
 
 export const Route = createFileRoute("/conductor/")({
   component: ConductorHome,
@@ -95,6 +98,9 @@ function ConductorHome() {
             <ShareLocationToggle />
             {userId && <PushNotificationsToggle userId={userId} />}
             <InstallAppBanner />
+          </Suspense>
+          <Suspense fallback={null}>
+            <ServiciosFijosHoy />
           </Suspense>
           <Section title={`Hoy (${hoy.length})`} servicios={hoy} empty="No tienes servicios hoy." />
           <Section title={`Próximos (${proximos.length})`} servicios={proximos} empty="Sin servicios programados." />
