@@ -268,8 +268,11 @@ function ServiciosFijosPage() {
                       ))}
                     </td>
                     <td className="p-2 text-xs">
-                      {f.hora_inicio_prog?.slice(0, 5) ?? "--"}–{f.hora_fin_prog?.slice(0, 5) ?? "--"}
+                      {!f.hora_inicio_prog && !f.hora_fin_prog
+                        ? <span className="italic text-muted-foreground">Libre</span>
+                        : `${f.hora_inicio_prog?.slice(0, 5) ?? "--"}–${f.hora_fin_prog?.slice(0, 5) ?? "--"}`}
                     </td>
+
                     <td className="p-2">
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full border ${
