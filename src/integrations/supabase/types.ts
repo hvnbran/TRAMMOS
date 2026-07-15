@@ -1597,6 +1597,50 @@ export type Database = {
           },
         ]
       }
+      servicio_fijo_ejecuciones: {
+        Row: {
+          created_at: string
+          estado: string
+          fecha: string
+          finalizado_at: string | null
+          id: string
+          iniciado_at: string | null
+          notas_conductor: string | null
+          servicio_fijo_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          fecha: string
+          finalizado_at?: string | null
+          id?: string
+          iniciado_at?: string | null
+          notas_conductor?: string | null
+          servicio_fijo_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          fecha?: string
+          finalizado_at?: string | null
+          id?: string
+          iniciado_at?: string | null
+          notas_conductor?: string | null
+          servicio_fijo_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicio_fijo_ejecuciones_servicio_fijo_id_fkey"
+            columns: ["servicio_fijo_id"]
+            isOneToOne: false
+            referencedRelation: "servicios_fijos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       servicios: {
         Row: {
           asignado_at: string | null
@@ -1673,6 +1717,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      servicios_fijos: {
+        Row: {
+          activo: boolean
+          centro_costo: string | null
+          cliente: string | null
+          conductor: string
+          created_at: string
+          created_by: string | null
+          destino: string | null
+          dias_semana: number[]
+          fecha_fin: string | null
+          fecha_inicio: string
+          hora_fin_prog: string | null
+          hora_inicio_prog: string | null
+          id: string
+          notas: string | null
+          origen: string | null
+          pasajero: string | null
+          tipo: string | null
+          updated_at: string
+          vehiculo: string | null
+        }
+        Insert: {
+          activo?: boolean
+          centro_costo?: string | null
+          cliente?: string | null
+          conductor: string
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          dias_semana?: number[]
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          hora_fin_prog?: string | null
+          hora_inicio_prog?: string | null
+          id?: string
+          notas?: string | null
+          origen?: string | null
+          pasajero?: string | null
+          tipo?: string | null
+          updated_at?: string
+          vehiculo?: string | null
+        }
+        Update: {
+          activo?: boolean
+          centro_costo?: string | null
+          cliente?: string | null
+          conductor?: string
+          created_at?: string
+          created_by?: string | null
+          destino?: string | null
+          dias_semana?: number[]
+          fecha_fin?: string | null
+          fecha_inicio?: string
+          hora_fin_prog?: string | null
+          hora_inicio_prog?: string | null
+          id?: string
+          notas?: string | null
+          origen?: string | null
+          pasajero?: string | null
+          tipo?: string | null
+          updated_at?: string
+          vehiculo?: string | null
+        }
+        Relationships: []
       }
       solicitudes_pasajero: {
         Row: {
@@ -2075,6 +2185,11 @@ export type Database = {
         Returns: boolean
       }
       can_access_empresa: { Args: { _empresa_id: string }; Returns: boolean }
+      conductor_finalizar_fijo: {
+        Args: { _fijo_id: string; _notas?: string }
+        Returns: Json
+      }
+      conductor_iniciar_fijo: { Args: { _fijo_id: string }; Returns: Json }
       conductor_set_estado_servicio: {
         Args: { _motivo?: string; _nuevo_estado: string; _servicio_id: string }
         Returns: Json
@@ -2134,6 +2249,23 @@ export type Database = {
       }
       link_conductor_to_auth: { Args: { _cedula: string }; Returns: Json }
       link_pasajero_to_auth: { Args: never; Returns: Json }
+      listar_fijos_hoy_conductor: {
+        Args: never
+        Returns: {
+          centro_costo: string
+          destino: string
+          ejecucion_id: string
+          estado: string
+          fijo_id: string
+          finalizado_at: string
+          hora_fin_prog: string
+          hora_inicio_prog: string
+          iniciado_at: string
+          origen: string
+          pasajero: string
+          vehiculo: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
