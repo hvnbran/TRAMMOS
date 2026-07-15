@@ -366,21 +366,36 @@ function ServiciosFijosPage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs text-muted-foreground">Origen</label>
-                <input
-                  value={form.origen ?? ""}
-                  onChange={(e) => setForm({ ...form, origen: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={esHospitalSur}
+                    onChange={(e) => setEsHospitalSur(e.target.checked)}
+                  />
+                  Servicio para <strong>Hospital del Sur Itagüí</strong> (omite origen/destino)
+                </label>
               </div>
-              <div className="md:col-span-2">
-                <label className="text-xs text-muted-foreground">Destino</label>
-                <input
-                  value={form.destino ?? ""}
-                  onChange={(e) => setForm({ ...form, destino: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
+              {!esHospitalSur && (
+                <>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-muted-foreground">Origen</label>
+                    <input
+                      value={form.origen ?? ""}
+                      onChange={(e) => setForm({ ...form, origen: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-xs text-muted-foreground">Destino</label>
+                    <input
+                      value={form.destino ?? ""}
+                      onChange={(e) => setForm({ ...form, destino: e.target.value })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="md:col-span-2">
                 <label className="text-xs text-muted-foreground block mb-1">Días de la semana</label>
                 <div className="flex gap-1">
