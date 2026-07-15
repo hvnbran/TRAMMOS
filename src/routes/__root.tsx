@@ -7,6 +7,8 @@ import { A11yProvider } from "../lib/a11y-context";
 import { ColorBlindFilters } from "../components/layout/ColorBlindFilters";
 import { useEnforcePolicyAcceptance } from "../lib/legal/use-enforce-acceptance";
 import { TramiAvatar } from "../components/trami/TramiAvatar";
+import { ThemeProvider } from "../hooks/useTheme";
+
 
 const PolicyReacceptModal = lazy(() =>
   import("../components/legal/PolicyReacceptModal").then((m) => ({ default: m.PolicyReacceptModal })),
@@ -183,11 +185,13 @@ function AuthGate() {
 
 function RootComponent() {
   return (
-    <A11yProvider>
-      <AuthProvider>
-        <ColorBlindFilters />
-        <AuthGate />
-      </AuthProvider>
-    </A11yProvider>
+    <ThemeProvider>
+      <A11yProvider>
+        <AuthProvider>
+          <ColorBlindFilters />
+          <AuthGate />
+        </AuthProvider>
+      </A11yProvider>
+    </ThemeProvider>
   );
 }
