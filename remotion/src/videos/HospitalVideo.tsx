@@ -1,45 +1,122 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
-import { TransitionSeries, springTiming, linearTiming } from "@remotion/transitions";
+import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
-import { slide } from "@remotion/transitions/slide";
-import { IntroCard } from "../components/IntroCard";
-import { RealScene } from "../components/RealScene";
-import { OutroCard } from "../components/OutroCard";
+import { ColdOpen } from "../components/ColdOpen";
+import { Manifesto } from "../components/Manifesto";
+import { BrandInterstitial } from "../components/BrandInterstitial";
+import { CinemaScene, CaptionSide } from "../components/CinemaScene";
+import { FinalCard } from "../components/FinalCard";
+import "../components/fonts";
 
-const S = 95;
-const INTRO = 120;
-const OUTRO = 90;
+// Hospital uses a refined red-tinged accent for medical brand — but we keep the palette elegant, not clinical.
+const ACCENT = "#E11D48";
+const COLD = 55;
+const MANIFESTO = 110;
+const INTER = 45;
+const SCENE = 100;
+const FINAL = 110;
+const T = 8;
 
-const scenes: { src: string; caption: string; subtitle?: string }[] = [
-  { src: "real/hospital/01-home.png", caption: "Portal Hospital del Sur", subtitle: "Vista dedicada a la ESE Itagüí — solo tu flota, tus conductores y tus pacientes." },
-  { src: "real/hospital/02-vehiculos.png", caption: "Vehículos asignados", subtitle: "Consulta placas, estado y documentos vigentes de la flota asignada al hospital." },
-  { src: "real/hospital/03-conductores.png", caption: "Conductores autorizados", subtitle: "Perfil, licencia y examen médico de cada conductor habilitado para servicios de salud." },
-  { src: "real/hospital/07-pasajeros.png", caption: "Registrar pasajeros", subtitle: "Crea cuentas de pacientes/acompañantes con acceso directo a la app pasajero." },
-  { src: "real/hospital/04-servicios.png", caption: "Servicios del hospital", subtitle: "Solo los servicios generados por pasajeros del Hospital del Sur — filtrado automático." },
-  { src: "real/hospital/05-monitoreo.png", caption: "Monitoreo en vivo", subtitle: "Ubicación GPS del vehículo asignado y estado del servicio en curso." },
-  { src: "real/hospital/06-cumplimiento.png", caption: "Cumplimiento ANS", subtitle: "KPIs de puntualidad, cobertura y calidad — auditables mes a mes." },
+type Scene = { src: string; eyebrow: string; title: string; body: string; side: CaptionSide };
+
+const scenes: Scene[] = [
+  {
+    src: "real/hospital/01-home.png",
+    eyebrow: "01 — Portal",
+    title: "Un portal solo para tu ESE.",
+    body: "Vista dedicada al Hospital del Sur — tu flota, tu equipo, tus pacientes.",
+    side: "left",
+  },
+  {
+    src: "real/hospital/02-vehiculos.png",
+    eyebrow: "02 — Flota",
+    title: "Vehículos asignados.",
+    body: "Placas, estado y documentos vigentes de la flota autorizada.",
+    side: "right",
+  },
+  {
+    src: "real/hospital/03-conductores.png",
+    eyebrow: "03 — Equipo",
+    title: "Conductores autorizados.",
+    body: "Licencia, exámenes médicos y perfil — todo verificado.",
+    side: "left",
+  },
+  {
+    src: "real/hospital/07-pasajeros.png",
+    eyebrow: "04 — Pacientes",
+    title: "Pasajeros del hospital.",
+    body: "Crea cuentas de pacientes con acceso directo a la app.",
+    side: "right",
+  },
+  {
+    src: "real/hospital/04-servicios.png",
+    eyebrow: "05 — Servicios",
+    title: "Solo lo tuyo.",
+    body: "Filtrado automático de los servicios generados por pacientes del hospital.",
+    side: "left",
+  },
+  {
+    src: "real/hospital/05-monitoreo.png",
+    eyebrow: "06 — Monitoreo",
+    title: "Cada viaje, en vivo.",
+    body: "Ubicación GPS y estado del servicio, en tiempo real.",
+    side: "right",
+  },
+  {
+    src: "real/hospital/06-cumplimiento.png",
+    eyebrow: "07 — Cumplimiento",
+    title: "ANS medibles. Auditables.",
+    body: "Puntualidad, cobertura y calidad — reportes mes a mes.",
+    side: "left",
+  },
 ];
 
-export const HOSPITAL_DURATION = INTRO + scenes.length * S + OUTRO;
+export const HOSPITAL_DURATION =
+  COLD + MANIFESTO + INTER + SCENE * scenes.length + FINAL - T * (3 + scenes.length);
 
 export const HospitalVideo: React.FC = () => (
-  <AbsoluteFill style={{ background: "#0B1120" }}>
+  <AbsoluteFill style={{ background: "#050507" }}>
     <TransitionSeries>
-      <TransitionSeries.Sequence durationInFrames={INTRO}>
-        <IntroCard chip="HOSPITAL DEL SUR ITAGÜÍ" title="Transporte especial en salud" subtitle="Panel dedicado con acceso restringido a los recursos de tu ESE." brand="hospital" />
+      <TransitionSeries.Sequence durationInFrames={COLD}>
+        <ColdOpen label="Hospital del Sur · Itagüí" sub="Transporte especial en salud" accent={ACCENT} />
       </TransitionSeries.Sequence>
-      <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 15 })} />
-      {scenes.map((sc, i) => (
+      <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
+
+      <TransitionSeries.Sequence durationInFrames={MANIFESTO}>
+        <Manifesto
+          kicker="Trammos · Hospital"
+          lines={["Cada paciente.", "Cada viaje.", "Trazable."]}
+          accent={ACCENT}
+        />
+      </TransitionSeries.Sequence>
+      <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
+
+      <TransitionSeries.Sequence durationInFrames={INTER}>
+        <BrandInterstitial accent={ACCENT} />
+      </TransitionSeries.Sequence>
+      <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
+
+      {scenes.map((s, i) => (
         <React.Fragment key={i}>
-          <TransitionSeries.Sequence durationInFrames={S}>
-            <RealScene device="desktop" src={sc.src} caption={sc.caption} subtitle={sc.subtitle} duration={S} brand="hospital" />
+          <TransitionSeries.Sequence durationInFrames={SCENE}>
+            <CinemaScene
+              device="desktop"
+              src={s.src}
+              eyebrow={s.eyebrow}
+              title={s.title}
+              body={s.body}
+              duration={SCENE}
+              side={s.side}
+              accent={ACCENT}
+            />
           </TransitionSeries.Sequence>
-          <TransitionSeries.Transition presentation={i % 2 === 0 ? slide({ direction: "from-right" }) : fade()} timing={springTiming({ config: { damping: 200 }, durationInFrames: 18 })} />
+          <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: T })} />
         </React.Fragment>
       ))}
-      <TransitionSeries.Sequence durationInFrames={OUTRO}>
-        <OutroCard />
+
+      <TransitionSeries.Sequence durationInFrames={FINAL}>
+        <FinalCard tagline="Transporte especial. Con la trazabilidad que la salud exige." accent={ACCENT} />
       </TransitionSeries.Sequence>
     </TransitionSeries>
   </AbsoluteFill>
