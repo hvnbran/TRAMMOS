@@ -1,31 +1,46 @@
 import React from "react";
-import { AbsoluteFill, Series } from "remotion";
-import { BgLayer } from "../components/BgLayer";
-import { TitleCard } from "../components/TitleCard";
+import { AbsoluteFill } from "remotion";
+import { TransitionSeries, springTiming, linearTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
+import { IntroCard } from "../components/IntroCard";
+import { RealScene } from "../components/RealScene";
 import { OutroCard } from "../components/OutroCard";
-import { HLogin } from "../scenes/hospital/HLogin";
-import { HPasajero } from "../scenes/hospital/HPasajero";
-import { HMonitoreo } from "../scenes/hospital/HMonitoreo";
-import { HAns } from "../scenes/hospital/HAns";
-import { COLORS } from "../theme";
 
-const S1=90, S2=240, S3=390, S4=360, S5=270, S6=180;
-export const HOSPITAL_DURATION = S1+S2+S3+S4+S5+S6;
+const S = 95;
+const INTRO = 120;
+const OUTRO = 90;
+
+const scenes: { src: string; caption: string; subtitle?: string }[] = [
+  { src: "real/hospital/01-home.png", caption: "Portal Hospital del Sur", subtitle: "Vista dedicada a la ESE Itagüí — solo tu flota, tus conductores y tus pacientes." },
+  { src: "real/hospital/02-vehiculos.png", caption: "Vehículos asignados", subtitle: "Consulta placas, estado y documentos vigentes de la flota asignada al hospital." },
+  { src: "real/hospital/03-conductores.png", caption: "Conductores autorizados", subtitle: "Perfil, licencia y examen médico de cada conductor habilitado para servicios de salud." },
+  { src: "real/hospital/07-pasajeros.png", caption: "Registrar pasajeros", subtitle: "Crea cuentas de pacientes/acompañantes con acceso directo a la app pasajero." },
+  { src: "real/hospital/04-servicios.png", caption: "Servicios del hospital", subtitle: "Solo los servicios generados por pasajeros del Hospital del Sur — filtrado automático." },
+  { src: "real/hospital/05-monitoreo.png", caption: "Monitoreo en vivo", subtitle: "Ubicación GPS del vehículo asignado y estado del servicio en curso." },
+  { src: "real/hospital/06-cumplimiento.png", caption: "Cumplimiento ANS", subtitle: "KPIs de puntualidad, cobertura y calidad — auditables mes a mes." },
+];
+
+export const HOSPITAL_DURATION = INTRO + scenes.length * S + OUTRO;
 
 export const HospitalVideo: React.FC = () => (
-  <AbsoluteFill>
-    <BgLayer hospital />
-    <Series>
-      <Series.Sequence durationInFrames={S1}>
-        <TitleCard eyebrow="Panel Hospital del Sur" title="Tu operación en vivo" subtitle="Solo tus vehículos, conductores, pasajeros y servicios" accent={COLORS.hospital} logo="assets/logo-hospital.png" />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={S2}><HLogin /></Series.Sequence>
-      <Series.Sequence durationInFrames={S3}><HPasajero /></Series.Sequence>
-      <Series.Sequence durationInFrames={S4}><HMonitoreo /></Series.Sequence>
-      <Series.Sequence durationInFrames={S5}><HAns /></Series.Sequence>
-      <Series.Sequence durationInFrames={S6}>
-        <OutroCard tip="Sedes preconfiguradas: San Pío, Santamaría y Calatrava" accent={COLORS.hospital} />
-      </Series.Sequence>
-    </Series>
+  <AbsoluteFill style={{ background: "#0B1120" }}>
+    <TransitionSeries>
+      <TransitionSeries.Sequence durationInFrames={INTRO}>
+        <IntroCard chip="HOSPITAL DEL SUR ITAGÜÍ" title="Transporte especial en salud" subtitle="Panel dedicado con acceso restringido a los recursos de tu ESE." brand="hospital" />
+      </TransitionSeries.Sequence>
+      <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 15 })} />
+      {scenes.map((sc, i) => (
+        <React.Fragment key={i}>
+          <TransitionSeries.Sequence durationInFrames={S}>
+            <RealScene device="desktop" src={sc.src} caption={sc.caption} subtitle={sc.subtitle} duration={S} brand="hospital" />
+          </TransitionSeries.Sequence>
+          <TransitionSeries.Transition presentation={i % 2 === 0 ? slide({ direction: "from-right" }) : fade()} timing={springTiming({ config: { damping: 200 }, durationInFrames: 18 })} />
+        </React.Fragment>
+      ))}
+      <TransitionSeries.Sequence durationInFrames={OUTRO}>
+        <OutroCard />
+      </TransitionSeries.Sequence>
+    </TransitionSeries>
   </AbsoluteFill>
 );
