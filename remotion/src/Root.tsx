@@ -1,0 +1,14 @@
+import { Composition } from "remotion";
+import { PasajeroVideo, PASAJERO_DURATION } from "./videos/PasajeroVideo";
+import { ConductorVideo, CONDUCTOR_DURATION } from "./videos/ConductorVideo";
+import { AdminVideo, ADMIN_DURATION } from "./videos/AdminVideo";
+import { HospitalVideo, HOSPITAL_DURATION } from "./videos/HospitalVideo";
+
+export const RemotionRoot: React.FC = () => (
+  <>
+    <Composition id="pasajero" component={PasajeroVideo} durationInFrames={PASAJERO_DURATION} fps={30} width={1920} height={1080} />
+    <Composition id="conductor" component={ConductorVideo} durationInFrames={CONDUCTOR_DURATION} fps={30} width={1920} height={1080} />
+    <Composition id="admin" component={AdminVideo} durationInFrames={ADMIN_DURATION} fps={30} width={1920} height={1080} />
+    <Composition id="hospital" component={HospitalVideo} durationInFrames={HOSPITAL_DURATION} fps={30} width={1920} height={1080} />
+  </>
+);
