@@ -1,31 +1,44 @@
 import React from "react";
-import { AbsoluteFill, Series } from "remotion";
-import { BgLayer } from "../components/BgLayer";
-import { TitleCard } from "../components/TitleCard";
+import { AbsoluteFill } from "remotion";
+import { TransitionSeries, springTiming, linearTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
+import { slide } from "@remotion/transitions/slide";
+import { IntroCard } from "../components/IntroCard";
+import { RealScene } from "../components/RealScene";
 import { OutroCard } from "../components/OutroCard";
-import { CLogin } from "../scenes/conductor/CLogin";
-import { CHome } from "../scenes/conductor/CHome";
-import { CTurno } from "../scenes/conductor/CTurno";
-import { CFinalizar } from "../scenes/conductor/CFinalizar";
-import { COLORS } from "../theme";
 
-const S1=90, S2=210, S3=390, S4=390, S5=270, S6=180;
-export const CONDUCTOR_DURATION = S1+S2+S3+S4+S5+S6;
+const S = 100;
+const INTRO = 110;
+const OUTRO = 90;
+
+const scenes: { src: string; caption: string; subtitle?: string }[] = [
+  { src: "real/conductor/01-login.png", caption: "Ingreso del Conductor", subtitle: "Login con cédula y contraseña — acceso directo desde el enlace enviado por WhatsApp." },
+  { src: "real/conductor/02-login-filled.png", caption: "Credenciales seguras", subtitle: "Contraseña sincronizada con el panel admin — si te la cambian, entra al instante." },
+  { src: "real/conductor/03-home.png", caption: "Panel del Conductor", subtitle: "Servicios asignados, jornada activa y notificaciones — todo en la pantalla principal." },
+  { src: "real/conductor/04-fijos.png", caption: "Servicios Fijos", subtitle: "Rutas recurrentes (ej. Hospital del Sur) — abre y cierra la jornada con un toque." },
+  { src: "real/conductor/05-servicios.png", caption: "Servicios del día", subtitle: "Historial y estado de cada carrera — origen, destino, hora y pasajero." },
+];
+
+export const CONDUCTOR_DURATION = INTRO + scenes.length * S + OUTRO;
 
 export const ConductorVideo: React.FC = () => (
-  <AbsoluteFill>
-    <BgLayer />
-    <Series>
-      <Series.Sequence durationInFrames={S1}>
-        <TitleCard eyebrow="App Conductor" title="Tu jornada, tu ritmo" subtitle="Milton (placa QWN462) opera el fijo L–V del Hospital del Sur" accent={COLORS.lime} />
-      </Series.Sequence>
-      <Series.Sequence durationInFrames={S2}><CLogin /></Series.Sequence>
-      <Series.Sequence durationInFrames={S3}><CHome /></Series.Sequence>
-      <Series.Sequence durationInFrames={S4}><CTurno /></Series.Sequence>
-      <Series.Sequence durationInFrames={S5}><CFinalizar /></Series.Sequence>
-      <Series.Sequence durationInFrames={S6}>
-        <OutroCard tip="Instala TRAMMOS como app en tu celular desde el navegador" accent={COLORS.lime} />
-      </Series.Sequence>
-    </Series>
+  <AbsoluteFill style={{ background: "#0B1120" }}>
+    <TransitionSeries>
+      <TransitionSeries.Sequence durationInFrames={INTRO}>
+        <IntroCard chip="APP CONDUCTOR" title="Tu jornada en tu mano" subtitle="Login, servicios asignados, apertura y cierre de jornada — desde el celular." />
+      </TransitionSeries.Sequence>
+      <TransitionSeries.Transition presentation={fade()} timing={linearTiming({ durationInFrames: 15 })} />
+      {scenes.map((sc, i) => (
+        <React.Fragment key={i}>
+          <TransitionSeries.Sequence durationInFrames={S}>
+            <RealScene device="phone" src={sc.src} caption={sc.caption} subtitle={sc.subtitle} duration={S} />
+          </TransitionSeries.Sequence>
+          <TransitionSeries.Transition presentation={i % 2 === 0 ? slide({ direction: "from-right" }) : fade()} timing={springTiming({ config: { damping: 200 }, durationInFrames: 20 })} />
+        </React.Fragment>
+      ))}
+      <TransitionSeries.Sequence durationInFrames={OUTRO}>
+        <OutroCard />
+      </TransitionSeries.Sequence>
+    </TransitionSeries>
   </AbsoluteFill>
 );
