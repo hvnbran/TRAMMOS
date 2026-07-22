@@ -1,3 +1,4 @@
+import React from "react";
 import { Composition } from "remotion";
 import { PasajeroVideo, PASAJERO_DURATION } from "./videos/PasajeroVideo";
 import { ConductorVideo, CONDUCTOR_DURATION } from "./videos/ConductorVideo";
