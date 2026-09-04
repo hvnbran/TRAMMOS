@@ -75,6 +75,16 @@ interface ServicioRow {
   vehiculo: string | null;
   estado: string;
   pasajero_pcd_id: string | null;
+  es_multidestino: boolean | null;
+}
+
+interface ParadaRow {
+  id: string;
+  servicio_id: string;
+  orden: number;
+  direccion: string;
+  hora_estimada: string | null;
+  nota: string | null;
 }
 
 function estadoStyle(e: string) {
