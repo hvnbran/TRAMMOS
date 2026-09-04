@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle, Accessibility, ShieldCheck } from "lucide-react";
+import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle, Accessibility, ShieldCheck, Route as RouteIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
