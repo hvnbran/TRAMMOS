@@ -11,6 +11,9 @@ import { SimplifyText } from "@/components/SimplifyText";
 import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 import { SolicitudesEntrantes } from "@/components/operacion/SolicitudesEntrantes";
 import { AddressAutocomplete, type ExtraSuggestion } from "@/components/AddressAutocomplete";
+import { ConductorPicker } from "@/components/servicios/ConductorPicker";
+import { VehiculoPicker } from "@/components/servicios/VehiculoPicker";
+import { ParadasEditor, nuevaParada, type ParadaDraft } from "@/components/servicios/ParadasEditor";
 
 function isVencido(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
