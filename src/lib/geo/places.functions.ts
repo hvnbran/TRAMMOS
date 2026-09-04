@@ -147,7 +147,7 @@ export const placeDetails = createServerFn({ method: "POST" })
 export const placesReverseGeocode = createServerFn({ method: "POST" })
   .inputValidator((data) => ReverseInput.parse(data))
   .handler(async ({ data }): Promise<{ label: string } | null> => {
-    const url = `${GATEWAY}/maps/api/geocode/json?latlng=${data.lat},${data.lon}&language=es&region=co`;
+    const url = geocodeUrl(`latlng=${data.lat},${data.lon}&language=es&region=co`);
     const res = await fetch(url, { headers: headers() });
     if (!res.ok) return null;
     const json = (await res.json()) as { results?: Array<{ formatted_address?: string }> };
