@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "../components/layout/AppLayout";
-import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle, Accessibility, ShieldCheck } from "lucide-react";
+import { Plus, Filter, Clock, MapPin, Loader2, Trash2, AlertTriangle, Accessibility, ShieldCheck, Route as RouteIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -11,6 +11,9 @@ import { SimplifyText } from "@/components/SimplifyText";
 import { generarBrief, type PasajeroPCD, TIPOS_DISC } from "@/lib/pcd-helpers";
 import { SolicitudesEntrantes } from "@/components/operacion/SolicitudesEntrantes";
 import { AddressAutocomplete, type ExtraSuggestion } from "@/components/AddressAutocomplete";
+import { ConductorPicker } from "@/components/servicios/ConductorPicker";
+import { VehiculoPicker } from "@/components/servicios/VehiculoPicker";
+import { ParadasEditor, nuevaParada, type ParadaDraft } from "@/components/servicios/ParadasEditor";
 
 function isVencido(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
@@ -28,6 +31,7 @@ interface ConductorOpt {
   clientes: ("corona" | "sodimac" | "hospital_sur")[] | null;
   estado: string;
   vence_licencia: string | null;
+  foto_url: string | null;
 }
 
 interface VehiculoOpt {
@@ -40,6 +44,7 @@ interface VehiculoOpt {
   estado: string;
   vence_soat: string | null;
   vence_rtm: string | null;
+  foto_url: string | null;
 }
 
 interface VehConductorRel {
@@ -73,6 +78,16 @@ interface ServicioRow {
   vehiculo: string | null;
   estado: string;
   pasajero_pcd_id: string | null;
+  es_multidestino: boolean | null;
+}
+
+interface ParadaRow {
+  id: string;
+  servicio_id: string;
+  orden: number;
+  direccion: string;
+  hora_estimada: string | null;
+  nota: string | null;
 }
 
 function estadoStyle(e: string) {
@@ -97,6 +112,10 @@ function Servicios() {
   const [filtro, setFiltro] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [paradasPorServicio, setParadasPorServicio] = useState<Record<string, ParadaRow[]>>({});
+  const [editandoOrden, setEditandoOrden] = useState(false);
+  const [multidestino, setMultidestino] = useState(false);
+  const [paradas, setParadas] = useState<ParadaDraft[]>([nuevaParada(), nuevaParada()]);
 
   // ... keep existing code (form state)
   const [pasajerosPCD, setPasajerosPCD] = useState<PasajeroPCD[]>([]);
@@ -115,6 +134,9 @@ function Servicios() {
     estado: "Programado",
   });
 
+  const clienteActivo = (cliente ?? form.cliente) as "corona" | "sodimac" | "hospital_sur";
+  const usaCentroCosto = clienteActivo !== "hospital_sur";
+
   useEffect(() => {
     if (!authLoading && !role) navigate({ to: "/login" });
   }, [authLoading, role, navigate]);
@@ -125,15 +147,30 @@ function Servicios() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
+  // Consecutivo automático de orden de servicio al abrir el formulario
+  useEffect(() => {
+    if (!showForm) return;
+    let cancelado = false;
+    (async () => {
+      const { data, error } = await supabase.rpc("siguiente_orden_servicio");
+      if (!cancelado && !error && typeof data === "string") {
+        setForm((f) => ({ ...f, numero_orden: data }));
+        setEditandoOrden(false);
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [showForm]);
+
   async function load() {
     setLoading(true);
-    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes, centrosRes] = await Promise.all([
+    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes, centrosRes, paradasRes] = await Promise.all([
       supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
-      supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia"),
-      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm"),
+      supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia,foto_url"),
+      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm,foto_url"),
       supabase.from("pasajeros_pcd").select("*").order("nombre"),
       supabase.from("vehiculo_conductores").select("conductor_id,vehiculo_id,es_principal,asignado_hasta"),
       supabase.from("centros_costo").select("codigo,origen,destino,departamento").eq("activo", true).order("codigo"),
+      supabase.from("servicio_paradas").select("*").order("orden"),
     ]);
     if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
     if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
@@ -141,6 +178,13 @@ function Servicios() {
     if (!pcdRes.error && pcdRes.data) setPasajerosPCD(pcdRes.data as PasajeroPCD[]);
     if (!vcRes.error && vcRes.data) setVehConductores(vcRes.data as VehConductorRel[]);
     if (!centrosRes.error && centrosRes.data) setCentrosRutas(centrosRes.data as typeof centrosRutas);
+    if (!paradasRes.error && paradasRes.data) {
+      const mapa: Record<string, ParadaRow[]> = {};
+      for (const p of paradasRes.data as ParadaRow[]) {
+        (mapa[p.servicio_id] ??= []).push(p);
+      }
+      setParadasPorServicio(mapa);
+    }
     setLoading(false);
   }
 
@@ -217,24 +261,59 @@ function Servicios() {
     return placas;
   }
 
+  // Conductores con foto y placa principal para el desplegable
+  const conductoresPicker = conductoresDisponibles.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    foto_url: c.foto_url,
+    placa: placasDeConductor(c.nombre)[0]?.placa ?? null,
+  }));
+
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    const paradasValidas = paradas.filter((p) => p.direccion.trim());
+    if (multidestino && paradasValidas.length < 2) {
+      alert("Un multiservicio necesita al menos 2 paradas con dirección.");
+      return;
+    }
     setSaving(true);
     // Si seleccionó un pasajero PCD, usamos su nombre como "pasajero" textual también
     const pcdSel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
     const payload = {
       ...form,
       cliente: cliente ?? form.cliente,
+      centro_costo: usaCentroCosto ? form.centro_costo : null,
       pasajero: pcdSel ? pcdSel.nombre : form.pasajero,
       pasajero_pcd_id: form.pasajero_pcd_id || null,
+      es_multidestino: multidestino,
+      destino: multidestino ? paradasValidas[paradasValidas.length - 1].direccion : form.destino,
     };
-    const { error } = await supabase.from("servicios").insert(payload);
+    const { data: creado, error } = await supabase.from("servicios").insert(payload).select("id").single();
+    if (!error && creado && multidestino) {
+      const filas = paradasValidas.map((p, i) => ({
+        servicio_id: creado.id,
+        orden: i + 1,
+        direccion: p.direccion.trim(),
+        hora_estimada: p.hora_estimada || null,
+        nota: p.nota || null,
+      }));
+      const { error: errP } = await supabase.from("servicio_paradas").insert(filas);
+      if (errP) {
+        setSaving(false);
+        alert("El servicio se creó pero las paradas fallaron: " + errP.message);
+        load();
+        return;
+      }
+    }
     setSaving(false);
     if (error) {
       alert("Error: " + error.message);
       return;
     }
     setShowForm(false);
+    setMultidestino(false);
+    setParadas([nuevaParada(), nuevaParada()]);
     setForm({ ...form, numero_orden: "", origen: "", destino: "", pasajero: "", pasajero_pcd_id: "", conductor: "", vehiculo: "" });
     load();
   }
@@ -327,211 +406,262 @@ function Servicios() {
         <SolicitudesEntrantes />
 
         {showForm && (
-          <form onSubmit={handleCreate} className="rounded-lg border border-primary/30 bg-card p-5 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {role === "admin" && (
+          <form onSubmit={handleCreate} className="rounded-xl border border-primary/30 bg-card p-5 md:p-6 space-y-6 max-w-4xl mx-auto">
+            {/* ── 1. Datos de la orden ───────────────────────────── */}
+            <section className="space-y-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-primary">Datos de la orden</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs text-muted-foreground">Cliente</label>
-                  <select
-                    value={form.cliente}
-                    onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="corona">Corona</option>
-                    <option value="sodimac">Sodimac</option><option value="hospital_sur">Hospital del Sur</option>
-                  </select>
+                  <label className="text-xs text-muted-foreground">Orden de servicio</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      required
+                      readOnly={!editandoOrden}
+                      value={form.numero_orden}
+                      onChange={(e) => setForm({ ...form, numero_orden: e.target.value })}
+                      placeholder="OS-000001"
+                      className={`w-full rounded-md border border-input px-3 py-2 text-sm font-semibold ${editandoOrden ? "bg-background" : "bg-muted text-muted-foreground"}`}
+                    />
+                    <button type="button" onClick={() => setEditandoOrden((v) => !v)} className="shrink-0 text-[11px] text-primary hover:underline">
+                      {editandoOrden ? "auto" : "editar"}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">Consecutivo automático</p>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Fecha</label>
+                  <input type="date" required value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Hora</label>
+                  <input type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+                {role === "admin" && (
+                  <div className="md:col-span-3">
+                    <label className="text-xs text-muted-foreground">Cliente</label>
+                    <select
+                      value={form.cliente}
+                      onChange={(e) => setForm({ ...form, cliente: e.target.value as "corona" | "sodimac" | "hospital_sur" })}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    >
+                      <option value="corona">Corona</option>
+                      <option value="sodimac">Sodimac</option>
+                      <option value="hospital_sur">Hospital del Sur</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* ── 2. Ruta ────────────────────────────────────────── */}
+            <section className="space-y-3 border-t border-border pt-5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-primary">Ruta</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                <div>
+                  <label className="text-xs text-muted-foreground">Origen</label>
+                  <AddressAutocomplete
+                    value={form.origen}
+                    onChange={(v) => setForm({ ...form, origen: v })}
+                    extraSuggestions={sugerenciasOrigen}
+                    placeholder="Buscar dirección o ruta…"
+                    required
+                    inputClassName="h-10 text-sm"
+                  />
+                </div>
+                {!multidestino && (
+                  <div>
+                    <label className="text-xs text-muted-foreground">Destino</label>
+                    <AddressAutocomplete
+                      value={form.destino}
+                      onChange={(v) => setForm({ ...form, destino: v })}
+                      extraSuggestions={sugerenciasDestino}
+                      placeholder="Buscar dirección o ruta…"
+                      required
+                      inputClassName="h-10 text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <label className="flex items-start gap-2 rounded-lg border border-primary/25 bg-primary/5 p-3 cursor-pointer max-w-3xl mx-auto">
+                <input
+                  type="checkbox"
+                  checked={multidestino}
+                  onChange={(e) => setMultidestino(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-[hsl(var(--primary))]"
+                />
+                <span className="text-sm">
+                  <span className="font-medium">Multiservicio (varios destinos)</span>
+                  <span className="block text-xs text-muted-foreground">Un solo servicio con varias paradas en orden</span>
+                </span>
+              </label>
+
+              {multidestino && (
+                <div className="max-w-3xl mx-auto">
+                  <ParadasEditor paradas={paradas} onChange={setParadas} sugerencias={sugerenciasDestino} />
                 </div>
               )}
-              <div>
-                <label className="text-xs text-muted-foreground">N° orden de servicio</label>
-                <input required value={form.numero_orden} onChange={(e) => setForm({ ...form, numero_orden: e.target.value })} placeholder="Ej. OS-001234" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Fecha</label>
-                <input type="date" required value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Hora</label>
-                <input type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Origen</label>
-                <AddressAutocomplete
-                  value={form.origen}
-                  onChange={(v) => setForm({ ...form, origen: v })}
-                  extraSuggestions={sugerenciasOrigen}
-                  placeholder="Buscar dirección o ruta…"
-                  required
-                  inputClassName="h-10 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Destino</label>
-                <AddressAutocomplete
-                  value={form.destino}
-                  onChange={(v) => setForm({ ...form, destino: v })}
-                  extraSuggestions={sugerenciasDestino}
-                  placeholder="Buscar dirección o ruta…"
-                  required
-                  inputClassName="h-10 text-sm"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Accessibility className="h-3 w-3 text-primary" aria-hidden="true" />
-                  Pasajero registrado con perfil PCD (opcional, recomendado)
-                </label>
-                <select
-                  value={form.pasajero_pcd_id}
-                  onChange={(e) => {
-                    const id = e.target.value;
-                    const sel = pasajerosPCD.find((p) => p.id === id);
-                    setForm({
-                      ...form,
-                      pasajero_pcd_id: id,
-                      pasajero: sel ? sel.nombre : form.pasajero,
-                    });
-                  }}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">— Sin perfil PCD (pasajero ocasional) —</option>
-                  {pasajerosPCD
-                    .filter((p) => p.cliente === (cliente ?? form.cliente))
-                    .map((p) => {
-                      const tipo = TIPOS_DISC.find((t) => t.value === p.tipo_discapacidad)!;
-                      const tag = p.tipo_discapacidad === "ninguna" ? "" : ` · ${tipo.label}`;
-                      const adapt = p.requiere_vehiculo_adaptado ? " · Vehículo adaptado" : "";
-                      return (
-                        <option key={p.id} value={p.id}>
-                          {p.nombre}{tag}{adapt}
-                        </option>
-                      );
-                    })}
-                </select>
-                {form.pasajero_pcd_id && (() => {
-                  const sel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
-                  if (!sel) return null;
-                  const brief = generarBrief(sel);
-                  return (
-                    <div className="mt-2 rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+            </section>
+
+            {/* ── 3. Pasajero ────────────────────────────────────── */}
+            <section className="space-y-3 border-t border-border pt-5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-primary">Pasajero</h2>
+              <div className="max-w-3xl mx-auto space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Accessibility className="h-3 w-3 text-primary" aria-hidden="true" />
+                    Pasajero registrado (perfil PCD)
+                  </label>
+                  <select
+                    value={form.pasajero_pcd_id}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      const sel = pasajerosPCD.find((p) => p.id === id);
+                      setForm({
+                        ...form,
+                        pasajero_pcd_id: id,
+                        pasajero: sel ? sel.nombre : form.pasajero,
+                      });
+                    }}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">— Sin perfil registrado —</option>
+                    {pasajerosPCD
+                      .filter((p) => p.cliente === clienteActivo)
+                      .map((p) => {
+                        const tipo = TIPOS_DISC.find((t) => t.value === p.tipo_discapacidad)!;
+                        const tag = p.tipo_discapacidad === "ninguna" ? "" : ` · ${tipo.label}`;
+                        const adapt = p.requiere_vehiculo_adaptado ? " · Vehículo adaptado" : "";
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre}{tag}{adapt}
+                          </option>
+                        );
+                      })}
+                  </select>
+                  {form.pasajero_pcd_id && (() => {
+                    const sel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
+                    if (!sel) return null;
+                    const brief = generarBrief(sel);
+                    return (
+                      <div className="mt-2 rounded-lg bg-primary/5 border border-primary/20 p-3 text-sm">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-1">
                           <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
                           Brief automático para el conductor
                         </div>
+                        <SimplifyText text={brief} className="text-foreground" />
                       </div>
-                      <SimplifyText text={brief} className="text-foreground" />
-                    </div>
-                  );
-                })()}
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Pasajero (texto libre)</label>
-                <input
-                  value={form.pasajero}
-                  onChange={(e) => setForm({ ...form, pasajero: e.target.value })}
-                  placeholder={form.pasajero_pcd_id ? "Auto-completado del perfil PCD" : "Nombre del pasajero"}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Centro de costo</label>
-                <input value={form.centro_costo} onChange={(e) => setForm({ ...form, centro_costo: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Conductor</label>
-                <select
-                  value={form.conductor}
-                  onChange={(e) => {
-                    const nuevoCond = e.target.value;
-                    const placas = placasDeConductor(nuevoCond);
-                    let nuevaPlaca = form.vehiculo;
-                    if (placas.length === 1) {
-                      nuevaPlaca = placas[0].placa;
-                    } else if (placas.length > 1) {
-                      // Si la placa actual no es del nuevo conductor, limpiar
-                      if (!placas.some((p) => p.placa === form.vehiculo)) nuevaPlaca = "";
-                    } else if (nuevoCond === "") {
-                      // Quitar conductor: dejar vehículo como esté
-                    }
-                    setForm({ ...form, conductor: nuevoCond, vehiculo: nuevaPlaca });
-                  }}
-                  disabled={conductoresDisponibles.length === 0}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
-                >
-                  <option value="">{conductoresDisponibles.length === 0 ? "Sin conductores disponibles" : "Selecciona un conductor"}</option>
-                  {conductoresDisponibles.map((c) => (
-                    <option key={c.id} value={c.nombre}>{c.nombre}</option>
-                  ))}
-                </select>
-                {conductoresDisponibles.length === 0 && (
-                  <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
-                    <AlertTriangle className="h-3 w-3" /> Actualiza licencias vencidas en Conductores
-                  </p>
+                    );
+                  })()}
+                </div>
+
+                {!form.pasajero_pcd_id && (
+                  <div className="rounded-lg border border-dashed border-border p-3">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Pasajero no registrado</label>
+                    <input
+                      value={form.pasajero}
+                      onChange={(e) => setForm({ ...form, pasajero: e.target.value })}
+                      placeholder="Nombre del pasajero ocasional"
+                      className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                )}
+
+                {usaCentroCosto && (
+                  <div>
+                    <label className="text-xs text-muted-foreground">Centro de costo</label>
+                    <input value={form.centro_costo} onChange={(e) => setForm({ ...form, centro_costo: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  </div>
                 )}
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Vehículo (placa)</label>
-                {(() => {
-                  const placasCond = placasDeConductor(form.conductor);
-                  const tieneConductor = !!form.conductor;
-                  const lista = tieneConductor && placasCond.length > 0 ? placasCond : vehiculosDisponibles;
-                  const sinOpciones = lista.length === 0;
-                  const autoUnico = tieneConductor && placasCond.length === 1;
-                  return (
-                    <>
-                      <select
-                        value={form.vehiculo}
-                        onChange={(e) => setForm({ ...form, vehiculo: e.target.value })}
-                        disabled={sinOpciones || autoUnico}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
-                      >
-                        <option value="">
-                          {sinOpciones
-                            ? (tieneConductor ? "Conductor sin vehículo asignado" : "Sin vehículos disponibles")
-                            : "Selecciona un vehículo"}
-                        </option>
-                        {lista.map((v) => (
-                          <option key={v.id} value={v.placa}>
-                            {v.placa}{v.marca || v.linea ? ` — ${[v.marca, v.linea].filter(Boolean).join(" ")}` : ""}
-                          </option>
-                        ))}
-                      </select>
-                      {tieneConductor && placasCond.length === 0 && (
-                        <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
-                          <AlertTriangle className="h-3 w-3" /> Asigna un vehículo a este conductor en Vehículos
-                        </p>
-                      )}
-                      {autoUnico && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">Auto-asignado: único vehículo del conductor</p>
-                      )}
-                      {tieneConductor && placasCond.length > 1 && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">El conductor maneja {placasCond.length} vehículos · selecciona uno</p>
-                      )}
-                      {!tieneConductor && vehiculosDisponibles.length === 0 && (
-                        <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
-                          <AlertTriangle className="h-3 w-3" /> Actualiza SOAT/RTM vencidos en Vehículos
-                        </p>
-                      )}
-                    </>
-                  );
-                })()}
+            </section>
+
+            {/* ── 4. Asignación ──────────────────────────────────── */}
+            <section className="space-y-3 border-t border-border pt-5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-primary">Asignación</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                <div>
+                  <label className="text-xs text-muted-foreground">Conductor</label>
+                  <ConductorPicker
+                    value={form.conductor}
+                    items={conductoresPicker}
+                    disabled={conductoresDisponibles.length === 0}
+                    onChange={(nombre) => {
+                      const placas = placasDeConductor(nombre);
+                      let nuevaPlaca = form.vehiculo;
+                      if (placas.length === 1) nuevaPlaca = placas[0].placa;
+                      else if (placas.length > 1 && !placas.some((p) => p.placa === form.vehiculo)) nuevaPlaca = "";
+                      setForm({ ...form, conductor: nombre, vehiculo: nuevaPlaca });
+                    }}
+                  />
+                  {conductoresDisponibles.length === 0 && (
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                      <AlertTriangle className="h-3 w-3" /> Actualiza licencias vencidas en Conductores
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Vehículo (placa)</label>
+                  {(() => {
+                    const placasCond = placasDeConductor(form.conductor);
+                    const tieneConductor = !!form.conductor;
+                    const lista = tieneConductor && placasCond.length > 0 ? placasCond : vehiculosDisponibles;
+                    return (
+                      <>
+                        <VehiculoPicker
+                          value={form.vehiculo}
+                          items={lista}
+                          disabled={lista.length === 0}
+                          onChange={(placa) => setForm({ ...form, vehiculo: placa })}
+                        />
+                        {tieneConductor && placasCond.length === 0 && (
+                          <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                            <AlertTriangle className="h-3 w-3" /> Asigna un vehículo a este conductor en Vehículos
+                          </p>
+                        )}
+                        {tieneConductor && placasCond.length > 1 && (
+                          <p className="mt-1 text-[11px] text-muted-foreground">El conductor maneja {placasCond.length} vehículos · selecciona uno</p>
+                        )}
+                        {!tieneConductor && vehiculosDisponibles.length === 0 && (
+                          <p className="mt-1 flex items-center gap-1 text-[11px] text-warning">
+                            <AlertTriangle className="h-3 w-3" /> Actualiza SOAT/RTM vencidos en Vehículos
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Estado</label>
-                <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  {["Programado", "En curso", "Finalizado", "Cancelado"].map((x) => <option key={x}>{x}</option>)}
-                </select>
+            </section>
+
+            {/* ── 5. Estado ──────────────────────────────────────── */}
+            <section className="space-y-3 border-t border-border pt-5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-primary">Estado</h2>
+              <div className="flex flex-wrap gap-2 max-w-3xl mx-auto">
+                {["Programado", "En curso", "Finalizado", "Cancelado"].map((x) => (
+                  <button
+                    key={x}
+                    type="button"
+                    onClick={() => setForm({ ...form, estado: x })}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      form.estado === x ? `${estadoStyle(x)} border-current` : "border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {x}
+                  </button>
+                ))}
               </div>
-            </div>
-            <div className="flex gap-2 justify-end">
+            </section>
+
+            <div className="flex gap-2 justify-end border-t border-border pt-4">
               <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground">Cancelar</button>
-              <button type="submit" disabled={saving} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">
-                {saving ? "Guardando..." : "Guardar"}
+              <button type="submit" disabled={saving} className="px-5 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-60">
+                {saving ? "Guardando..." : "Guardar servicio"}
               </button>
             </div>
           </form>
         )}
+
 
         <div className="flex items-center gap-1">
           <Filter className="h-4 w-4 text-muted-foreground mr-1" />
@@ -607,15 +737,43 @@ function Servicios() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-sm">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  <span>{s.origen}</span>
-                  <span className="text-muted-foreground">→</span>
-                  <span>{s.destino}</span>
-                </div>
+                {s.es_multidestino ? (
+                  <div className="mt-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-2">
+                      <RouteIcon className="h-3.5 w-3.5" aria-hidden="true" /> Multiservicio · {(paradasPorServicio[s.id] ?? []).length} paradas
+                    </div>
+                    <ol className="space-y-1 text-sm">
+                      {s.origen && (
+                        <li className="flex items-start gap-2 text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" aria-hidden="true" />
+                          <span>Salida: {s.origen}</span>
+                        </li>
+                      )}
+                      {(paradasPorServicio[s.id] ?? []).map((p) => (
+                        <li key={p.id} className="flex items-start gap-2">
+                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary/15 text-[10px] font-bold text-primary flex items-center justify-center">{p.orden}</span>
+                          <span>
+                            {p.direccion}
+                            {p.hora_estimada && <span className="text-xs text-muted-foreground"> · {p.hora_estimada.slice(0, 5)}</span>}
+                            {p.nota && <span className="block text-xs text-muted-foreground">{p.nota}</span>}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex items-center gap-2 text-sm">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    <span>{s.origen}</span>
+                    <span className="text-muted-foreground">→</span>
+                    <span>{s.destino}</span>
+                  </div>
+                )}
                 <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div><span className="text-muted-foreground">Pasajero</span><p className="font-medium">{s.pasajero || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Centro costo</span><p className="font-medium">{s.centro_costo || "—"}</p></div>
+                  {s.cliente !== "hospital_sur" && (
+                    <div><span className="text-muted-foreground">Centro costo</span><p className="font-medium">{s.centro_costo || "—"}</p></div>
+                  )}
                   <div>
                     <label className="text-muted-foreground" htmlFor={`cond-${s.id}`}>Conductor</label>
                     <select

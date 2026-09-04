@@ -1641,6 +1641,47 @@ export type Database = {
           },
         ]
       }
+      servicio_paradas: {
+        Row: {
+          created_at: string
+          direccion: string
+          hora_estimada: string | null
+          id: string
+          nota: string | null
+          orden: number
+          servicio_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          direccion: string
+          hora_estimada?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          servicio_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          direccion?: string
+          hora_estimada?: string | null
+          id?: string
+          nota?: string | null
+          orden?: number
+          servicio_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicio_paradas_servicio_id_fkey"
+            columns: ["servicio_id"]
+            isOneToOne: false
+            referencedRelation: "servicios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       servicios: {
         Row: {
           asignado_at: string | null
@@ -1651,6 +1692,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           destino: string | null
+          es_multidestino: boolean
           estado: string
           fecha: string
           finalizado_at: string | null
@@ -1673,6 +1715,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           destino?: string | null
+          es_multidestino?: boolean
           estado?: string
           fecha: string
           finalizado_at?: string | null
@@ -1695,6 +1738,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           destino?: string | null
+          es_multidestino?: boolean
           estado?: string
           fecha?: string
           finalizado_at?: string | null
@@ -2287,6 +2331,7 @@ export type Database = {
         Args: { _conductor_id: string; _password: string }
         Returns: undefined
       }
+      siguiente_orden_servicio: { Args: never; Returns: string }
       user_client: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["cliente_tipo"]
