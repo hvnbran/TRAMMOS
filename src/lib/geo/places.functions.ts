@@ -2,6 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
+const GOOGLE_DIRECT = "https://places.googleapis.com";
+const GOOGLE_GEOCODE = "https://maps.googleapis.com";
+
+/** Llave propia del cliente (funciona en dominios propios). Si no existe, usamos el conector de Lovable. */
+function ownKey() {
+  return process.env.GOOGLE_API_KEY || null;
+}
 
 const AutocompleteInput = z.object({
   input: z.string().min(1).max(200),
@@ -33,15 +40,38 @@ export interface PlaceDetails {
 }
 
 function headers() {
+  const own = ownKey();
+  if (own) {
+    return {
+      "X-Goog-Api-Key": own,
+      "Content-Type": "application/json",
+    } as Record<string, string>;
+  }
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey || !lovableKey) throw new Error("Google Maps connector no disponible");
+  if (!apiKey || !lovableKey) throw new Error("Google Maps no disponible");
   return {
     Authorization: `Bearer ${lovableKey}`,
     "X-Connection-Api-Key": apiKey,
     "Content-Type": "application/json",
-  };
+  } as Record<string, string>;
 }
+
+/** URL de Places (v1) según si usamos la llave propia o el conector. */
+function placesUrl(path: string) {
+  return ownKey() ? `${GOOGLE_DIRECT}/v1/${path}` : `${GATEWAY}/places/v1/${path}`;
+}
+
+/** URL de Geocoding según si usamos la llave propia o el conector. */
+function geocodeUrl(qs: string) {
+  const own = ownKey();
+  // La API clásica de Geocoding solo acepta la llave por query param.
+  return own
+    ? `${GOOGLE_GEOCODE}/maps/api/geocode/json?${qs}&key=${encodeURIComponent(own)}`
+    : `${GATEWAY}/maps/api/geocode/json?${qs}`;
+}
+
+
 
 export const placesAutocomplete = createServerFn({ method: "POST" })
   .inputValidator((data) => AutocompleteInput.parse(data))
@@ -61,7 +91,7 @@ export const placesAutocomplete = createServerFn({ method: "POST" })
       };
     }
     if (data.sessionToken) body.sessionToken = data.sessionToken;
-    const res = await fetch(`${GATEWAY}/places/v1/places:autocomplete`, {
+    const res = await fetch(placesUrl("places:autocomplete"), {
       method: "POST",
       headers: headers(),
       body: JSON.stringify(body),
@@ -87,9 +117,11 @@ export const placesAutocomplete = createServerFn({ method: "POST" })
 export const placeDetails = createServerFn({ method: "POST" })
   .inputValidator((data) => DetailsInput.parse(data))
   .handler(async ({ data }): Promise<PlaceDetails> => {
-    const url = `${GATEWAY}/places/v1/places/${encodeURIComponent(data.placeId)}${
-      data.sessionToken ? `?sessionToken=${encodeURIComponent(data.sessionToken)}` : ""
-    }`;
+    const url = placesUrl(
+      `places/${encodeURIComponent(data.placeId)}${
+        data.sessionToken ? `?sessionToken=${encodeURIComponent(data.sessionToken)}` : ""
+      }`,
+    );
     const res = await fetch(url, {
       method: "GET",
       headers: {
@@ -117,7 +149,7 @@ export const placeDetails = createServerFn({ method: "POST" })
 export const placesReverseGeocode = createServerFn({ method: "POST" })
   .inputValidator((data) => ReverseInput.parse(data))
   .handler(async ({ data }): Promise<{ label: string } | null> => {
-    const url = `${GATEWAY}/maps/api/geocode/json?latlng=${data.lat},${data.lon}&language=es&region=co`;
+    const url = geocodeUrl(`latlng=${data.lat},${data.lon}&language=es&region=co`);
     const res = await fetch(url, { headers: headers() });
     if (!res.ok) return null;
     const json = (await res.json()) as { results?: Array<{ formatted_address?: string }> };

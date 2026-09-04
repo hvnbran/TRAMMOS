@@ -103,7 +103,24 @@ export function ShareLocationToggle() {
     watchIdRef.current = id;
   }, [upsert]);
 
+  // Latido: si el conductor está quieto el GPS deja de reportar, así que
+  // reenviamos la última posición cada 30s para que no aparezca "offline".
+  useEffect(() => {
+    if (estado !== "online") return;
+    const t = setInterval(() => {
+      const last = lastPosRef.current;
+      if (!last || sendingRef.current) return;
+      sendingRef.current = true;
+      upsert({ data: { lat: last.lat, lng: last.lng, accuracy: null, speed_kmh: 0, heading: null } })
+        .then(() => setLastSentAt(Date.now()))
+        .catch(() => { /* reintenta en el próximo latido */ })
+        .finally(() => { sendingRef.current = false; });
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [estado, upsert]);
+
   // Cleanup al desmontar / cerrar pestaña
+
   useEffect(() => {
     const handleUnload = () => {
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
