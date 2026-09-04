@@ -40,15 +40,33 @@ export interface PlaceDetails {
 }
 
 function headers() {
+  const own = ownKey();
+  if (own) {
+    return {
+      "X-Goog-Api-Key": own,
+      "Content-Type": "application/json",
+    } as Record<string, string>;
+  }
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   const lovableKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey || !lovableKey) throw new Error("Google Maps connector no disponible");
+  if (!apiKey || !lovableKey) throw new Error("Google Maps no disponible");
   return {
     Authorization: `Bearer ${lovableKey}`,
     "X-Connection-Api-Key": apiKey,
     "Content-Type": "application/json",
-  };
+  } as Record<string, string>;
 }
+
+/** Base para Places (v1) según si usamos la llave propia o el conector. */
+function placesBase() {
+  return ownKey() ? GOOGLE_DIRECT : GATEWAY;
+}
+
+/** Base para Geocoding según si usamos la llave propia o el conector. */
+function geocodeBase() {
+  return ownKey() ? GOOGLE_GEOCODE : GATEWAY;
+}
+
 
 export const placesAutocomplete = createServerFn({ method: "POST" })
   .inputValidator((data) => AutocompleteInput.parse(data))
