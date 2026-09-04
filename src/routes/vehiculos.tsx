@@ -298,7 +298,7 @@ function Vehiculos() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="md:col-span-3">
+              {role === "admin" && (<div className="md:col-span-3">
                 <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
                 <div className="flex flex-wrap gap-3 mt-1">
                   {(["corona", "sodimac", "hospital_sur"] as const).map((c) => (
@@ -315,7 +315,7 @@ function Vehiculos() {
                     <span className="text-[11px] text-warning self-center">Sin asignar — visible para todos los administradores hasta que sea reclamado</span>
                   )}
                 </div>
-              </div>
+              </div>)}
               <div><label className="text-xs text-muted-foreground">Placa</label><input required value={form.placa} onChange={(e) => setForm({ ...form, placa: e.target.value.toUpperCase() })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Marca</label><input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
               <div><label className="text-xs text-muted-foreground">Línea</label><input value={form.linea} onChange={(e) => setForm({ ...form, linea: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>

@@ -257,6 +257,17 @@ function RegistroPage() {
               </Field>
             )}
 
+            {/* Pasajero: empresa ya asignada por quien generó el enlace */}
+            {v.tipo === "pasajero" && v.empresa_id && (
+              <Field label="Tu empresa">
+                <div className="input flex items-center justify-between gap-2 bg-muted/40">
+                  <span className="font-medium">{v.empresa_nombre ?? "Empresa asignada"}</span>
+                  <span className="text-[11px] text-muted-foreground">Asignada automáticamente</span>
+                </div>
+              </Field>
+            )}
+
+
             {/* Pasajero: selector de empresa cuando no está fijada */}
             {v.tipo === "pasajero" && !v.empresa_id && (
               <Field label="Tu empresa">
