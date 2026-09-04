@@ -217,7 +217,7 @@ function Conductores() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 pt-2">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-3">
+                {role === "admin" && (<div className="md:col-span-3">
                   <label className="text-xs text-muted-foreground">Cliente(s) — marca uno, ambos, o ninguno (sin asignar)</label>
                   <div className="flex flex-wrap gap-3 mt-1">
                     {(["corona", "sodimac", "hospital_sur"] as const).map((cl) => (
@@ -230,7 +230,7 @@ function Conductores() {
                       <span className="text-[11px] text-warning self-center">Sin asignar — visible para todos los administradores hasta que sea reclamado</span>
                     )}
                   </div>
-                </div>
+                </div>)}
                 <div><label className="text-xs text-muted-foreground">Nombre completo</label><input required value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
                 <div><label className="text-xs text-muted-foreground">Cédula</label><input value={form.cedula} onChange={(e) => setForm({ ...form, cedula: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
                 <div><label className="text-xs text-muted-foreground">Teléfono</label><input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
