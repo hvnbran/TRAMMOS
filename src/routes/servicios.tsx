@@ -263,22 +263,48 @@ function Servicios() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    const paradasValidas = paradas.filter((p) => p.direccion.trim());
+    if (multidestino && paradasValidas.length < 2) {
+      alert("Un multiservicio necesita al menos 2 paradas con dirección.");
+      return;
+    }
     setSaving(true);
     // Si seleccionó un pasajero PCD, usamos su nombre como "pasajero" textual también
     const pcdSel = pasajerosPCD.find((p) => p.id === form.pasajero_pcd_id);
     const payload = {
       ...form,
       cliente: cliente ?? form.cliente,
+      centro_costo: usaCentroCosto ? form.centro_costo : null,
       pasajero: pcdSel ? pcdSel.nombre : form.pasajero,
       pasajero_pcd_id: form.pasajero_pcd_id || null,
+      es_multidestino: multidestino,
+      destino: multidestino ? paradasValidas[paradasValidas.length - 1].direccion : form.destino,
     };
-    const { error } = await supabase.from("servicios").insert(payload);
+    const { data: creado, error } = await supabase.from("servicios").insert(payload).select("id").single();
+    if (!error && creado && multidestino) {
+      const filas = paradasValidas.map((p, i) => ({
+        servicio_id: creado.id,
+        orden: i + 1,
+        direccion: p.direccion.trim(),
+        hora_estimada: p.hora_estimada || null,
+        nota: p.nota || null,
+      }));
+      const { error: errP } = await supabase.from("servicio_paradas").insert(filas);
+      if (errP) {
+        setSaving(false);
+        alert("El servicio se creó pero las paradas fallaron: " + errP.message);
+        load();
+        return;
+      }
+    }
     setSaving(false);
     if (error) {
       alert("Error: " + error.message);
       return;
     }
     setShowForm(false);
+    setMultidestino(false);
+    setParadas([nuevaParada(), nuevaParada()]);
     setForm({ ...form, numero_orden: "", origen: "", destino: "", pasajero: "", pasajero_pcd_id: "", conductor: "", vehiculo: "" });
     load();
   }
