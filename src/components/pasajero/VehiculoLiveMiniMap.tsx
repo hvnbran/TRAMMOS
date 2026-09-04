@@ -89,10 +89,9 @@ export function VehiculoLiveMiniMap({ conductorNombre, height = 200 }: Props) {
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          subdomains={["a", "b", "c", "d"]}
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
-          attribution='&copy; OpenStreetMap &copy; CARTO'
+          attribution='&copy; OpenStreetMap contributors'
         />
         <Marker position={[pos.lat, pos.lng]} icon={carIcon}>
           <Popup>
