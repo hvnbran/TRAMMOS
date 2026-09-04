@@ -64,8 +64,10 @@ function placesUrl(path: string) {
 
 /** URL de Geocoding según si usamos la llave propia o el conector. */
 function geocodeUrl(qs: string) {
-  return ownKey()
-    ? `${GOOGLE_GEOCODE}/maps/api/geocode/json?${qs}`
+  const own = ownKey();
+  // La API clásica de Geocoding solo acepta la llave por query param.
+  return own
+    ? `${GOOGLE_GEOCODE}/maps/api/geocode/json?${qs}&key=${encodeURIComponent(own)}`
     : `${GATEWAY}/maps/api/geocode/json?${qs}`;
 }
 
