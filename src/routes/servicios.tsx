@@ -79,6 +79,17 @@ interface ServicioRow {
   estado: string;
   pasajero_pcd_id: string | null;
   es_multidestino: boolean | null;
+  iniciado_at: string | null;
+  finalizado_at: string | null;
+}
+
+/** ISO → valor para <input type="datetime-local"> en hora local */
+function isoToLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 interface ParadaRow {
@@ -335,6 +346,18 @@ function Servicios() {
     }
     // Disparar envío de notificación push (el trigger de BD ya encoló)
     fetch("/api/public/push/process", { method: "POST" }).catch(() => { /* ignore */ });
+  }
+
+  /** Editar manualmente la hora de inicio o de finalización real del servicio */
+  async function handleTiempoChange(id: string, campo: "iniciado_at" | "finalizado_at", local: string) {
+    const iso = local ? new Date(local).toISOString() : null;
+    setItems((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: iso } : s)));
+    const patch = campo === "iniciado_at" ? { iniciado_at: iso } : { finalizado_at: iso };
+    const { error } = await supabase.from("servicios").update(patch).eq("id", id);
+    if (error) {
+      alert("No se pudo guardar la hora: " + error.message);
+      load();
+    }
   }
 
   async function handleFieldChange(id: string, campo: "conductor" | "vehiculo", valor: string) {
@@ -823,6 +846,30 @@ function Servicios() {
                         </select>
                       );
                     })()}
+                  </div>
+                </div>
+
+                {/* Horas reales de inicio y finalización (editables) */}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-border pt-3 text-xs">
+                  <div>
+                    <label className="text-muted-foreground" htmlFor={`ini-${s.id}`}>Inició (real)</label>
+                    <input
+                      id={`ini-${s.id}`}
+                      type="datetime-local"
+                      value={isoToLocalInput(s.iniciado_at)}
+                      onChange={(e) => handleTiempoChange(s.id, "iniciado_at", e.target.value)}
+                      className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs hover:border-primary/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-muted-foreground" htmlFor={`fin-${s.id}`}>Terminó (real)</label>
+                    <input
+                      id={`fin-${s.id}`}
+                      type="datetime-local"
+                      value={isoToLocalInput(s.finalizado_at)}
+                      onChange={(e) => handleTiempoChange(s.id, "finalizado_at", e.target.value)}
+                      className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs hover:border-primary/50"
+                    />
                   </div>
                 </div>
 

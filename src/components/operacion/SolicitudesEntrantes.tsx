@@ -19,7 +19,9 @@ interface SolicitudEntrante {
   pasajero_telefono?: string | null;
 }
 
-const ESTADOS_PENDIENTES = ["solicitada", "aceptada", "asignada"] as const;
+// Solo las solicitudes que aún requieren acción de operación.
+// Al aceptarlas se crea el servicio y desaparecen de esta bandeja.
+const ESTADOS_PENDIENTES = ["solicitada"] as const;
 
 function formatHora(iso: string) {
   try {
@@ -152,6 +154,9 @@ export function SolicitudesEntrantes() {
     if (e) { setError(e.message); return; }
     await load();
   }
+
+  // Bandeja vacía: no ocupar espacio en la pantalla de servicios.
+  if (!loading && rows.length === 0 && !error) return null;
 
   return (
     <section
