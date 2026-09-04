@@ -115,9 +115,11 @@ export const placesAutocomplete = createServerFn({ method: "POST" })
 export const placeDetails = createServerFn({ method: "POST" })
   .inputValidator((data) => DetailsInput.parse(data))
   .handler(async ({ data }): Promise<PlaceDetails> => {
-    const url = `${GATEWAY}/places/v1/places/${encodeURIComponent(data.placeId)}${
-      data.sessionToken ? `?sessionToken=${encodeURIComponent(data.sessionToken)}` : ""
-    }`;
+    const url = placesUrl(
+      `places/${encodeURIComponent(data.placeId)}${
+        data.sessionToken ? `?sessionToken=${encodeURIComponent(data.sessionToken)}` : ""
+      }`,
+    );
     const res = await fetch(url, {
       method: "GET",
       headers: {
