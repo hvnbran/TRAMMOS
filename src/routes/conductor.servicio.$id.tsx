@@ -245,26 +245,54 @@ function ServicioDetalle() {
               </div>
             </div>
           )}
-          {servicio.destino && (
-            <div className="flex items-start gap-2">
-              <div className="h-6 w-6 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
-                <MapPin className="h-3.5 w-3.5 text-primary" />
+          {servicio.es_multidestino && paradas.length > 0 ? (
+            <ol className="space-y-3">
+              {paradas.map((p) => (
+                <li key={p.id} className="flex items-start gap-2">
+                  <div className="h-6 w-6 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold text-primary">
+                    {p.orden}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] text-muted-foreground">
+                      Parada {p.orden}{p.hora_estimada ? ` · ${p.hora_estimada.slice(0, 5)}` : ""}
+                    </p>
+                    <p className="text-sm font-medium">{p.direccion}</p>
+                    {p.nota && <p className="text-xs text-muted-foreground">{p.nota}</p>}
+                    <a
+                      href={mapsUrl(p.direccion)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+                    >
+                      <Navigation className="h-3 w-3" /> Navegar
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            servicio.destino && (
+              <div className="flex items-start gap-2">
+                <div className="h-6 w-6 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-muted-foreground">Llevar a</p>
+                  <p className="text-sm font-medium">{servicio.destino}</p>
+                  <a
+                    href={mapsUrl(servicio.destino)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+                  >
+                    <Navigation className="h-3 w-3" /> Ir al destino
+                  </a>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] text-muted-foreground">Llevar a</p>
-                <p className="text-sm font-medium">{servicio.destino}</p>
-                <a
-                  href={mapsUrl(servicio.destino)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
-                >
-                  <Navigation className="h-3 w-3" /> Ir al destino
-                </a>
-              </div>
-            </div>
+            )
           )}
         </div>
+
 
         {/* Brief PCD */}
         {brief && (
