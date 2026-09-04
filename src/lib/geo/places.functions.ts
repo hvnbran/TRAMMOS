@@ -57,15 +57,18 @@ function headers() {
   } as Record<string, string>;
 }
 
-/** Base para Places (v1) según si usamos la llave propia o el conector. */
-function placesBase() {
-  return ownKey() ? GOOGLE_DIRECT : GATEWAY;
+/** URL de Places (v1) según si usamos la llave propia o el conector. */
+function placesUrl(path: string) {
+  return ownKey() ? `${GOOGLE_DIRECT}/v1/${path}` : `${GATEWAY}/places/v1/${path}`;
 }
 
-/** Base para Geocoding según si usamos la llave propia o el conector. */
-function geocodeBase() {
-  return ownKey() ? GOOGLE_GEOCODE : GATEWAY;
+/** URL de Geocoding según si usamos la llave propia o el conector. */
+function geocodeUrl(qs: string) {
+  return ownKey()
+    ? `${GOOGLE_GEOCODE}/maps/api/geocode/json?${qs}`
+    : `${GATEWAY}/maps/api/geocode/json?${qs}`;
 }
+
 
 
 export const placesAutocomplete = createServerFn({ method: "POST" })
