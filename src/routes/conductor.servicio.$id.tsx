@@ -40,6 +40,15 @@ interface Servicio {
   numero_orden: string | null;
   vehiculo: string | null;
   pasajero_pcd_id: string | null;
+  es_multidestino: boolean | null;
+}
+
+interface Parada {
+  id: string;
+  orden: number;
+  direccion: string;
+  hora_estimada: string | null;
+  nota: string | null;
 }
 
 interface PasajeroBrief {
