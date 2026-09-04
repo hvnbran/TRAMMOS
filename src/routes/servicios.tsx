@@ -261,6 +261,15 @@ function Servicios() {
     return placas;
   }
 
+  // Conductores con foto y placa principal para el desplegable
+  const conductoresPicker = conductoresDisponibles.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    foto_url: c.foto_url,
+    placa: placasDeConductor(c.nombre)[0]?.placa ?? null,
+  }));
+
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     const paradasValidas = paradas.filter((p) => p.direccion.trim());
