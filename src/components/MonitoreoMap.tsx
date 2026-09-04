@@ -147,9 +147,8 @@ export default function MonitoreoMap({ focusedId, onCount }: Props) {
     <div style={{ position: "relative", height: "100%", width: "100%" }}>
       <MapContainer center={MEDELLIN} zoom={12} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
         <TileLayer
-          attribution='&copy; OpenStreetMap &copy; CARTO'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          subdomains={["a", "b", "c", "d"]}
+          attribution='&copy; OpenStreetMap contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />
         {rows.map((d) => {
