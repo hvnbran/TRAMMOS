@@ -100,6 +100,15 @@ function ServicioDetalle() {
     }
     setServicio(serv as Servicio);
 
+    if ((serv as Servicio).es_multidestino) {
+      const { data: ps } = await supabase
+        .from("servicio_paradas")
+        .select("id,orden,direccion,hora_estimada,nota")
+        .eq("servicio_id", id)
+        .order("orden");
+      setParadas((ps as Parada[]) ?? []);
+    }
+
     if ((serv as Servicio).pasajero_pcd_id) {
       const { data: b } = await supabase.rpc("get_pasajero_brief_for_conductor", {
         _servicio_id: id,
