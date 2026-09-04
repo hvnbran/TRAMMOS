@@ -89,7 +89,7 @@ export const placesAutocomplete = createServerFn({ method: "POST" })
       };
     }
     if (data.sessionToken) body.sessionToken = data.sessionToken;
-    const res = await fetch(`${placesBase()}/v1/places:autocomplete`, {
+    const res = await fetch(placesUrl("places:autocomplete"), {
       method: "POST",
       headers: headers(),
       body: JSON.stringify(body),
