@@ -109,6 +109,10 @@ function Servicios() {
   const [filtro, setFiltro] = useState("Todos");
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [paradasPorServicio, setParadasPorServicio] = useState<Record<string, ParadaRow[]>>({});
+  const [editandoOrden, setEditandoOrden] = useState(false);
+  const [multidestino, setMultidestino] = useState(false);
+  const [paradas, setParadas] = useState<ParadaDraft[]>([nuevaParada(), nuevaParada()]);
 
   // ... keep existing code (form state)
   const [pasajerosPCD, setPasajerosPCD] = useState<PasajeroPCD[]>([]);
@@ -127,6 +131,9 @@ function Servicios() {
     estado: "Programado",
   });
 
+  const clienteActivo = (cliente ?? form.cliente) as "corona" | "sodimac" | "hospital_sur";
+  const usaCentroCosto = clienteActivo !== "hospital_sur";
+
   useEffect(() => {
     if (!authLoading && !role) navigate({ to: "/login" });
   }, [authLoading, role, navigate]);
@@ -137,15 +144,30 @@ function Servicios() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
+  // Consecutivo automático de orden de servicio al abrir el formulario
+  useEffect(() => {
+    if (!showForm) return;
+    let cancelado = false;
+    (async () => {
+      const { data, error } = await supabase.rpc("siguiente_orden_servicio");
+      if (!cancelado && !error && typeof data === "string") {
+        setForm((f) => ({ ...f, numero_orden: data }));
+        setEditandoOrden(false);
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [showForm]);
+
   async function load() {
     setLoading(true);
-    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes, centrosRes] = await Promise.all([
+    const [serviciosRes, conductoresRes, vehiculosRes, pcdRes, vcRes, centrosRes, paradasRes] = await Promise.all([
       supabase.from("servicios").select("*").order("fecha", { ascending: false }).order("hora", { ascending: false }),
-      supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia"),
-      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm"),
+      supabase.from("conductores").select("id,nombre,cliente,clientes,estado,vence_licencia,foto_url"),
+      supabase.from("vehiculos").select("id,placa,marca,linea,cliente,clientes,estado,vence_soat,vence_rtm,foto_url"),
       supabase.from("pasajeros_pcd").select("*").order("nombre"),
       supabase.from("vehiculo_conductores").select("conductor_id,vehiculo_id,es_principal,asignado_hasta"),
       supabase.from("centros_costo").select("codigo,origen,destino,departamento").eq("activo", true).order("codigo"),
+      supabase.from("servicio_paradas").select("*").order("orden"),
     ]);
     if (!serviciosRes.error && serviciosRes.data) setItems(serviciosRes.data as ServicioRow[]);
     if (!conductoresRes.error && conductoresRes.data) setConductoresAll(conductoresRes.data as ConductorOpt[]);
@@ -153,6 +175,13 @@ function Servicios() {
     if (!pcdRes.error && pcdRes.data) setPasajerosPCD(pcdRes.data as PasajeroPCD[]);
     if (!vcRes.error && vcRes.data) setVehConductores(vcRes.data as VehConductorRel[]);
     if (!centrosRes.error && centrosRes.data) setCentrosRutas(centrosRes.data as typeof centrosRutas);
+    if (!paradasRes.error && paradasRes.data) {
+      const mapa: Record<string, ParadaRow[]> = {};
+      for (const p of paradasRes.data as ParadaRow[]) {
+        (mapa[p.servicio_id] ??= []).push(p);
+      }
+      setParadasPorServicio(mapa);
+    }
     setLoading(false);
   }
 
