@@ -45,6 +45,9 @@ function headers() {
     return {
       "X-Goog-Api-Key": own,
       "Content-Type": "application/json",
+      // Enviamos el dominio propio como referer para que las restricciones
+      // de HTTP referrer de la llave del cliente no bloqueen llamadas server-side.
+      Referer: "https://trammos.online/",
     } as Record<string, string>;
   }
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
