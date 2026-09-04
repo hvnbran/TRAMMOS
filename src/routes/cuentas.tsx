@@ -355,18 +355,30 @@ function EmpresaTab() {
 
 function PasajeroTab() {
   const crearInv = useServerFn(crearInvitacionRegistro);
+  const { role } = useAuth();
+  const isAdmin = role === "admin";
+  const { empresas } = useEmpresas();
+  const [empresaId, setEmpresaId] = useState("");
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [expira, setExpira] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const empresasAsignables = empresas.filter((e) => e.activo && e.cliente_legacy);
+
   async function generar() {
     setLoading(true);
     setError(null);
     setLink(null);
     try {
-      const r = await crearInv({ data: { tipo: "pasajero", expires_in_hours: 168 } });
+      const r = await crearInv({
+        data: {
+          tipo: "pasajero",
+          expires_in_hours: 168,
+          ...(isAdmin && empresaId ? { empresaId } : {}),
+        },
+      });
       const url = `${window.location.origin}/r/${r.token}`;
       setLink(url);
       setExpira(r.expiresAt);
@@ -382,10 +394,32 @@ function PasajeroTab() {
       <div className="space-y-4 max-w-2xl">
         <p className="text-sm text-muted-foreground">
           Genera un enlace y envíalo al pasajero. Él mismo completa todos sus datos
-          (incluyendo discapacidad, ayudas técnicas, contacto de emergencia, etc.) y
-          elige a qué empresa pertenece. Al finalizar, queda registrado automáticamente
-          en el listado de pasajeros PcD.
+          (incluyendo discapacidad, ayudas técnicas, contacto de emergencia, etc.).
+          Al finalizar, queda registrado automáticamente en el listado de pasajeros PcD.
         </p>
+
+        {isAdmin ? (
+          <div>
+            <label className="text-xs text-muted-foreground">Empresa del pasajero</label>
+            <select
+              value={empresaId}
+              onChange={(e) => setEmpresaId(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1"
+            >
+              <option value="">— Que el pasajero la elija —</option>
+              {empresasAsignables.map((e) => (
+                <option key={e.id} value={e.id}>{e.nombre}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Si eliges una empresa, el pasajero la verá ya asignada y no podrá cambiarla.
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
+            El enlace queda asignado automáticamente a tu empresa; el pasajero no tendrá que elegirla.
+          </p>
+        )}
 
         <button onClick={generar} disabled={loading} className="btn-primary">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
@@ -393,6 +427,7 @@ function PasajeroTab() {
         </button>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+
 
         {link && (
           <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
