@@ -79,6 +79,17 @@ interface ServicioRow {
   estado: string;
   pasajero_pcd_id: string | null;
   es_multidestino: boolean | null;
+  iniciado_at: string | null;
+  finalizado_at: string | null;
+}
+
+/** ISO → valor para <input type="datetime-local"> en hora local */
+function isoToLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 interface ParadaRow {
