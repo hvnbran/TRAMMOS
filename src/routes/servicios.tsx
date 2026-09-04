@@ -352,7 +352,8 @@ function Servicios() {
   async function handleTiempoChange(id: string, campo: "iniciado_at" | "finalizado_at", local: string) {
     const iso = local ? new Date(local).toISOString() : null;
     setItems((prev) => prev.map((s) => (s.id === id ? { ...s, [campo]: iso } : s)));
-    const { error } = await supabase.from("servicios").update({ [campo]: iso }).eq("id", id);
+    const patch = campo === "iniciado_at" ? { iniciado_at: iso } : { finalizado_at: iso };
+    const { error } = await supabase.from("servicios").update(patch).eq("id", id);
     if (error) {
       alert("No se pudo guardar la hora: " + error.message);
       load();
