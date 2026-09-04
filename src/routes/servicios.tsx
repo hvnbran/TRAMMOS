@@ -737,15 +737,43 @@ function Servicios() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center gap-2 text-sm">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  <span>{s.origen}</span>
-                  <span className="text-muted-foreground">→</span>
-                  <span>{s.destino}</span>
-                </div>
+                {s.es_multidestino ? (
+                  <div className="mt-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-2">
+                      <Route className="h-3.5 w-3.5" aria-hidden="true" /> Multiservicio · {(paradasPorServicio[s.id] ?? []).length} paradas
+                    </div>
+                    <ol className="space-y-1 text-sm">
+                      {s.origen && (
+                        <li className="flex items-start gap-2 text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" aria-hidden="true" />
+                          <span>Salida: {s.origen}</span>
+                        </li>
+                      )}
+                      {(paradasPorServicio[s.id] ?? []).map((p) => (
+                        <li key={p.id} className="flex items-start gap-2">
+                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary/15 text-[10px] font-bold text-primary flex items-center justify-center">{p.orden}</span>
+                          <span>
+                            {p.direccion}
+                            {p.hora_estimada && <span className="text-xs text-muted-foreground"> · {p.hora_estimada.slice(0, 5)}</span>}
+                            {p.nota && <span className="block text-xs text-muted-foreground">{p.nota}</span>}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex items-center gap-2 text-sm">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    <span>{s.origen}</span>
+                    <span className="text-muted-foreground">→</span>
+                    <span>{s.destino}</span>
+                  </div>
+                )}
                 <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div><span className="text-muted-foreground">Pasajero</span><p className="font-medium">{s.pasajero || "—"}</p></div>
-                  <div><span className="text-muted-foreground">Centro costo</span><p className="font-medium">{s.centro_costo || "—"}</p></div>
+                  {s.cliente !== "hospital_sur" && (
+                    <div><span className="text-muted-foreground">Centro costo</span><p className="font-medium">{s.centro_costo || "—"}</p></div>
+                  )}
                   <div>
                     <label className="text-muted-foreground" htmlFor={`cond-${s.id}`}>Conductor</label>
                     <select
