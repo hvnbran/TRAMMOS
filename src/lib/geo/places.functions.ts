@@ -2,6 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
+const GOOGLE_DIRECT = "https://places.googleapis.com";
+const GOOGLE_GEOCODE = "https://maps.googleapis.com";
+
+/** Llave propia del cliente (funciona en dominios propios). Si no existe, usamos el conector de Lovable. */
+function ownKey() {
+  return process.env.GOOGLE_API_KEY || null;
+}
 
 const AutocompleteInput = z.object({
   input: z.string().min(1).max(200),
