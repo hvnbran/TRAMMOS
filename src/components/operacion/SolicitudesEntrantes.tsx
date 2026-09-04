@@ -155,6 +155,9 @@ export function SolicitudesEntrantes() {
     await load();
   }
 
+  // Bandeja vacía: no ocupar espacio en la pantalla de servicios.
+  if (!loading && rows.length === 0 && !error) return null;
+
   return (
     <section
       aria-labelledby="solicitudes-entrantes-title"
