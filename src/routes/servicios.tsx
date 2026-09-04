@@ -28,6 +28,7 @@ interface ConductorOpt {
   clientes: ("corona" | "sodimac" | "hospital_sur")[] | null;
   estado: string;
   vence_licencia: string | null;
+  foto_url: string | null;
 }
 
 interface VehiculoOpt {
@@ -40,6 +41,7 @@ interface VehiculoOpt {
   estado: string;
   vence_soat: string | null;
   vence_rtm: string | null;
+  foto_url: string | null;
 }
 
 interface VehConductorRel {
