@@ -740,7 +740,7 @@ function Servicios() {
                 {s.es_multidestino ? (
                   <div className="mt-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-2">
-                      <Route className="h-3.5 w-3.5" aria-hidden="true" /> Multiservicio · {(paradasPorServicio[s.id] ?? []).length} paradas
+                      <RouteIcon className="h-3.5 w-3.5" aria-hidden="true" /> Multiservicio · {(paradasPorServicio[s.id] ?? []).length} paradas
                     </div>
                     <ol className="space-y-1 text-sm">
                       {s.origen && (
