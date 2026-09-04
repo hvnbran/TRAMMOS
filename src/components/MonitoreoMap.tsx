@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import { supabase } from "@/integrations/supabase/client";
 
 const MEDELLIN: [number, number] = [6.2442, -75.5812];
-const STALE_MS = 60_000; // 60s sin update => offline
+const STALE_MS = 180_000; // 3 min sin update => offline (el latido llega cada 30s)
 
 export interface ConductorLive {
   conductor_id: string;
