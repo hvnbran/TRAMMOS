@@ -90,6 +90,7 @@ function ServicioDetalle() {
   const navigate = useNavigate();
   const [servicio, setServicio] = useState<Servicio | null>(null);
   const [brief, setBrief] = useState<PasajeroBrief | null>(null);
+  const [paradas, setParadas] = useState<Parada[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
