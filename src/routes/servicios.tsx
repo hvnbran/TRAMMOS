@@ -849,6 +849,30 @@ function Servicios() {
                   </div>
                 </div>
 
+                {/* Horas reales de inicio y finalización (editables) */}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-border pt-3 text-xs">
+                  <div>
+                    <label className="text-muted-foreground" htmlFor={`ini-${s.id}`}>Inició (real)</label>
+                    <input
+                      id={`ini-${s.id}`}
+                      type="datetime-local"
+                      value={isoToLocalInput(s.iniciado_at)}
+                      onChange={(e) => handleTiempoChange(s.id, "iniciado_at", e.target.value)}
+                      className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs hover:border-primary/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-muted-foreground" htmlFor={`fin-${s.id}`}>Terminó (real)</label>
+                    <input
+                      id={`fin-${s.id}`}
+                      type="datetime-local"
+                      value={isoToLocalInput(s.finalizado_at)}
+                      onChange={(e) => handleTiempoChange(s.id, "finalizado_at", e.target.value)}
+                      className="mt-0.5 w-full rounded-md border border-input bg-background px-2 py-1 text-xs hover:border-primary/50"
+                    />
+                  </div>
+                </div>
+
                 {s.pasajero_pcd_id && (() => {
                   const pcd = pasajerosPCD.find((p) => p.id === s.pasajero_pcd_id);
                   if (!pcd) return null;
