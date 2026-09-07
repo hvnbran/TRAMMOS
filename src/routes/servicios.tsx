@@ -148,6 +148,28 @@ function Servicios() {
   const clienteActivo = (cliente ?? form.cliente) as "corona" | "sodimac" | "hospital_sur";
   const usaCentroCosto = clienteActivo !== "hospital_sur";
 
+  // Sedes de la empresa (Hospital del Sur no usa centros de costo, así que las
+  // sugerencias de dirección vienen de sus sedes).
+  const [sedes, setSedes] = useState<{ nombre: string; direccion: string }[]>([]);
+  useEffect(() => {
+    if (clienteActivo !== "hospital_sur") { setSedes([]); return; }
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("empresas")
+        .select("id, empresa_sedes(nombre, direccion, orden, activo)")
+        .eq("slug", "hospital-sur-itagui")
+        .maybeSingle();
+      const list = (((data as unknown) as { empresa_sedes?: { nombre: string; direccion: string; orden: number; activo: boolean }[] } | null)?.empresa_sedes ?? [])
+        .filter((s) => s.activo)
+        .sort((a, b) => a.orden - b.orden)
+        .map(({ nombre, direccion }) => ({ nombre, direccion }));
+      if (mounted) setSedes(list);
+    })();
+    return () => { mounted = false; };
+  }, [clienteActivo]);
+
+
   useEffect(() => {
     if (!authLoading && !role) navigate({ to: "/login" });
   }, [authLoading, role, navigate]);
