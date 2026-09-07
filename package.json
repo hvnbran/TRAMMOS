@@ -9,7 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "apk:sync": "cap sync android",
+    "apk:build": "cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",

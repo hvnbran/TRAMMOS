@@ -134,7 +134,6 @@ export async function sendFcmToTokens(tokens: string[], msg: FcmMessage): Promis
             android: {
               priority: "HIGH",
               notification: {
-                channel_id: "servicios",
                 sound: "default",
                 default_vibrate_timings: true,
               },
