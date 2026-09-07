@@ -1,0 +1,52 @@
+name: APK TRAMMOS Conductor
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "apk-v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Instalar dependencias
+        run: bun install --frozen-lockfile
+
+      - name: Credenciales de Firebase (notificaciones)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          else
+            echo "Sin google-services.json: el APK se compila sin notificaciones."
+          fi
+
+      - name: Sincronizar proyecto Android
+        run: bunx cap sync android
+
+      - name: Compilar APK
+        working-directory: android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: trammos-conductor-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

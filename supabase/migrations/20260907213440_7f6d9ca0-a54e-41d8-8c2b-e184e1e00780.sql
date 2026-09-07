@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.enqueue_push_on_servicio_asignado() FROM PUBLIC, anon, authenticated;

@@ -187,6 +187,39 @@ export type Database = {
           },
         ]
       }
+      conductor_push_tokens: {
+        Row: {
+          created_at: string
+          device_model: string | null
+          id: string
+          last_seen_at: string
+          plataforma: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_model?: string | null
+          id?: string
+          last_seen_at?: string
+          plataforma?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_model?: string | null
+          id?: string
+          last_seen_at?: string
+          plataforma?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conductor_ubicaciones: {
         Row: {
           accuracy: number | null
@@ -1466,6 +1499,8 @@ export type Database = {
           body: string
           created_at: string
           data: Json | null
+          fcm_sent_at: string | null
+          fcm_status: string | null
           id: string
           last_error: string | null
           sent_at: string | null
@@ -1480,6 +1515,8 @@ export type Database = {
           body: string
           created_at?: string
           data?: Json | null
+          fcm_sent_at?: string | null
+          fcm_status?: string | null
           id?: string
           last_error?: string | null
           sent_at?: string | null
@@ -1494,6 +1531,8 @@ export type Database = {
           body?: string
           created_at?: string
           data?: Json | null
+          fcm_sent_at?: string | null
+          fcm_status?: string | null
           id?: string
           last_error?: string | null
           sent_at?: string | null

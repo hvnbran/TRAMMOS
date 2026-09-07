@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertUbicacion, setOffline } from "@/lib/gps/ubicacion.functions";
 import { MapPin, MapPinOff, Loader2, AlertTriangle } from "lucide-react";
+import { BackgroundGeolocation, isNativeApp } from "@/lib/native/native";
 
 type Estado = "offline" | "starting" | "online" | "denied" | "unsupported" | "error";
 
@@ -18,6 +19,10 @@ function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: 
   return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
+// Se guarda fuera del componente para que el rastreo del APK siga activo
+// aunque el conductor navegue a otra pantalla dentro de la app.
+let nativeWatcherId: string | null = null;
+
 export function ShareLocationToggle() {
   const upsert = useServerFn(upsertUbicacion);
   const offline = useServerFn(setOffline);
@@ -29,11 +34,59 @@ export function ShareLocationToggle() {
   const lastPosRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const sendingRef = useRef(false);
+  const esApp = isNativeApp();
+
+  const enviarPosicion = useCallback(
+    async (p: {
+      lat: number;
+      lng: number;
+      accuracy: number | null;
+      speed: number | null;
+      heading: number | null;
+    }) => {
+      const now = Date.now();
+      const last = lastPosRef.current;
+      if (last) {
+        const dt = now - last.at;
+        const dist = distanceMeters(last, { lat: p.lat, lng: p.lng });
+        if (dt < MIN_INTERVAL_MS && dist < MIN_DISTANCE_M) return;
+      }
+      if (sendingRef.current) return;
+      sendingRef.current = true;
+      try {
+        await upsert({
+          data: {
+            lat: p.lat,
+            lng: p.lng,
+            accuracy: p.accuracy,
+            speed_kmh: p.speed != null && p.speed >= 0 ? p.speed * 3.6 : null,
+            heading:
+              p.heading != null && p.heading >= 0 && !Number.isNaN(p.heading) ? p.heading : null,
+          },
+        });
+        lastPosRef.current = { lat: p.lat, lng: p.lng, at: now };
+        setLastSentAt(now);
+        setEstado("online");
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "Error de red");
+        setEstado("error");
+      } finally {
+        sendingRef.current = false;
+      }
+    },
+    [upsert],
+  );
 
   const stop = useCallback(async () => {
     if (watchIdRef.current != null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
+    }
+    if (nativeWatcherId) {
+      try {
+        await BackgroundGeolocation.removeWatcher({ id: nativeWatcherId });
+      } catch { /* ignore */ }
+      nativeWatcherId = null;
     }
     if (wakeLockRef.current) {
       try { await wakeLockRef.current.release(); } catch { /* ignore */ }
@@ -45,12 +98,52 @@ export function ShareLocationToggle() {
   }, [offline]);
 
   const start = useCallback(async () => {
+    setErrorMsg(null);
+
+    // Dentro del APK: rastreo continuo aunque la pantalla esté apagada.
+    if (esApp) {
+      setEstado("starting");
+      try {
+        const id = await BackgroundGeolocation.addWatcher(
+          {
+            backgroundTitle: "TRAMMOS Conductor en servicio",
+            backgroundMessage: "Tu ubicación se comparte con la central mientras estés en línea.",
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: MIN_DISTANCE_M,
+          },
+          (position, error) => {
+            if (error) {
+              if (error.code === "NOT_AUTHORIZED") setEstado("denied");
+              else {
+                setErrorMsg(error.message);
+                setEstado("error");
+              }
+              return;
+            }
+            if (!position) return;
+            void enviarPosicion({
+              lat: position.latitude,
+              lng: position.longitude,
+              accuracy: position.accuracy ?? null,
+              speed: position.speed ?? null,
+              heading: position.bearing ?? null,
+            });
+          },
+        );
+        nativeWatcherId = id;
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "No pudimos iniciar el GPS");
+        setEstado("error");
+      }
+      return;
+    }
+
     if (!("geolocation" in navigator)) {
       setEstado("unsupported");
       return;
     }
     setEstado("starting");
-    setErrorMsg(null);
 
     // Wake Lock para que la pantalla no se duerma (opcional)
     try {
@@ -60,39 +153,15 @@ export function ShareLocationToggle() {
     } catch { /* permiso opcional */ }
 
     const id = navigator.geolocation.watchPosition(
-      async (pos) => {
+      (pos) => {
         const { latitude, longitude, accuracy, speed, heading } = pos.coords;
-        const now = Date.now();
-        const last = lastPosRef.current;
-
-        // Throttle: solo enviamos cada 5s O si nos movimos > 8m
-        if (last) {
-          const dt = now - last.at;
-          const dist = distanceMeters(last, { lat: latitude, lng: longitude });
-          if (dt < MIN_INTERVAL_MS && dist < MIN_DISTANCE_M) return;
-        }
-
-        if (sendingRef.current) return;
-        sendingRef.current = true;
-        try {
-          await upsert({
-            data: {
-              lat: latitude,
-              lng: longitude,
-              accuracy: accuracy ?? null,
-              speed_kmh: speed != null && speed >= 0 ? speed * 3.6 : null,
-              heading: heading != null && heading >= 0 && !Number.isNaN(heading) ? heading : null,
-            },
-          });
-          lastPosRef.current = { lat: latitude, lng: longitude, at: now };
-          setLastSentAt(now);
-          setEstado("online");
-        } catch (err) {
-          setErrorMsg(err instanceof Error ? err.message : "Error de red");
-          setEstado("error");
-        } finally {
-          sendingRef.current = false;
-        }
+        void enviarPosicion({
+          lat: latitude,
+          lng: longitude,
+          accuracy: accuracy ?? null,
+          speed: speed ?? null,
+          heading: heading ?? null,
+        });
       },
       (err) => {
         setErrorMsg(err.message);
@@ -101,7 +170,7 @@ export function ShareLocationToggle() {
       { enableHighAccuracy: true, maximumAge: 4_000, timeout: 20_000 },
     );
     watchIdRef.current = id;
-  }, [upsert]);
+  }, [esApp, enviarPosicion]);
 
   // Latido: si el conductor está quieto el GPS deja de reportar, así que
   // reenviamos la última posición cada 30s para que no aparezca "offline".
@@ -122,6 +191,11 @@ export function ShareLocationToggle() {
   // Cleanup al desmontar / cerrar pestaña
 
   useEffect(() => {
+    // En el APK el rastreo sigue en segundo plano: no lo apagamos solo.
+    if (esApp) {
+      if (nativeWatcherId) setEstado("online");
+      return;
+    }
     const handleUnload = () => {
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
       // intento best-effort: no podemos await aquí
@@ -133,7 +207,7 @@ export function ShareLocationToggle() {
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
       if (wakeLockRef.current) { void wakeLockRef.current.release().catch(() => {}); }
     };
-  }, [offline]);
+  }, [offline, esApp]);
 
   // Re-adquirir wake lock al volver de background
   useEffect(() => {
@@ -176,7 +250,11 @@ export function ShareLocationToggle() {
             </h2>
           </div>
           <p className="text-[12px] text-muted-foreground mt-1">
-            {estado === "online" &&
+            {estado === "online" && esApp &&
+              `Tu ubicación se comparte incluso con la pantalla apagada. ${
+                lastSentAt ? `Última actualización: ${new Date(lastSentAt).toLocaleTimeString("es-CO")}` : ""
+              }`}
+            {estado === "online" && !esApp &&
               `Los administradores y tus pasajeros pueden ver tu ubicación en tiempo real. ${
                 lastSentAt ? `Última actualización: ${new Date(lastSentAt).toLocaleTimeString("es-CO")}` : ""
               }`}

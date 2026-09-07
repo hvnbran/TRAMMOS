@@ -10,8 +10,13 @@ const InstallAppBanner = lazy(() =>
 const PushNotificationsToggle = lazy(() =>
   import("@/components/conductor/PushNotificationsToggle").then((m) => ({ default: m.PushNotificationsToggle })),
 );
+import { isNativeApp } from "@/lib/native/native";
+
 const ShareLocationToggle = lazy(() =>
   import("@/components/conductor/ShareLocationToggle").then((m) => ({ default: m.ShareLocationToggle })),
+);
+const NativePushRegistrar = lazy(() =>
+  import("@/components/conductor/NativePushRegistrar").then((m) => ({ default: m.NativePushRegistrar })),
 );
 const ServiciosFijosHoy = lazy(() =>
   import("@/components/conductor/ServiciosFijosHoy").then((m) => ({ default: m.ServiciosFijosHoy })),
@@ -96,8 +101,14 @@ function ConductorHome() {
         <div className="space-y-6">
           <Suspense fallback={null}>
             <ShareLocationToggle />
-            {userId && <PushNotificationsToggle userId={userId} />}
-            <InstallAppBanner />
+            {isNativeApp() ? (
+              <NativePushRegistrar />
+            ) : (
+              <>
+                {userId && <PushNotificationsToggle userId={userId} />}
+                <InstallAppBanner />
+              </>
+            )}
           </Suspense>
           <Suspense fallback={null}>
             <ServiciosFijosHoy />
