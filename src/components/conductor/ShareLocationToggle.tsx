@@ -19,6 +19,10 @@ function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: 
   return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
+// Se guarda fuera del componente para que el rastreo del APK siga activo
+// aunque el conductor navegue a otra pantalla dentro de la app.
+let nativeWatcherId: string | null = null;
+
 export function ShareLocationToggle() {
   const upsert = useServerFn(upsertUbicacion);
   const offline = useServerFn(setOffline);
@@ -27,7 +31,6 @@ export function ShareLocationToggle() {
   const [lastSentAt, setLastSentAt] = useState<number | null>(null);
 
   const watchIdRef = useRef<number | null>(null);
-  const nativeWatcherRef = useRef<string | null>(null);
   const lastPosRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const sendingRef = useRef(false);
@@ -79,11 +82,11 @@ export function ShareLocationToggle() {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
-    if (nativeWatcherRef.current) {
+    if (nativeWatcherId) {
       try {
-        await BackgroundGeolocation.removeWatcher({ id: nativeWatcherRef.current });
+        await BackgroundGeolocation.removeWatcher({ id: nativeWatcherId });
       } catch { /* ignore */ }
-      nativeWatcherRef.current = null;
+      nativeWatcherId = null;
     }
     if (wakeLockRef.current) {
       try { await wakeLockRef.current.release(); } catch { /* ignore */ }
@@ -128,7 +131,7 @@ export function ShareLocationToggle() {
             });
           },
         );
-        nativeWatcherRef.current = id;
+        nativeWatcherId = id;
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : "No pudimos iniciar el GPS");
         setEstado("error");
@@ -188,6 +191,11 @@ export function ShareLocationToggle() {
   // Cleanup al desmontar / cerrar pestaña
 
   useEffect(() => {
+    // En el APK el rastreo sigue en segundo plano: no lo apagamos solo.
+    if (esApp) {
+      if (nativeWatcherId) setEstado("online");
+      return;
+    }
     const handleUnload = () => {
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
       // intento best-effort: no podemos await aquí
@@ -199,7 +207,7 @@ export function ShareLocationToggle() {
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
       if (wakeLockRef.current) { void wakeLockRef.current.release().catch(() => {}); }
     };
-  }, [offline]);
+  }, [offline, esApp]);
 
   // Re-adquirir wake lock al volver de background
   useEffect(() => {
@@ -242,7 +250,11 @@ export function ShareLocationToggle() {
             </h2>
           </div>
           <p className="text-[12px] text-muted-foreground mt-1">
-            {estado === "online" &&
+            {estado === "online" && esApp &&
+              `Tu ubicación se comparte incluso con la pantalla apagada. ${
+                lastSentAt ? `Última actualización: ${new Date(lastSentAt).toLocaleTimeString("es-CO")}` : ""
+              }`}
+            {estado === "online" && !esApp &&
               `Los administradores y tus pasajeros pueden ver tu ubicación en tiempo real. ${
                 lastSentAt ? `Última actualización: ${new Date(lastSentAt).toLocaleTimeString("es-CO")}` : ""
               }`}
