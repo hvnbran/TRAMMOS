@@ -27,8 +27,14 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Credenciales de Firebase (notificaciones)
-        if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
-        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          else
+            echo "Sin google-services.json: el APK se compila sin notificaciones."
+          fi
 
       - name: Sincronizar proyecto Android
         run: bunx cap sync android
