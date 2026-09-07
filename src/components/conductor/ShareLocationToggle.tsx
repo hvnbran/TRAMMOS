@@ -150,39 +150,15 @@ export function ShareLocationToggle() {
     } catch { /* permiso opcional */ }
 
     const id = navigator.geolocation.watchPosition(
-      async (pos) => {
+      (pos) => {
         const { latitude, longitude, accuracy, speed, heading } = pos.coords;
-        const now = Date.now();
-        const last = lastPosRef.current;
-
-        // Throttle: solo enviamos cada 5s O si nos movimos > 8m
-        if (last) {
-          const dt = now - last.at;
-          const dist = distanceMeters(last, { lat: latitude, lng: longitude });
-          if (dt < MIN_INTERVAL_MS && dist < MIN_DISTANCE_M) return;
-        }
-
-        if (sendingRef.current) return;
-        sendingRef.current = true;
-        try {
-          await upsert({
-            data: {
-              lat: latitude,
-              lng: longitude,
-              accuracy: accuracy ?? null,
-              speed_kmh: speed != null && speed >= 0 ? speed * 3.6 : null,
-              heading: heading != null && heading >= 0 && !Number.isNaN(heading) ? heading : null,
-            },
-          });
-          lastPosRef.current = { lat: latitude, lng: longitude, at: now };
-          setLastSentAt(now);
-          setEstado("online");
-        } catch (err) {
-          setErrorMsg(err instanceof Error ? err.message : "Error de red");
-          setEstado("error");
-        } finally {
-          sendingRef.current = false;
-        }
+        void enviarPosicion({
+          lat: latitude,
+          lng: longitude,
+          accuracy: accuracy ?? null,
+          speed: speed ?? null,
+          heading: heading ?? null,
+        });
       },
       (err) => {
         setErrorMsg(err.message);
@@ -191,7 +167,7 @@ export function ShareLocationToggle() {
       { enableHighAccuracy: true, maximumAge: 4_000, timeout: 20_000 },
     );
     watchIdRef.current = id;
-  }, [upsert]);
+  }, [esApp, enviarPosicion]);
 
   // Latido: si el conductor está quieto el GPS deja de reportar, así que
   // reenviamos la última posición cada 30s para que no aparezca "offline".
