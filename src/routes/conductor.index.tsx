@@ -10,6 +10,8 @@ const InstallAppBanner = lazy(() =>
 const PushNotificationsToggle = lazy(() =>
   import("@/components/conductor/PushNotificationsToggle").then((m) => ({ default: m.PushNotificationsToggle })),
 );
+import { isNativeApp } from "@/lib/native/native";
+
 const ShareLocationToggle = lazy(() =>
   import("@/components/conductor/ShareLocationToggle").then((m) => ({ default: m.ShareLocationToggle })),
 );
