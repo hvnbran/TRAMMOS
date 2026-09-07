@@ -223,7 +223,7 @@ function LoginPage() {
                   autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin, corona, sodimac o tu@correo.com"
+                  placeholder="tu@correo.com"
                   className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                   required
                   disabled={submitting}
