@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { upsertUbicacion, setOffline } from "@/lib/gps/ubicacion.functions";
 import { MapPin, MapPinOff, Loader2, AlertTriangle } from "lucide-react";
+import { BackgroundGeolocation, isNativeApp } from "@/lib/native/native";
 
 type Estado = "offline" | "starting" | "online" | "denied" | "unsupported" | "error";
 
@@ -26,14 +27,63 @@ export function ShareLocationToggle() {
   const [lastSentAt, setLastSentAt] = useState<number | null>(null);
 
   const watchIdRef = useRef<number | null>(null);
+  const nativeWatcherRef = useRef<string | null>(null);
   const lastPosRef = useRef<{ lat: number; lng: number; at: number } | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const sendingRef = useRef(false);
+  const esApp = isNativeApp();
+
+  const enviarPosicion = useCallback(
+    async (p: {
+      lat: number;
+      lng: number;
+      accuracy: number | null;
+      speed: number | null;
+      heading: number | null;
+    }) => {
+      const now = Date.now();
+      const last = lastPosRef.current;
+      if (last) {
+        const dt = now - last.at;
+        const dist = distanceMeters(last, { lat: p.lat, lng: p.lng });
+        if (dt < MIN_INTERVAL_MS && dist < MIN_DISTANCE_M) return;
+      }
+      if (sendingRef.current) return;
+      sendingRef.current = true;
+      try {
+        await upsert({
+          data: {
+            lat: p.lat,
+            lng: p.lng,
+            accuracy: p.accuracy,
+            speed_kmh: p.speed != null && p.speed >= 0 ? p.speed * 3.6 : null,
+            heading:
+              p.heading != null && p.heading >= 0 && !Number.isNaN(p.heading) ? p.heading : null,
+          },
+        });
+        lastPosRef.current = { lat: p.lat, lng: p.lng, at: now };
+        setLastSentAt(now);
+        setEstado("online");
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "Error de red");
+        setEstado("error");
+      } finally {
+        sendingRef.current = false;
+      }
+    },
+    [upsert],
+  );
 
   const stop = useCallback(async () => {
     if (watchIdRef.current != null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
+    }
+    if (nativeWatcherRef.current) {
+      try {
+        await BackgroundGeolocation.removeWatcher({ id: nativeWatcherRef.current });
+      } catch { /* ignore */ }
+      nativeWatcherRef.current = null;
     }
     if (wakeLockRef.current) {
       try { await wakeLockRef.current.release(); } catch { /* ignore */ }
@@ -45,12 +95,52 @@ export function ShareLocationToggle() {
   }, [offline]);
 
   const start = useCallback(async () => {
+    setErrorMsg(null);
+
+    // Dentro del APK: rastreo continuo aunque la pantalla esté apagada.
+    if (esApp) {
+      setEstado("starting");
+      try {
+        const id = await BackgroundGeolocation.addWatcher(
+          {
+            backgroundTitle: "TRAMMOS Conductor en servicio",
+            backgroundMessage: "Tu ubicación se comparte con la central mientras estés en línea.",
+            requestPermissions: true,
+            stale: false,
+            distanceFilter: MIN_DISTANCE_M,
+          },
+          (position, error) => {
+            if (error) {
+              if (error.code === "NOT_AUTHORIZED") setEstado("denied");
+              else {
+                setErrorMsg(error.message);
+                setEstado("error");
+              }
+              return;
+            }
+            if (!position) return;
+            void enviarPosicion({
+              lat: position.latitude,
+              lng: position.longitude,
+              accuracy: position.accuracy ?? null,
+              speed: position.speed ?? null,
+              heading: position.bearing ?? null,
+            });
+          },
+        );
+        nativeWatcherRef.current = id;
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "No pudimos iniciar el GPS");
+        setEstado("error");
+      }
+      return;
+    }
+
     if (!("geolocation" in navigator)) {
       setEstado("unsupported");
       return;
     }
     setEstado("starting");
-    setErrorMsg(null);
 
     // Wake Lock para que la pantalla no se duerma (opcional)
     try {
