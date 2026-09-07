@@ -148,6 +148,28 @@ function Servicios() {
   const clienteActivo = (cliente ?? form.cliente) as "corona" | "sodimac" | "hospital_sur";
   const usaCentroCosto = clienteActivo !== "hospital_sur";
 
+  // Sedes de la empresa (Hospital del Sur no usa centros de costo, así que las
+  // sugerencias de dirección vienen de sus sedes).
+  const [sedes, setSedes] = useState<{ nombre: string; direccion: string }[]>([]);
+  useEffect(() => {
+    if (clienteActivo !== "hospital_sur") { setSedes([]); return; }
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase
+        .from("empresas")
+        .select("id, empresa_sedes(nombre, direccion, orden, activo)")
+        .eq("slug", "hospital-sur-itagui")
+        .maybeSingle();
+      const list = (((data as unknown) as { empresa_sedes?: { nombre: string; direccion: string; orden: number; activo: boolean }[] } | null)?.empresa_sedes ?? [])
+        .filter((s) => s.activo)
+        .sort((a, b) => a.orden - b.orden)
+        .map(({ nombre, direccion }) => ({ nombre, direccion }));
+      if (mounted) setSedes(list);
+    })();
+    return () => { mounted = false; };
+  }, [clienteActivo]);
+
+
   useEffect(() => {
     if (!authLoading && !role) navigate({ to: "/login" });
   }, [authLoading, role, navigate]);
@@ -228,29 +250,67 @@ function Servicios() {
     );
   }, [vehiculosAll, cliente, form.cliente]);
 
+  // Sedes de la empresa + direcciones usadas recientemente en servicios propios.
+  const sugerenciasSedes: ExtraSuggestion[] = useMemo(
+    () => sedes.map((s) => ({ label: s.direccion, sublabel: s.nombre, group: "Sedes" })),
+    [sedes],
+  );
+
+  function frecuentes(campo: "origen" | "destino", excluir: Set<string>): ExtraSuggestion[] {
+    const conteo = new Map<string, { label: string; n: number }>();
+    for (const s of items) {
+      const v = (s[campo] ?? "").trim();
+      if (!v) continue;
+      const key = v.toLowerCase();
+      if (excluir.has(key)) continue;
+      const prev = conteo.get(key);
+      if (prev) prev.n += 1;
+      else conteo.set(key, { label: v, n: 1 });
+    }
+    return [...conteo.values()]
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 8)
+      .map((e) => ({ label: e.label, sublabel: "Usada anteriormente", group: "Direcciones frecuentes" }));
+  }
+
   const sugerenciasOrigen: ExtraSuggestion[] = useMemo(() => {
     const seen = new Set<string>();
     const out: ExtraSuggestion[] = [];
+    for (const s of sugerenciasSedes) {
+      const key = s.label.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(s);
+    }
     for (const r of centrosRutas) {
       const key = r.origen.trim().toLowerCase();
       if (!key || seen.has(key)) continue;
       seen.add(key);
       out.push({ label: r.origen, sublabel: [r.codigo, r.departamento].filter(Boolean).join(" · "), group: "Rutas de Operación" });
     }
-    return out;
-  }, [centrosRutas]);
+    return [...out, ...frecuentes("origen", seen)];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centrosRutas, sugerenciasSedes, items]);
 
   const sugerenciasDestino: ExtraSuggestion[] = useMemo(() => {
     const seen = new Set<string>();
     const out: ExtraSuggestion[] = [];
+    for (const s of sugerenciasSedes) {
+      const key = s.label.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(s);
+    }
     for (const r of centrosRutas) {
       const key = r.destino.trim().toLowerCase();
       if (!key || seen.has(key)) continue;
       seen.add(key);
       out.push({ label: r.destino, sublabel: [r.codigo, r.departamento].filter(Boolean).join(" · "), group: "Rutas de Operación" });
     }
-    return out;
-  }, [centrosRutas]);
+    return [...out, ...frecuentes("destino", seen)];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centrosRutas, sugerenciasSedes, items]);
+
 
   // Devuelve las placas asignadas al conductor (por nombre), principal primero,
   // filtradas por las disponibles (cliente, estado, SOAT/RTM vigentes).
