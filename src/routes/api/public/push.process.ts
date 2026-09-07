@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import webpush from "web-push";
+import { sendFcmToTokens } from "@/lib/push/fcm.server";
 
 const VAPID_PUBLIC_KEY =
   "BPHM1WJuxn1upkUUEfbd56vqpJ-UnCisfB7E5EbMP8qus0ffFyhQI1HMS3ejYmekqtqcA-YLl8Tmnh8fExIcg_Q";
@@ -73,12 +74,19 @@ async function processQueue(maxItems = 20) {
       .maybeSingle();
     if (!claim) continue;
 
-    const { data: subs, error: subsErr } = await supabaseAdmin
+    const { data: subs } = await supabaseAdmin
       .from("push_subscriptions")
       .select("id,endpoint,p256dh,auth")
       .eq("user_id", item.user_id);
 
-    if (subsErr || !subs || subs.length === 0) {
+    const { data: nativeTokens } = await supabaseAdmin
+      .from("conductor_push_tokens")
+      .select("token")
+      .eq("user_id", item.user_id);
+
+    const tokens = (nativeTokens ?? []).map((t: { token: string }) => t.token);
+
+    if ((!subs || subs.length === 0) && tokens.length === 0) {
       await supabaseAdmin
         .from("push_notifications_queue")
         .update({ status: "no_subscription", sent_at: new Date().toISOString() })
@@ -99,7 +107,7 @@ async function processQueue(maxItems = 20) {
     const expiredEndpoints: string[] = [];
     let lastError: string | null = null;
 
-    for (const sub of subs as SubscriptionRow[]) {
+    for (const sub of (subs ?? []) as SubscriptionRow[]) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
@@ -117,6 +125,35 @@ async function processQueue(maxItems = 20) {
       }
     }
 
+    // App instalada (APK Android) — notificación nativa vía FCM
+    let fcmStatus: string | null = null;
+    if (tokens.length > 0) {
+      try {
+        const fcm = await sendFcmToTokens(tokens, {
+          title: item.title,
+          body: item.body,
+          url: item.url,
+          data: item.data,
+        });
+        if (!fcm.configured) {
+          fcmStatus = "no_configurado";
+        } else {
+          fcmStatus = fcm.sent > 0 ? `enviado:${fcm.sent}` : "fallido";
+          if (fcm.sent > 0) anySent = true;
+          if (fcm.lastError) lastError = fcm.lastError;
+          if (fcm.invalidTokens.length > 0) {
+            await supabaseAdmin
+              .from("conductor_push_tokens")
+              .delete()
+              .in("token", fcm.invalidTokens);
+          }
+        }
+      } catch (e) {
+        fcmStatus = "error";
+        lastError = e instanceof Error ? e.message : "fcm_error";
+      }
+    }
+
     if (expiredEndpoints.length > 0) {
       await supabaseAdmin
         .from("push_subscriptions")
@@ -130,6 +167,8 @@ async function processQueue(maxItems = 20) {
         status: anySent ? "sent" : "failed",
         sent_at: anySent ? new Date().toISOString() : null,
         last_error: anySent ? null : lastError,
+        fcm_status: fcmStatus,
+        fcm_sent_at: fcmStatus?.startsWith("enviado") ? new Date().toISOString() : null,
       })
       .eq("id", item.id);
 
