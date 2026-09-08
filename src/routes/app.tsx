@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Download, Loader2, ShieldCheck, Bell, MapPin, Globe } from "lucide-react";
 import logo from "@/assets/logo-trammos.png";
-import { getApkInfo } from "@/lib/app-conductor/apk.functions";
+import { getApkInfo, type ApkInfo } from "@/lib/app-conductor/apk.functions";
 
 export const Route = createFileRoute("/app")({
   component: DescargarApp,
