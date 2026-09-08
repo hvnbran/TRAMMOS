@@ -318,6 +318,63 @@ export function GenerarAccesoConductor({
                 </div>
               </>
             )}
+
+            {esAdmin && (
+              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                  <Smartphone className="h-3.5 w-3.5 text-primary" /> Instalable Android
+                </p>
+
+                {apkLoading ? (
+                  <p className="text-[11px] text-muted-foreground">Consultando…</p>
+                ) : apk ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Versión actual
+                    {apk.size ? ` · ${(apk.size / 1024 / 1024).toFixed(1)} MB` : ""}
+                    {apk.updated ? ` · subida el ${new Date(apk.updated).toLocaleDateString("es-CO")}` : ""}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">Todavía no has subido el instalable.</p>
+                )}
+
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".apk,application/vnd.android.package-archive"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) subirApk(f);
+                    e.target.value = "";
+                  }}
+                />
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={subiendo}
+                    className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border bg-card hover:bg-secondary disabled:opacity-50"
+                  >
+                    {subiendo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    {apk ? "Subir versión nueva" : "Subir archivo .apk"}
+                  </button>
+                  {apk && (
+                    <button
+                      onClick={descargarApk}
+                      className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border bg-card hover:bg-secondary"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Descargar y comprobar
+                    </button>
+                  )}
+                </div>
+
+                {apkError && <p className="text-[11px] text-destructive">{apkError}</p>}
+                <p className="text-[11px] text-muted-foreground">
+                  Los conductores lo instalan desde <strong>trammos.online/app</strong> (ese enlace va incluido en
+                  el mensaje de WhatsApp).
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
