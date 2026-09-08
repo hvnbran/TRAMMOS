@@ -152,9 +152,9 @@ function AuthGate() {
     if (user && role && role !== "conductor" && isConductorRoute && !isConductorLoginRoute) {
       navigate({ to: "/", replace: true });
     }
-  }, [user, loading, role, isLoginRoute, isLegalRoute, isPasajeroRoute, isConductorRoute, isConductorLoginRoute, navigate]);
+  }, [user, loading, role, isLoginRoute, isLegalRoute, isPasajeroRoute, isConductorRoute, isConductorLoginRoute, isDescargaRoute, navigate]);
 
-  if (loading && !isLegalRoute && !isConductorLoginRoute) {
+  if (loading && !isLegalRoute && !isConductorLoginRoute && !isDescargaRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -162,7 +162,7 @@ function AuthGate() {
     );
   }
 
-  if (!user && !isLoginRoute && !isLegalRoute && !isConductorLoginRoute) {
+  if (!user && !isLoginRoute && !isLegalRoute && !isConductorLoginRoute && !isDescargaRoute) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
