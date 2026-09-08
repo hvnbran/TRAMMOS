@@ -40,6 +40,63 @@ export function GenerarAccesoConductor({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<"pwd" | "msg" | null>(null);
 
+  const { role } = useAuth();
+  const esAdmin = role === "admin";
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [apk, setApk] = useState<{ size: number | null; updated: string | null } | null>(null);
+  const [apkLoading, setApkLoading] = useState(false);
+  const [apkError, setApkError] = useState<string | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+
+  async function cargarApk() {
+    setApkLoading(true);
+    const { data } = await supabase.storage.from(BUCKET).list("", { limit: 100 });
+    const f = data?.find((x) => x.name === APK_FILE);
+    setApk(
+      f
+        ? {
+            size: (f.metadata as { size?: number } | null)?.size ?? null,
+            updated: f.updated_at ?? f.created_at ?? null,
+          }
+        : null,
+    );
+    setApkLoading(false);
+  }
+
+  useEffect(() => {
+    if (open && esAdmin) cargarApk();
+  }, [open, esAdmin]);
+
+  async function subirApk(file: File) {
+    setApkError(null);
+    if (!file.name.toLowerCase().endsWith(".apk")) {
+      setApkError("El archivo debe terminar en .apk");
+      return;
+    }
+    setSubiendo(true);
+    const { error: err } = await supabase.storage
+      .from(BUCKET)
+      .upload(APK_FILE, file, { upsert: true, contentType: "application/vnd.android.package-archive" });
+    setSubiendo(false);
+    if (err) {
+      setApkError(err.message);
+      return;
+    }
+    await cargarApk();
+  }
+
+  async function descargarApk() {
+    const { data, error: err } = await supabase.storage.from(BUCKET).createSignedUrl(APK_FILE, 300, {
+      download: "TRAMMOS-Conductor.apk",
+    });
+    if (err || !data?.signedUrl) {
+      setApkError(err?.message ?? "No se pudo generar la descarga");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  }
+
+
   async function abrir() {
     setOpen(true);
     setView("loading");
