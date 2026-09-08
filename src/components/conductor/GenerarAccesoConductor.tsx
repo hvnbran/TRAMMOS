@@ -1,6 +1,22 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { KeyRound, Loader2, Copy, Check, Eye, EyeOff, RefreshCw, MessageCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import {
+  KeyRound,
+  Loader2,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  MessageCircle,
+  Smartphone,
+  Upload,
+  Download,
+} from "lucide-react";
+
+const BUCKET = "app-conductor";
+const APK_FILE = "trammos-conductor.apk";
 
 /**
  * Botón para que el admin genere/consulte/restablezca la contraseña de acceso
@@ -23,6 +39,63 @@ export function GenerarAccesoConductor({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<"pwd" | "msg" | null>(null);
+
+  const { role } = useAuth();
+  const esAdmin = role === "admin";
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [apk, setApk] = useState<{ size: number | null; updated: string | null } | null>(null);
+  const [apkLoading, setApkLoading] = useState(false);
+  const [apkError, setApkError] = useState<string | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+
+  async function cargarApk() {
+    setApkLoading(true);
+    const { data } = await supabase.storage.from(BUCKET).list("", { limit: 100 });
+    const f = data?.find((x) => x.name === APK_FILE);
+    setApk(
+      f
+        ? {
+            size: (f.metadata as { size?: number } | null)?.size ?? null,
+            updated: f.updated_at ?? f.created_at ?? null,
+          }
+        : null,
+    );
+    setApkLoading(false);
+  }
+
+  useEffect(() => {
+    if (open && esAdmin) cargarApk();
+  }, [open, esAdmin]);
+
+  async function subirApk(file: File) {
+    setApkError(null);
+    if (!file.name.toLowerCase().endsWith(".apk")) {
+      setApkError("El archivo debe terminar en .apk");
+      return;
+    }
+    setSubiendo(true);
+    const { error: err } = await supabase.storage
+      .from(BUCKET)
+      .upload(APK_FILE, file, { upsert: true, contentType: "application/vnd.android.package-archive" });
+    setSubiendo(false);
+    if (err) {
+      setApkError(err.message);
+      return;
+    }
+    await cargarApk();
+  }
+
+  async function descargarApk() {
+    const { data, error: err } = await supabase.storage.from(BUCKET).createSignedUrl(APK_FILE, 300, {
+      download: "TRAMMOS-Conductor.apk",
+    });
+    if (err || !data?.signedUrl) {
+      setApkError(err?.message ?? "No se pudo generar la descarga");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  }
+
 
   async function abrir() {
     setOpen(true);
@@ -101,10 +174,13 @@ export function GenerarAccesoConductor({
   async function copiarMensaje() {
     if (!currentPassword) return;
     const msg =
-      `Hola ${nombre}, este es tu acceso a TRAMMOS Conductor:\n` +
-      `Enlace: https://trammos.online/conductor/login\n` +
+      `Hola ${nombre}, este es tu acceso a TRAMMOS Conductor:\n\n` +
       `Cédula: ${cedula ?? "(tu cédula)"}\n` +
-      `Contraseña: ${currentPassword}`;
+      `Contraseña: ${currentPassword}\n\n` +
+      `1) Instala la app: https://trammos.online/app\n` +
+      `2) Ábrela y entra con tu cédula y contraseña.\n\n` +
+      `Si prefieres no instalar nada, entra desde el navegador:\n` +
+      `https://trammos.online/conductor/login`;
     await navigator.clipboard.writeText(msg);
     setCopied("msg");
     setTimeout(() => setCopied(null), 2000);
@@ -241,6 +317,63 @@ export function GenerarAccesoConductor({
                   </button>
                 </div>
               </>
+            )}
+
+            {esAdmin && (
+              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+                  <Smartphone className="h-3.5 w-3.5 text-primary" /> Instalable Android
+                </p>
+
+                {apkLoading ? (
+                  <p className="text-[11px] text-muted-foreground">Consultando…</p>
+                ) : apk ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Versión actual
+                    {apk.size ? ` · ${(apk.size / 1024 / 1024).toFixed(1)} MB` : ""}
+                    {apk.updated ? ` · subida el ${new Date(apk.updated).toLocaleDateString("es-CO")}` : ""}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">Todavía no has subido el instalable.</p>
+                )}
+
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".apk,application/vnd.android.package-archive"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) subirApk(f);
+                    e.target.value = "";
+                  }}
+                />
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={subiendo}
+                    className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border bg-card hover:bg-secondary disabled:opacity-50"
+                  >
+                    {subiendo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                    {apk ? "Subir versión nueva" : "Subir archivo .apk"}
+                  </button>
+                  {apk && (
+                    <button
+                      onClick={descargarApk}
+                      className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border bg-card hover:bg-secondary"
+                    >
+                      <Download className="h-3.5 w-3.5" /> Descargar y comprobar
+                    </button>
+                  )}
+                </div>
+
+                {apkError && <p className="text-[11px] text-destructive">{apkError}</p>}
+                <p className="text-[11px] text-muted-foreground">
+                  Los conductores lo instalan desde <strong>trammos.online/app</strong> (ese enlace va incluido en
+                  el mensaje de WhatsApp).
+                </p>
+              </div>
             )}
           </div>
         </div>

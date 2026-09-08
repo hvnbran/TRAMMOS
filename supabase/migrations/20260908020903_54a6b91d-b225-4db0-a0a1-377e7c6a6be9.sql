@@ -1,0 +1,4 @@
+CREATE POLICY "admin_select_app_conductor" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'app-conductor' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "admin_insert_app_conductor" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'app-conductor' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "admin_update_app_conductor" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'app-conductor' AND public.has_role(auth.uid(), 'admin')) WITH CHECK (bucket_id = 'app-conductor' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "admin_delete_app_conductor" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'app-conductor' AND public.has_role(auth.uid(), 'admin'));
