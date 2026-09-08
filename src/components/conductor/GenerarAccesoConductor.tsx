@@ -174,10 +174,13 @@ export function GenerarAccesoConductor({
   async function copiarMensaje() {
     if (!currentPassword) return;
     const msg =
-      `Hola ${nombre}, este es tu acceso a TRAMMOS Conductor:\n` +
-      `Enlace: https://trammos.online/conductor/login\n` +
+      `Hola ${nombre}, este es tu acceso a TRAMMOS Conductor:\n\n` +
       `Cédula: ${cedula ?? "(tu cédula)"}\n` +
-      `Contraseña: ${currentPassword}`;
+      `Contraseña: ${currentPassword}\n\n` +
+      `1) Instala la app: https://trammos.online/app\n` +
+      `2) Ábrela y entra con tu cédula y contraseña.\n\n` +
+      `Si prefieres no instalar nada, entra desde el navegador:\n` +
+      `https://trammos.online/conductor/login`;
     await navigator.clipboard.writeText(msg);
     setCopied("msg");
     setTimeout(() => setCopied(null), 2000);
