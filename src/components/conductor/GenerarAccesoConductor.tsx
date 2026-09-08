@@ -1,6 +1,22 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { KeyRound, Loader2, Copy, Check, Eye, EyeOff, RefreshCw, MessageCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import {
+  KeyRound,
+  Loader2,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  MessageCircle,
+  Smartphone,
+  Upload,
+  Download,
+} from "lucide-react";
+
+const BUCKET = "app-conductor";
+const APK_FILE = "trammos-conductor.apk";
 
 /**
  * Botón para que el admin genere/consulte/restablezca la contraseña de acceso
