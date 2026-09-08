@@ -107,6 +107,8 @@ function AuthGate() {
   const isConductorLoginRoute = location.pathname === "/conductor/login";
   const isConductorRoute =
     location.pathname === "/conductor" || location.pathname.startsWith("/conductor/");
+  // Página pública de descarga del instalable Android
+  const isDescargaRoute = location.pathname === "/app";
 
   // Hook de re-aceptación: solo activo cuando hay sesión y NO estamos en
   // rutas públicas (login/legal/conductor login) para no bloquear la propia política.
