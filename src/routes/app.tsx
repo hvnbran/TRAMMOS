@@ -34,11 +34,23 @@ function mb(bytes: number | null) {
 
 function DescargarApp() {
   const fetchInfo = useServerFn(getApkInfo);
-  const { data, isLoading } = useQuery({
-    queryKey: ["apk-info"],
-    queryFn: () => fetchInfo(),
-    refetchOnWindowFocus: false,
-  });
+  const [data, setData] = useState<ApkInfo | null>(null);
+  const [isLoading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let vivo = true;
+    fetchInfo()
+      .then((info) => {
+        if (vivo) setData(info);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (vivo) setLoading(false);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [fetchInfo]);
 
   return (
     <main className="min-h-screen bg-background text-foreground px-5 py-10">
