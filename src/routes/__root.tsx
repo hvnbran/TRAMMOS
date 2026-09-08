@@ -113,13 +113,13 @@ function AuthGate() {
   // Hook de re-aceptación: solo activo cuando hay sesión y NO estamos en
   // rutas públicas (login/legal/conductor login) para no bloquear la propia política.
   const enforcePolicy = useEnforcePolicyAcceptance(
-    user && !isLoginRoute && !isLegalRoute && !isConductorLoginRoute ? user.id : null,
+    user && !isLoginRoute && !isLegalRoute && !isConductorLoginRoute && !isDescargaRoute ? user.id : null,
   );
 
   useEffect(() => {
     if (loading) return;
-    // Las rutas /legal/* son públicas: nunca redirigimos desde ellas.
-    if (isLegalRoute) return;
+    // Las rutas /legal/* y /app son públicas: nunca redirigimos desde ellas.
+    if (isLegalRoute || isDescargaRoute) return;
     // /conductor/login es público (entrada para conductores)
     if (isConductorLoginRoute) {
       // Si ya hay sesión de conductor, llevarlo a su panel
