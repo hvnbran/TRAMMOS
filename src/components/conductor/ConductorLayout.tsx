@@ -39,9 +39,15 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+    <div
+      className="min-h-screen bg-gradient-to-br from-background to-secondary/20"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <header
+        className="sticky z-30 bg-card/95 backdrop-blur border-b border-border"
+        style={{ top: "env(safe-area-inset-top)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 sm:px-5 h-14 flex items-center gap-2.5">
           <Link to="/conductor" className="flex items-center gap-2 flex-1 min-w-0">
             <img src={logo} alt="TRAMMOS" className="h-8 w-8 rounded-md object-contain" />
             <div className="min-w-0">
