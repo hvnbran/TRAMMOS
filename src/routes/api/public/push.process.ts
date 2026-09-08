@@ -121,7 +121,7 @@ async function processQueue(maxItems = 20) {
     const expiredEndpoints: string[] = [];
     let lastError: string | null = null;
 
-    for (const sub of (subs ?? []) as SubscriptionRow[]) {
+    for (const sub of (canWebPush ? (subs ?? []) : []) as SubscriptionRow[]) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
