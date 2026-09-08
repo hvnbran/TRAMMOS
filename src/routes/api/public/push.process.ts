@@ -57,7 +57,7 @@ interface SubscriptionRow {
 }
 
 async function processQueue(maxItems = 20) {
-  configureVapid();
+  const canWebPush = configureVapid();
 
   // Tomar pendientes recientes (últimos 10 min) — evita reenviar viejos si la cola creció
   const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
