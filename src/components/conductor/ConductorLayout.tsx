@@ -39,9 +39,15 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+    <div
+      className="min-h-screen bg-gradient-to-br from-background to-secondary/20"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
+    >
+      <header
+        className="sticky z-30 bg-card/95 backdrop-blur border-b border-border"
+        style={{ top: "env(safe-area-inset-top)" }}
+      >
+        <div className="max-w-2xl mx-auto px-4 sm:px-5 h-14 flex items-center gap-2.5">
           <Link to="/conductor" className="flex items-center gap-2 flex-1 min-w-0">
             <img src={logo} alt="TRAMMOS" className="h-8 w-8 rounded-md object-contain" />
             <div className="min-w-0">
@@ -77,7 +83,7 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
           </button>
         </div>
         {title && (
-          <div className="max-w-2xl mx-auto px-4 pb-3 flex items-center gap-2">
+          <div className="max-w-2xl mx-auto px-4 sm:px-5 pb-3 flex items-center gap-2 min-w-0">
             <Link
               to="/conductor"
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
@@ -90,7 +96,12 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
         )}
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-4 pb-12">{children}</main>
+      <main
+        className="max-w-2xl mx-auto w-full px-4 sm:px-5 py-4"
+        style={{ paddingBottom: "calc(3rem + env(safe-area-inset-bottom))" }}
+      >
+        {children}
+      </main>
       <SiteFooter variant="compact" />
     </div>
   );

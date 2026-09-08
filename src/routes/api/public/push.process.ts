@@ -7,13 +7,27 @@ const VAPID_PUBLIC_KEY =
   "BPHM1WJuxn1upkUUEfbd56vqpJ-UnCisfB7E5EbMP8qus0ffFyhQI1HMS3ejYmekqtqcA-YLl8Tmnh8fExIcg_Q";
 
 let configured = false;
+let webPushReady = false;
+
+/**
+ * Configura Web Push. Nunca lanza: si falta o está mal la credencial VAPID,
+ * seguimos adelante para que los avisos nativos (APK Android) sí se envíen.
+ */
 function configureVapid() {
-  if (configured) return;
-  const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:soporte@trammos.online";
-  if (!privateKey) throw new Error("VAPID_PRIVATE_KEY no configurada");
-  webpush.setVapidDetails(subject, VAPID_PUBLIC_KEY, privateKey);
+  if (configured) return webPushReady;
   configured = true;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!privateKey) return false;
+  const raw = process.env.VAPID_SUBJECT?.trim() || "";
+  const valid = /^(mailto:|https?:\/\/)/i.test(raw);
+  const subject = valid ? raw : "mailto:soporte@trammos.online";
+  try {
+    webpush.setVapidDetails(subject, VAPID_PUBLIC_KEY, privateKey);
+    webPushReady = true;
+  } catch {
+    webPushReady = false;
+  }
+  return webPushReady;
 }
 
 interface PushPayload {
@@ -43,7 +57,7 @@ interface SubscriptionRow {
 }
 
 async function processQueue(maxItems = 20) {
-  configureVapid();
+  const canWebPush = configureVapid();
 
   // Tomar pendientes recientes (últimos 10 min) — evita reenviar viejos si la cola creció
   const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
@@ -107,7 +121,7 @@ async function processQueue(maxItems = 20) {
     const expiredEndpoints: string[] = [];
     let lastError: string | null = null;
 
-    for (const sub of (subs ?? []) as SubscriptionRow[]) {
+    for (const sub of (canWebPush ? (subs ?? []) : []) as SubscriptionRow[]) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
