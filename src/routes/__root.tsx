@@ -43,7 +43,7 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "TRAMMOS" },
       { name: "description", content: "Sistema integral de gestión y monitoreo para empresas de transporte especial" },
       { property: "og:title", content: "TRAMMOS" },
