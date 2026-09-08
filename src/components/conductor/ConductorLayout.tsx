@@ -83,7 +83,7 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
           </button>
         </div>
         {title && (
-          <div className="max-w-2xl mx-auto px-4 pb-3 flex items-center gap-2">
+          <div className="max-w-2xl mx-auto px-4 sm:px-5 pb-3 flex items-center gap-2 min-w-0">
             <Link
               to="/conductor"
               className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
@@ -96,7 +96,12 @@ export function ConductorLayout({ children, title }: { children: ReactNode; titl
         )}
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-4 pb-12">{children}</main>
+      <main
+        className="max-w-2xl mx-auto w-full px-4 sm:px-5 py-4"
+        style={{ paddingBottom: "calc(3rem + env(safe-area-inset-bottom))" }}
+      >
+        {children}
+      </main>
       <SiteFooter variant="compact" />
     </div>
   );
